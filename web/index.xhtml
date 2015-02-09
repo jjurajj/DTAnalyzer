@@ -1,0 +1,43 @@
+<?xml version='1.0' encoding='UTF-8' ?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml"
+      xmlns:f="http://java.sun.com/jsf/core"
+      xmlns:h="http://xmlns.jcp.org/jsf/html">
+    <h:head>
+        <title>Facelet Title</title>
+    </h:head>
+    <h:body>
+        <f:view>
+            <h:outputText value="Ovo je početna stranica na koju se može aploudati tekstualni fajl s prpopozicijama koje cine stablo odluke."/><br />
+            <br /><br />
+            <h:outputText value="Zasad je podrzan samo izlazni format iz CMAPToolsa." />
+            <br /><br />
+            <h:form id="form" enctype="multipart/form-data">
+                <h:inputFile id="file" value="#{Uploader.file}" validator="#{Uploader.validateFile}" />
+                
+                
+                <h:commandButton value="Upload">
+                    <!-- tu bi trebalo instancirat DT.parseFileDT(Uploader.fileContent)  -->
+                    
+                </h:commandButton>
+                
+<!--                
+                <h:commandButton value="Car won't start" action="analysis?faces-redirect=true">
+<f:ajax onevent="Uploader.upload" />
+Onclick will be executed first. <h:commandButton value="Upload file" onclick="Uploader.upload()" />
+It is used to call a javascript function.
+Actionlistener is used when you want to have
+some ajax call to a method that method should
+have no return type, the method either take
+ActionEvent as argument or no argument needed;
+it can also be used for non ajax call but the
+page will be refreshed. Action is used to navigate
+to a different page; the method should have
+string return type.                
+-->
+
+            </h:form>
+        </f:view>
+    </h:body>
+</html>
+

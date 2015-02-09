@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+To change this license header, choose License Headers in Project Properties.
+To change this template file, choose Tools | Templates
+and open the template in the editor.
+-->
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml"
+      xmlns:f="http://java.sun.com/jsf/core"
+      xmlns:h="http://xmlns.jcp.org/jsf/html">
+
+    <head>
+        <title>DT analysis</title>
+        <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    </head>
+    <body>
+        <f:view>
+            
+            <h:form id ="inicijalizacija">
+                <!--
+                <br />{Uploader.getFileContent()}<br />Kraj teksta fajla.{Uploader.file}Neki nesto{Uploader.fileContent}.
+                {assessmentcase.SetCase("C:/Users/juraj/Documents/NetBeansProjects/SkillAssessment/build/web/WEB-INF/classes/resources/case_base/case_2/case.txt")}-->
+                
+                
+                <f:event listener="#{Infobase.initialize}" type="preRenderView" />
+                <f:event listener="#{DT.initializeDT(Uploader.fileContent)}" type="preRenderView" />
+                
+                Uploaded DT file (propositions):
+                <br />
+                <pre>#{Uploader.getFileContent()}</pre>
+                <br />
+
+                Start node:
+                <br />#{DT.start_node}<br />
+                <br /><br />
+                
+                Diagnoses:
+                <br />#{DT.diagnoses}<br />
+                <br /><br />
+                
+                Analysis:
+                <br />Baza: #{Infobase.url}<br />
+                <br />Popis caseova: #{Infobase.caseovi}<br />
+                <br /><br />
+                
+                <br />Primjer casea:
+                <pre>#{Infobase.readCase("http://diana.zesoi.fer.hr/~jpetrovic/case_repository/car_starting/case_1/case.txt")}</pre><br />
+                <br /><br />
+                
+                Infobase
+                Case base:
+                (Neki URL di se vodi baza kejsova. Kejsovi su u fajlovima i treba ih hesirat ili napravit neki skraceni
+                zapis da se ne parsaju uvjek iznova. Mogo bi ucitat case i popisat ih u tablicu )
+                
+                
+            </h:form>
+            
+            
+            
+            
+        </f:view>
+
+    </body>
+</html>
