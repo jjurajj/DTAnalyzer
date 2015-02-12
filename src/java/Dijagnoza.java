@@ -27,7 +27,7 @@ public String getName() {
         this.name = name;
     }
     
-    public void setCorrect(String correctnes) {
+    public void setCorrect(String correct) {
         this.correct = correct;
     }
     

@@ -1,12 +1,18 @@
 /*
  * Ovo je klasa za case.
+ *
  * Tu definiram parametre koje case ima i omogucavam da se case ucita iz txt fajla. 
+ *
+ * Ovo bi trebala bit robustna klasa za ucitavanje casea, a poslije iz njega uzimam
+ * specificno elemente koji mi trebaju za pojedinu primjenu.
  */
 
 import java.util.ArrayList;
 import java.io.*;
 import java.math.BigDecimal;
+import java.net.MalformedURLException;
 import java.net.URL;
+import java.util.HashMap;
 import javax.faces.bean.ManagedBean;
 import java.util.Scanner;
 import javax.faces.bean.SessionScoped;
@@ -16,93 +22,176 @@ import javax.faces.bean.SessionScoped;
 @SessionScoped
 public class Case implements Serializable {
 
-    private static final long serialVersionUID = 1L;
+    //private static final long serialVersionUID = 1L;
     
     // Parametri casea:
-    String url;                                                     // URL case.txt fajla
-    String introduction, task;                                      // Uvod i zadatak
-    ArrayList<Dijagnoza> diagnoses = new ArrayList<>();                                               // Dijagnoza u kojem vec obliku
-    ArrayList<Parametar> parameters = new ArrayList<>();             // Parametri
+    public String url;
+    public String text; // URL case.txt fajla
+    public String introduction, task, explanation;                                      // Uvod i zadatak
+    public ArrayList<Dijagnoza> diagnoses = new ArrayList<Dijagnoza>();                                               // Dijagnoza u kojem vec obliku
+    public ArrayList<Parametar> parameters = new ArrayList<Parametar>();             // Parametri
+    public HashMap<String, String> CaseMap= new HashMap<String, String>();
 
-    public ArrayList<String> ParseTag(String text, String tag) {
-        String temp_text = text;
-        String start_tag = "<" + tag + ">";
-        String end_tag = "</" + tag + ">";
-        ArrayList<String> tag_values = new ArrayList<>();
-        while (temp_text.indexOf(start_tag) != -1){
-            String value = text.substring(text.indexOf(start_tag)+ start_tag.length(), text.indexOf(end_tag.length()) - 1);
-            tag_values.add(value);
-        }
-        return tag_values;
-    }
+    public void initializeCase(String url) throws IOException {
 
-    
-    public void SetCase(String url) throws IOException {
-
-        url = url+"/case_1/case.txt";
         this.url = url;
     
-        String case_file;                           //ucitaj cijeli fajl u case_file varijablu         
-    
         try{
-    
+            
+            String case_file;                           //ucitaj cijeli fajl u case_file varijablu         
             InputStream inputStream = new URL(this.url).openConnection().getInputStream();
             BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream ));
             case_file = new Scanner(reader).useDelimiter("\\A").next();                         // Sad imamo case fajl
-        
-            this.introduction = ParseTag(case_file, "Introduction").get(0);                            // Ovo su stavke s jedinstvenom string vrijednoscu
-            this.task = ParseTag(case_file, "Task").get(0);                                            // Ovo su stavke s jedinstvenom string vrijednoscu
-        
-            ArrayList<String> temp_diagnoses = ParseTag(case_file, "Diagnoses");                           // Ove stavke mogu imati vise elemenata
-            for (int i = 0; i < temp_diagnoses.size(); i++) {
+            this.text = case_file;
             
-                Dijagnoza temp_dijagnoza = new Dijagnoza();
-            
-                temp_dijagnoza.setName(ParseTag(temp_diagnoses.get(i), "Name").get(0));
-                temp_dijagnoza.setCorrect(ParseTag(temp_diagnoses.get(i), "Correct").get(0));
-            
-                this.diagnoses.add(temp_dijagnoza);
-            }
+            //Tagovi prve razine: introduction, task, parameters, diagnoses, explanation
+            String introduction = parseTag(case_file, "Introduction").get(0);
+            String task = parseTag(case_file, "Task").get(0);
+            String parameters = parseTag(case_file, "Parameters").get(0);
+            String diagnoses = parseTag(case_file, "Diagnoses").get(0);
+            String explanation = parseTag(case_file, "Explanation").get(0);
 
-            ArrayList<String> temp_parameters = ParseTag(case_file, "Parameters");                         // Ove stavke mogu imati vise elemenata
-            for (int i = 0; i < temp_parameters.size(); i++) {
+            //Introduction
+            this.introduction =introduction;
+            
+            //Task
+            this.task = task;
+        
+            // Parameters
+            ArrayList<String> temp_parameters = parseTag(case_file, "Parameter");                         // Ove stavke mogu imati vise elemenata
+            for (String temp_parameter : temp_parameters) {
            
                 Parametar temp_parametar = new Parametar();
            
-                temp_parametar.setName(ParseTag(temp_parameters.get(i), "Name").get(0));
-                temp_parametar.setSynonims(ParseTag(temp_parameters.get(i), "Synonims").get(0));
-                temp_parametar.setReal_value(ParseTag(temp_parameters.get(i), "Real value").get(0));
-                temp_parametar.setAssigned_value(ParseTag(temp_parameters.get(i), "Assigned value").get(0));
-                temp_parametar.setWeight(new BigDecimal(Float.parseFloat(ParseTag(temp_parameters.get(i), "Weight").get(0))).setScale(2, BigDecimal.ROUND_HALF_UP).doubleValue());  //http://stackoverflow.com/questions/2808535/round-a-double-to-2-significant-figures-after-decimal-point
-                temp_parametar.setPrice(new BigDecimal(Float.parseFloat(ParseTag(temp_parameters.get(i), "Price").get(0))).setScale(2, BigDecimal.ROUND_HALF_UP).doubleValue());  //http://stackoverflow.com/questions/2808535/round-a-double-to-2-significant-figures-after-decimal-point
-
+                temp_parametar.setName(parseTag(temp_parameter, "Name").get(0));
+                temp_parametar.setSynonims(parseTag(temp_parameter, "Synonims").get(0));
+                temp_parametar.setReal_value(parseTag(temp_parameter, "Real value").get(0));
+                temp_parametar.setAssigned_value(parseTag(temp_parameter, "Assigned value").get(0));
+                try {
+                    temp_parametar.setWeight(new BigDecimal(Float.parseFloat(parseTag(temp_parameter, "Weight").get(0))).setScale(2, BigDecimal.ROUND_HALF_UP).doubleValue());  //http://stackoverflow.com/questions/2808535/round-a-double-to-2-significant-figures-after-decimal-point
+                } catch (NullPointerException|NumberFormatException e2) {
+                    temp_parametar.setWeight(-999);
+                }
+                try {
+                    temp_parametar.setPrice(new BigDecimal(Float.parseFloat(parseTag(temp_parameter, "Price").get(0))).setScale(2, BigDecimal.ROUND_HALF_UP).doubleValue());  //http://stackoverflow.com/questions/2808535/round-a-double-to-2-significant-figures-after-decimal-point
+                } catch (NullPointerException|NumberFormatException e2) {
+                    temp_parametar.setPrice(-999);
+                }       
+                    
                 this.parameters.add(temp_parametar);
+                
+                CaseMap.put(temp_parametar.name, temp_parametar.assigned_value);
             }
+            
+            //Diagnoses
+            ArrayList<String> temp_diagnoses = parseTag(diagnoses, "Diagnosis");                           // Ove stavke mogu imati vise elemenata
+            for (String current_diagnosis : temp_diagnoses) {
+                Dijagnoza temp_dijagnoza = new Dijagnoza();
+                temp_dijagnoza.setName(parseTag(current_diagnosis, "Name").get(0));
+                temp_dijagnoza.setCorrect(parseTag(current_diagnosis, "Correct").get(0));
+                this.diagnoses.add(temp_dijagnoza);
+            }
+            
+            //Explanation
+            this.explanation = explanation;
+            
         } catch(Exception ex) {
             System.out.println("Error reading file '" + "'");					
         }
 
     }
+    public String getCasePlainText() throws MalformedURLException {
+        String text = "";
+        URL case_url;
+        InputStream stream = null;
+        DataInputStream dis;
+        String line;
+      
+        try {   //http://alvinalexander.com/java/edu/pj/pj010011
+            case_url = new URL(this.url);
+            stream = case_url.openStream();
+            BufferedReader in = new BufferedReader(new InputStreamReader(case_url.openStream()));
+            while ((line = in.readLine()) != null) {
+                text = text.concat(line).concat("\r\n");
+            }
+            in.close();
+            return text;
+        }
+        catch (MalformedURLException URLe) {
+            return "NULL";
+        }
+        catch (IOException IOe) {
+            return "NULL";
+        }
+    }
 
+    public String evaluateCase(DT tree) {
+        String diagnosis = "";
+        String next_concept = tree.start_node;
+        while (next_concept != null) {
+            PropositionKey key = new PropositionKey(next_concept, CaseMap.get(next_concept));
+            diagnosis = next_concept;
+            next_concept = tree.DTMap.get(key);
+        }
+        return diagnosis;
+    }
+    
+    private ArrayList<String> parseTag(String text, String tag) {
+        String temp_text = text;
+        String start_tag = "<" + tag + ">";
+        String end_tag = "</" + tag + ">";
+        ArrayList<String> tag_values = new ArrayList<>();
+        while (temp_text.indexOf(start_tag) != -1){
+            int start_index = temp_text.indexOf(start_tag)+ start_tag.length();
+            int end_index = temp_text.indexOf(end_tag);
+            String value = temp_text.substring(start_index, end_index);
+            temp_text = temp_text.substring(end_index+end_tag.length());
+            tag_values.add(value);
+        }
+        if (tag_values.isEmpty()) {
+            tag_values.add("");
+        }
+        return tag_values;
+    }
+
+    public String getExplanation() {
+        return explanation;
+    }
+
+    public void setExplanation(String explanation) {
+        this.explanation = explanation;
+    }
+
+    public HashMap<String, String> getCaseMap() {
+        return CaseMap;
+    }
+
+    public void setCaseMap(HashMap<String, String> CaseMap) {
+        this.CaseMap = CaseMap;
+    }
+    
     public String getUrl() {
         return url;
     }
-
     public String getIntroduction() {
         return introduction;
     }
-
     public String getTask() {
         return task;
     }
-
     public ArrayList<Parametar> getParameters() {
         return this.parameters;
     }
-
     public ArrayList<Dijagnoza> getDiagnoses() {
         return this.diagnoses;
     }
 
+    public String getText() {
+        return text;
+    }
 
+    public void setText(String text) {
+        this.text = text;
+    }
+    
 }

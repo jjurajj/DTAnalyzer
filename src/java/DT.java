@@ -4,6 +4,7 @@
 
 import java.io.Serializable;
 import java.util.ArrayList;
+import java.util.HashMap;
 import javax.faces.bean.ManagedBean;
 import javax.faces.bean.SessionScoped;
 
@@ -15,7 +16,8 @@ public class DT implements Serializable {
     public String start_node;
     public ArrayList<Proposition> propositions = new ArrayList<>(); 
     public ArrayList<String> diagnoses = new ArrayList<>();
-
+    public HashMap<PropositionKey, String> DTMap= new HashMap<>();
+    
 public void initializeDT(String fileContent) {
   
       // tu bi trebalo ucitat fajl liniju po liniju, provjerit jel okej 
@@ -48,6 +50,12 @@ public void initializeDT(String fileContent) {
           right_concepts.add(prop.concept_two);
           
           props.add(prop);
+          
+          // Dodaj propoziciju u HashMap
+          PropositionKey key = new PropositionKey();
+          key.concept = prop.concept_one;
+          key.value = prop.link;
+          DTMap.put(key, prop.concept_two);
       }
       MyTree.setPropositions(props);
       
@@ -135,4 +143,13 @@ public void initializeDT(String fileContent) {
 
     }
 
+    public HashMap<PropositionKey, String> getDTmap() {
+        return DTMap;
+    }
+
+    public void setDTmap(HashMap<PropositionKey, String> DTmap) {
+        this.DTMap = DTmap;
+    }
+
+    
 }

@@ -22,7 +22,8 @@ and open the template in the editor.
                 {assessmentcase.SetCase("C:/Users/juraj/Documents/NetBeansProjects/SkillAssessment/build/web/WEB-INF/classes/resources/case_base/case_2/case.txt")}-->
                 
                 
-                <f:event listener="#{Infobase.initialize}" type="preRenderView" />
+                <f:event listener="#{CaseBase.initialize}" type="preRenderView" />
+                <f:event listener="#{Case.initializeCase("http://diana.zesoi.fer.hr/~jpetrovic/case_repository/car_starting/case_1/case.txt")}" type="preRenderView" />
                 <f:event listener="#{DT.initializeDT(Uploader.fileContent)}" type="preRenderView" />
                 
                 Uploaded DT file (propositions):
@@ -39,14 +40,16 @@ and open the template in the editor.
                 <br /><br />
                 
                 Analysis:
-                <br />Baza: #{Infobase.url}<br />
-                <br />Popis caseova: #{Infobase.caseovi}<br />
+                <br />Baza: #{CaseBase.url}<br />
+                <br />Popis caseova: #{CaseBase.caseovi.get(0)}<br />
                 <br /><br />
                 
                 <br />Primjer casea:
-                <pre>#{Infobase.readCase("http://diana.zesoi.fer.hr/~jpetrovic/case_repository/car_starting/case_1/case.txt")}</pre><br />
+                <pre>#{Case.}</pre><br />
                 <br /><br />
                 
+                
+                #{CaseBase.getSingleCase(0).}
                 Infobase
                 Case base:
                 (Neki URL di se vodi baza kejsova. Kejsovi su u fajlovima i treba ih hesirat ili napravit neki skraceni
