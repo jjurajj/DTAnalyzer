@@ -10,14 +10,13 @@
 import java.util.ArrayList;
 import java.io.*;
 import java.math.BigDecimal;
-import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.HashMap;
 import javax.faces.bean.ManagedBean;
 import java.util.Scanner;
 import javax.faces.bean.SessionScoped;
 
-@ManagedBean (name ="assessmentcase", eager = true)
+@ManagedBean (name ="Case", eager = true)
 //@ViewScoped
 @SessionScoped
 public class Case implements Serializable {
@@ -28,10 +27,19 @@ public class Case implements Serializable {
     public String url;
     public String text; // URL case.txt fajla
     public String introduction, task, explanation;                                      // Uvod i zadatak
-    public ArrayList<Dijagnoza> diagnoses = new ArrayList<Dijagnoza>();                                               // Dijagnoza u kojem vec obliku
-    public ArrayList<Parametar> parameters = new ArrayList<Parametar>();             // Parametri
-    public HashMap<String, String> CaseMap= new HashMap<String, String>();
+    public ArrayList<Dijagnoza> diagnoses = new ArrayList<>();                                               // Dijagnoza u kojem vec obliku
+    public ArrayList<Parametar> parameters = new ArrayList<>();             // Parametri
+    public HashMap<String,String> parametersMap= new HashMap<>();
 
+    public void initialize() {
+    }
+    
+    public Case() {
+    
+        //this = Case("http://diana.zesoi.fer.hr/~jpetrovic/case_repository/car_starting/case_1/case.txt");
+        //Case("http://diana.zesoi.fer.hr/~jpetrovic/case_repository/car_starting/case_1/case.txt");
+    }
+    
     public void initializeCase(String url) throws IOException {
 
         this.url = url;
@@ -80,7 +88,7 @@ public class Case implements Serializable {
                     
                 this.parameters.add(temp_parametar);
                 
-                CaseMap.put(temp_parametar.name, temp_parametar.assigned_value);
+                parametersMap.put(temp_parametar.name, temp_parametar.assigned_value);
             }
             
             //Diagnoses
@@ -88,7 +96,10 @@ public class Case implements Serializable {
             for (String current_diagnosis : temp_diagnoses) {
                 Dijagnoza temp_dijagnoza = new Dijagnoza();
                 temp_dijagnoza.setName(parseTag(current_diagnosis, "Name").get(0));
-                temp_dijagnoza.setCorrect(parseTag(current_diagnosis, "Correct").get(0));
+                String correct = parseTag(current_diagnosis, "Correct").get(0);
+                if (correct.toLowerCase().contains("true") || correct.toLowerCase().contains("yes")) {
+                    temp_dijagnoza.setCorrect(true);
+                }
                 this.diagnoses.add(temp_dijagnoza);
             }
             
@@ -100,7 +111,106 @@ public class Case implements Serializable {
         }
 
     }
-    public String getCasePlainText() throws MalformedURLException {
+
+    // evaluacija casea. tu bi trebalo vratit.
+    //(dijagnozu, cijenu, nepotrebni parametri?)
+    //(di je zapelo, procjenu do tamo, nepotrebni parametri)
+    
+    public CaseEvaluation evaluateCase(DT tree) {
+        
+        CaseEvaluation eval = new CaseEvaluation();
+        
+        String next_concept = tree.start_node;                                                  // pocetni cvor stabla
+        PropositionKey key; 
+        key = new PropositionKey(next_concept, parametersMap.get(next_concept));
+        
+        while ((next_concept != null) && (key != null)) {                       // prodi po stablu: sumiraj cijene i dodi do kraja
+            eval.end_node = next_concept;                                           // Odi u iduci cvor stabla
+            key = new PropositionKey(next_concept, parametersMap.get(next_concept));  // Za taj cvor ispitaj vrijednost caseu
+            next_concept = tree.propositionsMap.get(key);                                 // Provjeri postoji li za to u stablu iduci cvor
+        }
+        
+        //ako je cvor u kojem je klasifikacija stala jedan od terminalnih cvorova stabla
+        if (tree.diagnoses.contains(eval.end_node)) {
+            eval.diagnosed = true;
+            if (this.diagnoses.get(this.diagnoses.indexOf(eval.end_node)).isCorrect()) {
+                eval.correct = true;
+            }
+            
+        }
+        
+        return eval;
+    }
+    
+    private ArrayList<String> parseTag(String text, String tag) {
+        String temp_text = text;
+        String start_tag = "<" + tag + ">";
+        String end_tag = "</" + tag + ">";
+        ArrayList<String> tag_values = new ArrayList<>();
+        while (temp_text.indexOf(start_tag) != -1){
+            int start_index = temp_text.indexOf(start_tag)+ start_tag.length();
+            int end_index = temp_text.indexOf(end_tag);
+            String value = temp_text.substring(start_index, end_index);
+            temp_text = temp_text.substring(end_index+end_tag.length());
+            tag_values.add(value);
+        }
+        if (tag_values.isEmpty()) {
+            tag_values.add("Undefined");
+        }
+        return tag_values;
+    }
+
+    public void setUrl(String url) {
+        this.url = url;
+    }
+    public void setIntroduction(String introduction) {
+        this.introduction = introduction;
+    }
+    public void setTask(String task) {
+        this.task = task;
+    }
+    public void setParameters(ArrayList<Parametar> parameters) {
+        this.parameters = parameters;
+    }
+    public void setDiagnoses(ArrayList<Dijagnoza> diagnoses) {
+        this.diagnoses = diagnoses;
+    }
+    public void setExplanation(String explanation) {
+        this.explanation = explanation;
+    }
+    public void setText(String text) {
+        this.text = text;
+    }
+    public void setParametersMap(HashMap<String, String> parametersMap) {
+        this.parametersMap = parametersMap;
+    }
+
+    public String getUrl() {
+        return url;
+    }
+    public String getIntroduction() {
+        return introduction;
+    }
+    public String getTask() {
+        return task;
+    }
+    public ArrayList<Parametar> getParameters() {
+        return this.parameters;
+    }
+    public ArrayList<Dijagnoza> getDiagnoses() {
+        return this.diagnoses;
+    }
+    public String getExplanation() {
+        return explanation;
+    }
+    public String getText() {
+        return text;
+    }
+    public HashMap<String, String> getParametersMap() {
+        return parametersMap;
+    }
+    
+    /*public String getCasePlainText() throws MalformedURLException {
         String text = "";
         URL case_url;
         InputStream stream = null;
@@ -123,75 +233,5 @@ public class Case implements Serializable {
         catch (IOException IOe) {
             return "NULL";
         }
-    }
-
-    public String evaluateCase(DT tree) {
-        String diagnosis = "";
-        String next_concept = tree.start_node;
-        while (next_concept != null) {
-            PropositionKey key = new PropositionKey(next_concept, CaseMap.get(next_concept));
-            diagnosis = next_concept;
-            next_concept = tree.DTMap.get(key);
-        }
-        return diagnosis;
-    }
-    
-    private ArrayList<String> parseTag(String text, String tag) {
-        String temp_text = text;
-        String start_tag = "<" + tag + ">";
-        String end_tag = "</" + tag + ">";
-        ArrayList<String> tag_values = new ArrayList<>();
-        while (temp_text.indexOf(start_tag) != -1){
-            int start_index = temp_text.indexOf(start_tag)+ start_tag.length();
-            int end_index = temp_text.indexOf(end_tag);
-            String value = temp_text.substring(start_index, end_index);
-            temp_text = temp_text.substring(end_index+end_tag.length());
-            tag_values.add(value);
-        }
-        if (tag_values.isEmpty()) {
-            tag_values.add("");
-        }
-        return tag_values;
-    }
-
-    public String getExplanation() {
-        return explanation;
-    }
-
-    public void setExplanation(String explanation) {
-        this.explanation = explanation;
-    }
-
-    public HashMap<String, String> getCaseMap() {
-        return CaseMap;
-    }
-
-    public void setCaseMap(HashMap<String, String> CaseMap) {
-        this.CaseMap = CaseMap;
-    }
-    
-    public String getUrl() {
-        return url;
-    }
-    public String getIntroduction() {
-        return introduction;
-    }
-    public String getTask() {
-        return task;
-    }
-    public ArrayList<Parametar> getParameters() {
-        return this.parameters;
-    }
-    public ArrayList<Dijagnoza> getDiagnoses() {
-        return this.diagnoses;
-    }
-
-    public String getText() {
-        return text;
-    }
-
-    public void setText(String text) {
-        this.text = text;
-    }
-    
+    }*/
 }

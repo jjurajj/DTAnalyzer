@@ -14,6 +14,12 @@ public class Proposition {
     String concept_two;
     String link;
 
+    public Proposition(String concept_one, String concept_two, String link) {
+        this.concept_one = concept_one;
+        this.concept_two = concept_two;
+        this.link = link;
+    }
+    
     public String getConcept_one() {
         return concept_one;
     }

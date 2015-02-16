@@ -19,12 +19,13 @@ import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
-@ManagedBean (name ="CaseBase", eager = true)
+@ManagedBean (name = "CaseBase", eager = true)
 @SessionScoped
 public class CaseBase {
     
     public String url = "http://diana.zesoi.fer.hr/~jpetrovic/case_repository/car_starting/";
     public ArrayList<Case> cases = new ArrayList<Case>();
+    public ArrayList<String> case_list = new ArrayList<>();
     
     public void initialize(String url) throws IOException {
         this.url = url;
@@ -33,17 +34,18 @@ public class CaseBase {
     
     public void initialize() throws IOException {
         
-        ArrayList<String> case_list = listCaseBase(this.url);
+        ArrayList<String> case_list = listCaseBase();
         for (String case_link : case_list) {
             Case new_case = new Case();
-            new_case.initializeCase(case_link.concat("case.txt"));
+            new_case.initializeCase( case_link.concat("case.txt") );
             cases.add(new_case);
         }
     }
     
     // Ovo vraća popis URL direktorija u svakom od kojih se nalazi 1 case, ocekivano imena case.txt i eventualno s popratnim materijalima
-    public ArrayList<String> listCaseBase(String url) {
+    public ArrayList<String> listCaseBase() {
         
+        String url = this.url;
         ArrayList<String> lista_caseova = new ArrayList<>();
         
         try {
@@ -78,9 +80,11 @@ public class CaseBase {
     public ArrayList<Case> getCaseovi() {
         return this.cases;
     }
-    
     public Case getSingleCase(int i) {
         return this.cases.get(i);
+    }
+    public ArrayList<Case> getCases() {
+        return cases;
     }
     
     public void setCases(ArrayList<Case> caseovi) {

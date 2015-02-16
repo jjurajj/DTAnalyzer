@@ -16,95 +16,73 @@ public class DT implements Serializable {
     public String start_node;
     public ArrayList<Proposition> propositions = new ArrayList<>(); 
     public ArrayList<String> diagnoses = new ArrayList<>();
-    public HashMap<PropositionKey, String> DTMap= new HashMap<>();
+    public HashMap<PropositionKey, String> propositionsMap= new HashMap<>();
     
-public void initializeDT(String fileContent) {
+    
+    public void initializeDT(String DT_text_file) {
   
-      // tu bi trebalo ucitat fajl liniju po liniju, provjerit jel okej 
-      // sadrzaj je u fileContent
-      DT MyTree = new DT();
+      ArrayList<String> left_concepts = new ArrayList<>();      // koncepti s lijeve strane
+      ArrayList<String> right_concepts = new ArrayList<>();     // koncepti s desne strane
+      String tree_text = DT_text_file;                           // plain text propozicije stabla s \t
       
-      ArrayList<Proposition> props = new ArrayList<>(); 
-      ArrayList<String> left_concepts = new ArrayList<>(), right_concepts = new ArrayList<>();
+      String separator = "\r\n";                                // odredi newline znak
+      if (tree_text.contains("\r\n")) {separator = "\r\n";}
+      else if (tree_text.contains("\n")) {separator = "\n";}
+      else if (tree_text.contains("\r")) {separator = "\r";}
+      else {System.out.println("Unknown newline character!");} 
       
-      String line = "", tree_text = fileContent;
+      String[] lines = tree_text.split(separator);              //splitaj tekst u linije propozicije
       
-      // Pohvatamo sve propozicije
-      while (!tree_text.contentEquals("")) {
+      for (String line : lines) {                               
           
-          Proposition prop = new Proposition();
+          String[] p_split = line.split("\t");                  // svaku liniju pretvori u C1-L-C2
+          left_concepts.add(p_split[0]);
+          right_concepts.add(p_split[2]);
           
-          if (tree_text.contains("\r\n")) {
-              line = tree_text.substring(0,tree_text.indexOf("\r\n"));
-              tree_text = tree_text.substring(tree_text.indexOf("\r\n")+2);
-          } else if (tree_text.contains("\n")) {
-              line = tree_text.substring(0,tree_text.indexOf("\n"));
-              tree_text = tree_text.substring(tree_text.indexOf("\n")+1);
-          } else { System.out.println("Unknown newline character!"); }
-          
-          prop.concept_one = line.substring(0,line.indexOf("\t"));
-          prop.link = line.substring(line.indexOf("\t")+1,line.lastIndexOf("\t"));
-          prop.concept_two = line.substring(line.lastIndexOf("\t")+1);
-          
-          left_concepts.add(prop.concept_one);
-          right_concepts.add(prop.concept_two);
-          
-          props.add(prop);
-          
-          // Dodaj propoziciju u HashMap
-          PropositionKey key = new PropositionKey();
-          key.concept = prop.concept_one;
-          key.value = prop.link;
-          DTMap.put(key, prop.concept_two);
-      }
-      MyTree.setPropositions(props);
-      
-      // Odredimo korijen
-      int i = 0;
-      while (right_concepts.contains(left_concepts.get(i++))) {}
-      if (right_concepts.contains(left_concepts.get(i-1))== false) {
-              MyTree.setStart_node(left_concepts.get(i-1));
-          }
-      else {
-          // Error - nema korijenskog cvora
+          this.propositions.add(new Proposition(p_split[0], p_split[1], p_split[2]));
+          PropositionKey key = new PropositionKey(p_split[0], p_split[1]);
+          this.propositionsMap.put(key, p_split[2]);            // propozicije stavi i u hashmapu
       }
       
-      // Odredimo listove - pregledavamo sve desne cvorove i gledamo koji od njih ni jednom nije lijevi
-      ArrayList<String> leaves = new ArrayList<>();
-      for (i=0; i<right_concepts.size(); i++)
-          if (left_concepts.contains(right_concepts.get(i)) == false)
-              leaves.add(right_concepts.get(i));
-      MyTree.setDiagnoses(leaves);
+      for (String concept : left_concepts )                     // Odredimo korijen stabla
+          if (right_concepts.contains(concept) == false) {this.setStart_node(concept);}
       
-      this.start_node = MyTree.start_node;
-      this.propositions = MyTree.propositions;
-      this.diagnoses = MyTree.diagnoses;
+      ArrayList<String> leaves = new ArrayList<>();             // listovi stabla
+      for (String concept : right_concepts)                     // su cvorovi koji nikad nisu lijevi
+          if (left_concepts.contains(concept) == false) leaves.add(concept);
+      this.setDiagnoses(leaves);
       
     }
 
+    
+    
     public String getStart_node() {
         return start_node;
     }
-
-    public void setStart_node(String start_node) {
-        this.start_node = start_node;
-    }
-
     public ArrayList<Proposition> getPropositions() {
         return propositions;
     }
-
-    public void setPropositions(ArrayList<Proposition> propositions) {
-        this.propositions = propositions;
-    }
-
     public ArrayList<String> getDiagnoses() {
         return diagnoses;
     }
-
+    public HashMap<PropositionKey, String> getPropositionsMap() {
+        return propositionsMap;
+    }
+        
+    public void setStart_node(String start_node) {
+        this.start_node = start_node;
+    }
     public void setDiagnoses(ArrayList<String> diagnoses) {
         this.diagnoses = diagnoses;
     }
+    public void setPropositions(ArrayList<Proposition> propositions) {
+        this.propositions = propositions;
+    }
+    public void setPropositionsMap (HashMap<PropositionKey, String> propositionsMap) {
+        this.propositionsMap = propositionsMap;
+    }
+
+
     
     // Ovo vraća propozicije koje imaju zadani pocetni koncept
     public ArrayList<Proposition> getNextConcepts(String start_concept){
@@ -117,6 +95,7 @@ public void initializeDT(String fileContent) {
         return related_props;
     }
     
+    // Ovo vraca listove u koje se moze doci iz trenutnog cvora. Reimplementirat s hashmapom
     public ArrayList<String> getLeavesConcepts(String start_concept){
 
         ArrayList<String> available_leaves = new ArrayList<>();
@@ -142,14 +121,5 @@ public void initializeDT(String fileContent) {
         return available_leaves;
 
     }
-
-    public HashMap<PropositionKey, String> getDTmap() {
-        return DTMap;
-    }
-
-    public void setDTmap(HashMap<PropositionKey, String> DTmap) {
-        this.DTMap = DTmap;
-    }
-
     
 }

@@ -23,7 +23,7 @@ and open the template in the editor.
                 
                 
                 <f:event listener="#{CaseBase.initialize}" type="preRenderView" />
-                <f:event listener="#{Case.initializeCase("http://diana.zesoi.fer.hr/~jpetrovic/case_repository/car_starting/case_1/case.txt")}" type="preRenderView" />
+                <f:event listener="#{Case.initializeCase('http://diana.zesoi.fer.hr/~jpetrovic/case_repository/car_starting/case_1/case.txt')}" type="preRenderView" />
                 <f:event listener="#{DT.initializeDT(Uploader.fileContent)}" type="preRenderView" />
                 
                 Uploaded DT file (propositions):
@@ -41,19 +41,17 @@ and open the template in the editor.
                 
                 Analysis:
                 <br />Baza: #{CaseBase.url}<br />
-                <br />Popis caseova: #{CaseBase.caseovi.get(0)}<br />
+                <br />Popis caseova (foldera): #{CaseBase.listCaseBase()}<br />
                 <br /><br />
                 
-                <br />Primjer casea:
-                <pre>#{Case.}</pre><br />
+                <br />Primjer casea u plain textu:
+                <pre>#{CaseBase.getSingleCase(0).text}</pre><br />
                 <br /><br />
                 
+                <br />Krajnji koncept jednog evaluiranog casea:
+                #{CaseBase.getSingleCase(0).evaluateCase(DT).end_node}
+                <br /><br />
                 
-                #{CaseBase.getSingleCase(0).}
-                Infobase
-                Case base:
-                (Neki URL di se vodi baza kejsova. Kejsovi su u fajlovima i treba ih hesirat ili napravit neki skraceni
-                zapis da se ne parsaju uvjek iznova. Mogo bi ucitat case i popisat ih u tablicu )
                 
                 
             </h:form>

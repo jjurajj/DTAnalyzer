@@ -12,22 +12,32 @@ import java.util.ArrayList;
  */
 public class Dijagnoza {
     
-    String name, correct;
+    String name;
+    boolean correct;
 
+    public Dijagnoza(String name, boolean correct) {
+        this.name = name;
+        this.correct = correct;
+    }
 
-public String getName() {
-        return name;
+    public Dijagnoza() {
+        this.name = "Undefined";
+        this.correct = false;
     }
     
-    public String getCorrect() {
+    public boolean isCorrect() {
         return correct;
+    }
+
+    public String getName() {
+        return name;
     }
     
     public void setName(String name) {
         this.name = name;
     }
     
-    public void setCorrect(String correct) {
+    public void setCorrect(boolean correct) {
         this.correct = correct;
     }
     

@@ -15,6 +15,10 @@ public class Parametar {
     String name, synonims, real_value, assigned_value;
     double weight, price;
     Date occurrence;
+
+    public Parametar() {
+    }
+    
     
     HashMap<String,String> dijagnoze;
         
