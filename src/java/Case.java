@@ -133,9 +133,10 @@ public class Case implements Serializable {
         //ako je cvor u kojem je klasifikacija stala jedan od terminalnih cvorova stabla
         if (tree.diagnoses.contains(eval.end_node)) {
             eval.diagnosed = true;
-            if (this.diagnoses.get(this.diagnoses.indexOf(eval.end_node)).isCorrect()) {
-                eval.correct = true;
-            }
+            // tu je greska...
+            for (Dijagnoza temp_diag : this.diagnoses)
+                if (temp_diag.getName().equals(eval.end_node))
+                    eval.correct = temp_diag.isCorrect();
             
         }
         

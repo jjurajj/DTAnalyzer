@@ -26,7 +26,7 @@ public class Dijagnoza {
     }
     
     public boolean isCorrect() {
-        return correct;
+        return this.correct;
     }
 
     public String getName() {
