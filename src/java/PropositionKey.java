@@ -63,5 +63,4 @@ public class PropositionKey {
         return true;
     }
     
-    
 }

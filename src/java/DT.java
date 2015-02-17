@@ -18,7 +18,6 @@ public class DT implements Serializable {
     public ArrayList<String> diagnoses = new ArrayList<>();
     public HashMap<PropositionKey, String> propositionsMap= new HashMap<>();
     
-    
     public void initializeDT(String DT_text_file) {
   
       ArrayList<String> left_concepts = new ArrayList<>();      // koncepti s lijeve strane
@@ -53,8 +52,6 @@ public class DT implements Serializable {
       this.setDiagnoses(leaves);
       
     }
-
-    
     
     public String getStart_node() {
         return start_node;
@@ -81,8 +78,6 @@ public class DT implements Serializable {
     public void setPropositionsMap (HashMap<PropositionKey, String> propositionsMap) {
         this.propositionsMap = propositionsMap;
     }
-
-
     
     // Ovo vraća propozicije koje imaju zadani pocetni koncept
     public ArrayList<Proposition> getNextConcepts(String start_concept){

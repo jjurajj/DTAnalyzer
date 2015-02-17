@@ -25,12 +25,12 @@ public class Case implements Serializable {
     
     // Parametri casea:
     public String url;
-    public String text; // URL case.txt fajla
-    public String introduction, task, explanation;                                      // Uvod i zadatak
-    public ArrayList<Dijagnoza> diagnoses = new ArrayList<>();                                               // Dijagnoza u kojem vec obliku
-    public ArrayList<Parametar> parameters = new ArrayList<>();             // Parametri
-    public HashMap<String,String> parametersMap= new HashMap<>();
-
+    public String text;                                             // URL case.txt fajla
+    public String introduction, task, explanation;                  // Uvod i zadatak
+    public ArrayList<Dijagnoza> diagnoses = new ArrayList<>();      // Dijagnoza u kojem vec obliku
+    public ArrayList<Parametar> parameters = new ArrayList<>();     // Parametri
+    public HashMap<String,String> parametersMap= new HashMap<>();   // HMap parametara <ime vrijednost> za parametre casea
+    
     public void initialize() {
     }
     
@@ -124,7 +124,7 @@ public class Case implements Serializable {
         PropositionKey key; 
         key = new PropositionKey(next_concept, parametersMap.get(next_concept));
         
-        while ((next_concept != null) && (key != null)) {                       // prodi po stablu: sumiraj cijene i dodi do kraja
+        while ((next_concept != null) && (key.concept != null)) {                       // prodi po stablu: sumiraj cijene i dodi do kraja
             eval.end_node = next_concept;                                           // Odi u iduci cvor stabla
             key = new PropositionKey(next_concept, parametersMap.get(next_concept));  // Za taj cvor ispitaj vrijednost caseu
             next_concept = tree.propositionsMap.get(key);                                 // Provjeri postoji li za to u stablu iduci cvor

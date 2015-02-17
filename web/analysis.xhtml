@@ -7,7 +7,8 @@ and open the template in the editor.
 <!DOCTYPE html>
 <html xmlns="http://www.w3.org/1999/xhtml"
       xmlns:f="http://java.sun.com/jsf/core"
-      xmlns:h="http://xmlns.jcp.org/jsf/html">
+      xmlns:h="http://xmlns.jcp.org/jsf/html"
+      xmlns:ui="http://xmlns.jcp.org/jsf/facelets">
 
     <head>
         <title>DT analysis</title>
@@ -26,30 +27,45 @@ and open the template in the editor.
                 <f:event listener="#{Case.initializeCase('http://diana.zesoi.fer.hr/~jpetrovic/case_repository/car_starting/case_1/case.txt')}" type="preRenderView" />
                 <f:event listener="#{DT.initializeDT(Uploader.fileContent)}" type="preRenderView" />
                 
-                Uploaded DT file (propositions):
+                Uploaded DT file (raw propositions):
                 <br />
                 <pre>#{Uploader.getFileContent()}</pre>
-                <br />
-
-                Start node:
-                <br />#{DT.start_node}<br />
                 <br /><br />
                 
-                Diagnoses:
+                Uploaded DT file description:
+                <br /><br />
+                
+                Start node:
+                <br />#{DT.start_node}<br />
+                <br />
+                
+                Propositions (parsed):
+                <ui:repeat value="#{DT.propositions}" var="item"> <!--http://stackoverflow.com/questions/20468236/using-foreach-loop-in-jsf-->
+                    <br />(#{item.concept_one})--(#{item.link})-->(#{item.concept_two})
+                </ui:repeat>   
+                <br /><br />
+                
+                Identified possible diagnoses:
                 <br />#{DT.diagnoses}<br />
                 <br /><br />
                 
                 Analysis:
                 <br />Baza: #{CaseBase.url}<br />
-                <br />Popis caseova (foldera): #{CaseBase.listCaseBase()}<br />
+                <br />Popis caseova (foldera): #{CaseBase.listCaseBase("http://diana.zesoi.fer.hr/~jpetrovic/case_repository/car_starting/")}<br />
+                <br />Drugi popis caseova (foldera):
+                <ui:repeat value="#{CaseBase.case_list}" var="item"> <!--http://stackoverflow.com/questions/20468236/using-foreach-loop-in-jsf-->
+                    <br />#{item}
+                </ui:repeat>
+
                 <br /><br />
-                
                 <br />Primjer casea u plain textu:
-                <pre>#{CaseBase.getSingleCase(0).text}</pre><br />
+                <pre>#{CaseBase.getCase(0).text}</pre><br />
                 <br /><br />
                 
-                <br />Krajnji koncept jednog evaluiranog casea:
-                #{CaseBase.getSingleCase(0).evaluateCase(DT).end_node} (Correct= #{CaseBase.getSingleCase(0).evaluateCase(DT).correct},Diagnosed=#{CaseBase.getSingleCase(0).evaluateCase(DT).diagnosed})
+                <br />Evaluacija svih caseova: (ako se ponavljaju, to je zato sto su caseovi session scoped)
+                <ui:repeat value="#{CaseBase.cases}" var="item"> <!--http://stackoverflow.com/questions/20468236/using-foreach-loop-in-jsf-->
+                    <br />(Diagnosis = #{item.evaluateCase(DT).end_node}, Correct= #{item.evaluateCase(DT).correct}, Diagnosed=#{item.evaluateCase(DT).diagnosed}) (URL: #{item.url})
+                </ui:repeat>   
                 
                 <br /><br /><br /><br />
                 
