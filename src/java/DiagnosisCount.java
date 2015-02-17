@@ -14,6 +14,7 @@ public class DiagnosisCount {
     public int total;
     public int correct;
     public int diagnosed;
+    public int incorrect;   // sve ovo trebaju postat liste odgovarajucih caseova
 
     public int getTotal() {
         return total;
