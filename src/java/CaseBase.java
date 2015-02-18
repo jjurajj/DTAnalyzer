@@ -10,6 +10,7 @@
 
 // Klasa CaseBase koja je objekt koji se sastoji od ucitanih caseova
 // Nad ovim objektom se može radit vrednovanje caseova(u ovisnosti o zadanom DTu)
+import com.sun.faces.util.CollectionsUtils;
 import java.io.IOException;
 import java.lang.reflect.Array;
 import java.util.ArrayList;
@@ -30,6 +31,7 @@ public class CaseBase {
     public String url = "http://diana.zesoi.fer.hr/~jpetrovic/case_repository/car_starting/";
     public ArrayList<Case> cases  = new ArrayList<>();
     public ArrayList<String> case_list  = new ArrayList<>();
+    public HashMap<String, DiagnosisCount> diagnosis_count = new HashMap<>();
     
     public void initialize(String url) throws IOException {
         this.url = url;
@@ -84,15 +86,36 @@ public class CaseBase {
         // isti takav vektor jos nadopunimo iz evaluateCase rezultata
         ArrayList<DiagnosisCount> diagnosis_count = new ArrayList<>();
         
-        for (Case temp_case : this.cases) {
-            for (Dijagnoza temp_diag : temp_case.diagnoses)     // Prodi sve dijagnoze jer moze biti vise tocnih
-                if (temp_diag.isCorrect()) {                    // Ako je dijagnoza tocna, onda to apdejtaj u total countu
-                                                                // Odmah ispitaj i kako se tja case klasificira pa za azuriraj
-                                                                    // ako se tocno klasificira
-                                                                    // ako se ne klasificira i gdje zapinje
-                                                                    // ako se krivo klasificira i kuda.
-                    // 
+        for (Case temp_case : this.cases) {                             // Provrtimo sve caseove iz baze;
+            
+            // Za case ispitamo sve njegove dijagnoze jer moze biti vise tocnih
+            for (Dijagnoza temp_diag : temp_case.diagnoses) {           
+                if (temp_diag.isCorrect()) {                                    // Ako je dijagnoza tocna
+                    if (this.diagnosis_count.containsKey(temp_diag.name)) {     // ako ta dijagnoza vec postoji u hashmapu, povecaj joj total vrijednost
+                        this.diagnosis_count.get(temp_diag.name).total++;
+                    } else {                                                    // inace dodaj tu dijagnozu u hashmap
+                        this.diagnosis_count.put(temp_diag.name, new DiagnosisCount(1,0,0));
+                    }
                 }
+            }
+            
+            // Sad treba klasificirat case u odnosu na stablo i dobit da li se dijagnosticira i da li se dijagnosticira ok
+            int correct_inc = 0, diagnosed_inc = 0;
+            CaseEvaluation temp_eval = temp_case.evaluateCase(tree);
+            if (temp_eval.diagnosed) diagnosed_inc++;
+            if (temp_eval.correct) correct_inc++;
+            if (this.diagnosis_count.containsKey(temp_diag.name)) {     // ako ta dijagnoza vec postoji u hashmapu, povecaj joj total vrijednost
+                this.diagnosis_count.get(temp_diag.name).total++;
+            } else {                                                    // inace dodaj tu dijagnozu u hashmap
+                this.diagnosis_count.put(temp_diag.name, new DiagnosisCount(1,0,0));
+            }
+            
+            
+                
+
+                
+                
+            
             
         }
         
@@ -114,7 +137,13 @@ public class CaseBase {
     public ArrayList<String> getCase_list() {
         return case_list;
     }
-    
+    public HashMap<String, DiagnosisCount> getDiagnosis_count() {
+        return diagnosis_count;
+    }
+
+    public void setDiagnosis_count(HashMap<String, DiagnosisCount> diagnosis_count) {
+        this.diagnosis_count = diagnosis_count;
+    }
     public void setCases(ArrayList<Case> cases) {
         this.cases = cases;
     }

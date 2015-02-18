@@ -10,11 +10,21 @@
  */
 public class DiagnosisCount {
 
-    public String diagnosis;
-    public int total;
-    public int correct;
-    public int diagnosed;
-    public int incorrect;   // sve ovo trebaju postat liste odgovarajucih caseova
+    public int total;       // Koliko ukupno caseova ima ovu dijagnozu? 
+    public int correct;     // Koliko caseova koji iamju ovu dijagnozu se ispravno klasificira?
+    public int diagnosed;   // Koliko caseova koji imaju ovu dijagnoze se dijagnosticira? (Ne zapinje)
+
+    public DiagnosisCount() {
+        this.correct = 0;
+        this.diagnosed = 0;
+        this.total = 0;
+    }
+
+    public DiagnosisCount(int total, int correct, int diagnosed) {
+        this.total = total;
+        this.correct = correct;
+        this.diagnosed = diagnosed;
+    }
 
     public int getTotal() {
         return total;
@@ -25,13 +35,7 @@ public class DiagnosisCount {
     public int getCorrect() {
         return correct;
     }
-    public String getDiagnosis() {
-        return diagnosis;
-    }
 
-    public void setDiagnosis(String diagnosis) {
-        this.diagnosis = diagnosis;
-    }
     public void setCorrect(int correct) {
         this.correct = correct;
     }
