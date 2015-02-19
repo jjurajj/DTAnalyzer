@@ -53,6 +53,43 @@ public class DT implements Serializable {
       
     }
     
+    // Ovo tu evaluira stablo na sebi odnosno na bazi caseova i vraca N, TP, FP, TN, FN za svaku dijagnozu CASEOVA iz baze, NE STABLA
+    public ArrayList<DiagnosisCount> evaluateTreeDecision (CaseBase base) {
+    
+        // preciznost/odziv za svaku dijagnozu
+        ArrayList<DiagnosisCount> diagnosis_count_al = new ArrayList<>();
+        HashMap<String, DiagnosisCount> diagnosis_count = new HashMap<>();
+        
+        for (Case temp_case : base.cases) {                             // Provrtimo sve caseove iz baze;
+            
+            // Za case ispitamo sve njegove dijagnoze jer moze biti vise tocnih
+            for (Dijagnoza temp_diag : temp_case.diagnoses) {           
+                if (temp_diag.isCorrect()) {                                    // Ako je dijagnoza tocna
+                    if (diagnosis_count.containsKey(temp_diag.name)) {     // ako ta dijagnoza vec postoji u hashmapu, povecaj joj total vrijednost
+                        diagnosis_count.get(temp_diag.name).N++;
+                    } else {                                                    // inace dodaj tu dijagnozu u hashmap
+                        diagnosis_count.put(temp_diag.name, new DiagnosisCount(temp_diag.name,1,0,0,0,0,0));
+                    }
+                    
+                    CaseEvaluation temp_eval = temp_case.evaluateCase(this);
+                    if (!temp_eval.diagnosed) diagnosis_count.get(temp_diag.name).undiagnosed++;
+                    if (temp_eval.correct) diagnosis_count.get(temp_diag.name).TP++;
+                    else {
+                        diagnosis_count.get(temp_diag.name).FN++;
+                        diagnosis_count.get(temp_eval.end_node).FP++;
+                    }
+                }
+            }
+        }
+        
+        // Sad mozda pretovrit Hashmap u araylist da lakse s njm baratam na webu http://stackoverflow.com/questions/1066589/iterate-through-a-hashmap
+        for (DiagnosisCount value : diagnosis_count.values()) {
+            diagnosis_count_al.add(value);
+        }
+
+        return diagnosis_count_al;
+    }
+
     public String getStart_node() {
         return start_node;
     }

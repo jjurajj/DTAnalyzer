@@ -78,53 +78,6 @@ public class CaseBase {
         return lista_caseova;
     }
     
-    // Ovo tu evaluira stablo na sebi odnosno na bazi caseova
-    public void evaluateTreeOnBase (DT tree) {
-    
-        //preciznost/odziv za svaku dijagnozu
-        // Za dijagnoze iz stabla napravit vektor s njihovim countovima u case bazi
-        // isti takav vektor jos nadopunimo iz evaluateCase rezultata
-        ArrayList<DiagnosisCount> diagnosis_count = new ArrayList<>();
-        
-        for (Case temp_case : this.cases) {                             // Provrtimo sve caseove iz baze;
-            
-            // Za case ispitamo sve njegove dijagnoze jer moze biti vise tocnih
-            for (Dijagnoza temp_diag : temp_case.diagnoses) {           
-                if (temp_diag.isCorrect()) {                                    // Ako je dijagnoza tocna
-                    if (this.diagnosis_count.containsKey(temp_diag.name)) {     // ako ta dijagnoza vec postoji u hashmapu, povecaj joj total vrijednost
-                        this.diagnosis_count.get(temp_diag.name).total++;
-                    } else {                                                    // inace dodaj tu dijagnozu u hashmap
-                        this.diagnosis_count.put(temp_diag.name, new DiagnosisCount(1,0,0));
-                    }
-                }
-            }
-            
-            // Sad treba klasificirat case u odnosu na stablo i dobit da li se dijagnosticira i da li se dijagnosticira ok
-            int correct_inc = 0, diagnosed_inc = 0;
-            CaseEvaluation temp_eval = temp_case.evaluateCase(tree);
-            if (temp_eval.diagnosed) diagnosed_inc++;
-            if (temp_eval.correct) correct_inc++;
-            if (this.diagnosis_count.containsKey(temp_diag.name)) {     // ako ta dijagnoza vec postoji u hashmapu, povecaj joj total vrijednost
-                this.diagnosis_count.get(temp_diag.name).total++;
-            } else {                                                    // inace dodaj tu dijagnozu u hashmap
-                this.diagnosis_count.put(temp_diag.name, new DiagnosisCount(1,0,0));
-            }
-            
-            
-                
-
-                
-                
-            
-            
-        }
-        
-        
-    
-    
-    }
-    
-    
     public Case getCase(int i) {
         return this.cases.get(i);
     }

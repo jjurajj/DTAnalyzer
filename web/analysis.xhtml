@@ -24,13 +24,15 @@ and open the template in the editor.
                 
                 
                 <f:event listener="#{CaseBase.initialize}" type="preRenderView" />
-                <f:event listener="#{Case.initializeCase('http://diana.zesoi.fer.hr/~jpetrovic/case_repository/car_starting/case_1/case.txt')}" type="preRenderView" />
+                <!--<f:event listener="hash{Case.initializeCase('http://diana.zesoi.fer.hr/~jpetrovic/case_repository/car_starting/case_1/case.txt')}" type="preRenderView" />-->
                 <f:event listener="#{DT.initializeDT(Uploader.fileContent)}" type="preRenderView" />
                 
+                <!--
                 Uploaded DT file (raw propositions):
                 <br />
-                <pre>#{Uploader.getFileContent()}</pre>
-                <br /><br />
+                <pre>hash{Uploader.getFileContent()}</pre>
+                <br /><br />*/
+                -->
                 
                 Uploaded DT file description:
                 <br /><br />
@@ -52,20 +54,30 @@ and open the template in the editor.
                 Analysis:
                 <br />Baza: #{CaseBase.url}<br />
                 <br />Popis caseova (foldera): #{CaseBase.listCaseBase("http://diana.zesoi.fer.hr/~jpetrovic/case_repository/car_starting/")}<br />
+                
+                <!--http://stackoverflow.com/questions/20468236/using-foreach-loop-in-jsf-->
+                <!--
                 <br />Drugi popis caseova (foldera):
-                <ui:repeat value="#{CaseBase.case_list}" var="item"> <!--http://stackoverflow.com/questions/20468236/using-foreach-loop-in-jsf-->
-                    <br />#{item}
+                <ui:repeat value="hash{CaseBase.case_list}" var="item"> 
+                    <br />hash{item}
                 </ui:repeat>
 
                 <br /><br />
                 <br />Primjer casea u plain textu:
-                <pre>#{CaseBase.getCase(0).text}</pre><br />
+                <pre>hash{CaseBase.getCase(0).text}</pre><br />
                 <br /><br />
+                -->
                 
                 <br />Evaluacija svih caseova: (ako se ponavljaju, to je zato sto su caseovi session scoped)
                 <ui:repeat value="#{CaseBase.cases}" var="item"> <!--http://stackoverflow.com/questions/20468236/using-foreach-loop-in-jsf-->
                     <br />(Diagnosis = #{item.evaluateCase(DT).end_node}, Correct= #{item.evaluateCase(DT).correct}, Diagnosed=#{item.evaluateCase(DT).diagnosed}) (URL: #{item.url})
-                </ui:repeat>   
+                </ui:repeat>
+
+                <br />Evaluacija stable po bazi:
+                <ui:repeat value="#{DT.evaluateTreeDecision(CaseBase)}" var="item"> <!--http://stackoverflow.com/questions/20468236/using-foreach-loop-in-jsf-->
+                    <br />(Diagnosis#{item.name}, total=#{item.n}, TP=#{item.TP}, TN=#{item.TN}, FP=#{item.FP}, FN=#{item.FN})
+                </ui:repeat>
+
                 
                 <br /><br /><br /><br />
                 
