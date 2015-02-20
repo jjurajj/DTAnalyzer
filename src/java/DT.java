@@ -31,7 +31,7 @@ public class DT implements Serializable {
       else {System.out.println("Unknown newline character!");} 
       
       String[] lines = tree_text.split(separator);              //splitaj tekst u linije propozicije
-      
+      this.propositions.clear();
       for (String line : lines) {                               
           
           String[] p_split = line.split("\t");                  // svaku liniju pretvori u C1-L-C2
@@ -56,28 +56,42 @@ public class DT implements Serializable {
     // Ovo tu evaluira stablo na sebi odnosno na bazi caseova i vraca N, TP, FP, TN, FN za svaku dijagnozu CASEOVA iz baze, NE STABLA
     public ArrayList<DiagnosisCount> evaluateTreeDecision (CaseBase base) {
     
+        //A sad bi trebalo svaki ovaj int pretvorit u listu caseova!!!!!! mogu i tak dobit njihov broj, a po potrebi pokazivat njihove linkove
+        // isl.
+        
         // preciznost/odziv za svaku dijagnozu
         ArrayList<DiagnosisCount> diagnosis_count_al = new ArrayList<>();
+        ArrayList<String> excluded = new ArrayList<>();
         HashMap<String, DiagnosisCount> diagnosis_count = new HashMap<>();
         
-        for (Case temp_case : base.cases) {                             // Provrtimo sve caseove iz baze;
+        for (Case temp_case : base.cases) {
             
             // Za case ispitamo sve njegove dijagnoze jer moze biti vise tocnih
-            for (Dijagnoza temp_diag : temp_case.diagnoses) {           
-                if (temp_diag.isCorrect()) {                                    // Ako je dijagnoza tocna
-                    if (diagnosis_count.containsKey(temp_diag.name)) {     // ako ta dijagnoza vec postoji u hashmapu, povecaj joj total vrijednost
+            for (Dijagnoza temp_diag : temp_case.diagnoses) {
+                
+                // za svaku tocnu (ocekivano jedinu tocnu dijagnozu)
+                if (temp_diag.isCorrect()) {
+                    
+                    // ako ta dijagnoza vec postoji u hashmapu, povecaj joj total vrijednost inace ju inicijaliziraj
+                    if (diagnosis_count.containsKey(temp_diag.name)) {     
                         diagnosis_count.get(temp_diag.name).N++;
-                    } else {                                                    // inace dodaj tu dijagnozu u hashmap
+                    } else {
                         diagnosis_count.put(temp_diag.name, new DiagnosisCount(temp_diag.name,1,0,0,0,0,0));
                     }
                     
+                    // Evaluiraj trenutni case i povecaj odgovarajuce vrijednosti (N, Tp, TN, FP, FN, undiagnosed)
                     CaseEvaluation temp_eval = temp_case.evaluateCase(this);
-                    if (!temp_eval.diagnosed) diagnosis_count.get(temp_diag.name).undiagnosed++;
-                    if (temp_eval.correct) diagnosis_count.get(temp_diag.name).TP++;
-                    else {
-                        diagnosis_count.get(temp_diag.name).FN++;
-                        diagnosis_count.get(temp_eval.end_node).FP++;
+                    if (!temp_eval.diagnosed) {                                 //ako se ne klsificira povecaj undiagnosed
+                        diagnosis_count.get(temp_diag.name).undiagnosed++;      // i provjeri jel ta dijagnoza uopce postoji u stablu
+                        if ((!this.diagnoses.contains(temp_diag.name)) && (!excluded.contains(temp_diag.name)))
+                            excluded.add(temp_diag.name);
+                    } else if (temp_eval.correct) {                             // ako se klasifcira i to tocno povecaj TP
+                        diagnosis_count.get(temp_diag.name).TP++;
+                    } else {                                                    // ako se krivo klasificira
+                        diagnosis_count.get(temp_diag.name).FN++;               // povecaj FM za trenutnu dijagnozu
+                        diagnosis_count.get(temp_eval.end_node).FP++;           // povecaj FP za dijagnozu di se krivo klasificira
                     }
+                    
                 }
             }
         }
@@ -90,6 +104,13 @@ public class DT implements Serializable {
         return diagnosis_count_al;
     }
 
+    // Ova funkcija bi zapravo trebala iterativno pozivat onu gore
+    // onu gore ce trebat ipak malo preuredit da se moze sekvencijalno smisleno pozivat
+    public void analyzeNodeByNode (CaseBase base) {
+    
+    
+    }
+    
     public String getStart_node() {
         return start_node;
     }

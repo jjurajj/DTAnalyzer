@@ -23,7 +23,7 @@ and open the template in the editor.
                 {assessmentcase.SetCase("C:/Users/juraj/Documents/NetBeansProjects/SkillAssessment/build/web/WEB-INF/classes/resources/case_base/case_2/case.txt")}-->
                 
                 
-                <f:event listener="#{CaseBase.initialize}" type="preRenderView" />
+                <f:event listener="#{CaseBase.initialize('http://diana.zesoi.fer.hr/~jpetrovic/case_repository/car_starting/')}" type="preRenderView" />
                 <!--<f:event listener="hash{Case.initializeCase('http://diana.zesoi.fer.hr/~jpetrovic/case_repository/car_starting/case_1/case.txt')}" type="preRenderView" />-->
                 <f:event listener="#{DT.initializeDT(Uploader.fileContent)}" type="preRenderView" />
                 
@@ -37,26 +37,21 @@ and open the template in the editor.
                 Uploaded DT file description:
                 <br /><br />
                 
-                Start node:
-                <br />#{DT.start_node}<br />
+                <b>Start node</b>: #{DT.start_node}<br />
                 <br />
                 
-                Propositions (parsed):
+                <b>Propositions (parsed)</b>:
                 <ui:repeat value="#{DT.propositions}" var="item"> <!--http://stackoverflow.com/questions/20468236/using-foreach-loop-in-jsf-->
                     <br />(#{item.concept_one})--(#{item.link})-->(#{item.concept_two})
                 </ui:repeat>   
                 <br /><br />
                 
-                Identified possible diagnoses:
-                <br />#{DT.diagnoses}<br />
-                <br /><br />
-                
-                Analysis:
-                <br />Baza: #{CaseBase.url}<br />
-                <br />Popis caseova (foldera): #{CaseBase.listCaseBase("http://diana.zesoi.fer.hr/~jpetrovic/case_repository/car_starting/")}<br />
+                <b>Identified possible diagnoses</b> (#{DT.diagnoses.size()}): #{DT.diagnoses}<br />
+                <br />
                 
                 <!--http://stackoverflow.com/questions/20468236/using-foreach-loop-in-jsf-->
                 <!--
+                <br />Popis caseova (foldera): hash{CaseBase.listCaseBase("http://diana.zesoi.fer.hr/~jpetrovic/case_repository/car_starting/")}<br />
                 <br />Drugi popis caseova (foldera):
                 <ui:repeat value="hash{CaseBase.case_list}" var="item"> 
                     <br />hash{item}
@@ -68,14 +63,23 @@ and open the template in the editor.
                 <br /><br />
                 -->
                 
-                <br />Evaluacija svih caseova: (ako se ponavljaju, to je zato sto su caseovi session scoped)
-                <ui:repeat value="#{CaseBase.cases}" var="item"> <!--http://stackoverflow.com/questions/20468236/using-foreach-loop-in-jsf-->
-                    <br />(Diagnosis = #{item.evaluateCase(DT).end_node}, Correct= #{item.evaluateCase(DT).correct}, Diagnosed=#{item.evaluateCase(DT).diagnosed}) (URL: #{item.url})
+                Evaluacija stabla <b>po caseovima</b> (korištene baze: 
+                <ui:repeat value="#{CaseBase.url}" var="item" varStatus="rbr">
+                     <h:outputLink value="#{item}">Baza #{rbr.index}</h:outputLink>
+                </ui:repeat>):
+                <ui:repeat value="#{CaseBase.cases}" var="item" varStatus="rbr"> <!--http://stackoverflow.com/questions/20468236/using-foreach-loop-in-jsf-->
+                    <br />*    
+                    <h:outputLink value="#{item.url}">Case #{rbr.index}</h:outputLink>
+                    <h:outputLabel value=": #{item.evaluateCase(DT).end_node}, #{item.evaluateCase(DT).diagnosed? 'diagnosed':'undiagnosed'}, #{item.evaluateCase(DT).correct? 'correct':'incorrect'})" />
                 </ui:repeat>
-
-                <br />Evaluacija stable po bazi:
+                <br /><br />
+                
+                <br />Evaluacija stabla <b>po konačnoj odluci</b>:
                 <ui:repeat value="#{DT.evaluateTreeDecision(CaseBase)}" var="item"> <!--http://stackoverflow.com/questions/20468236/using-foreach-loop-in-jsf-->
-                    <br />(Diagnosis#{item.name}, total=#{item.n}, TP=#{item.TP}, TN=#{item.TN}, FP=#{item.FP}, FN=#{item.FN})
+                    <br />
+                    <h:outputLabel value="* #{item.name}: total number of cases=#{item.n}, precision=#{item.TP/(item.TP+item.FP)}, recall=#{item.TP/(item.TP+item.TN)}" rendered="#{(item.FN==0) or (item.FN != item.undiagnosed)}" /> 
+                    <h:outputLabel value="* #{item.name} - not included in the DT, but included in everal cases." rendered="#{(item.FN == item.undiagnosed) and (item.FN>0)}"/> 
+                    <!--h:outputLabel value="hash{row==10? '10' : '15'}"/>-->
                 </ui:repeat>
 
                 

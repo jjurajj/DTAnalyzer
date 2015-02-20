@@ -1,23 +1,21 @@
 /**
- * Ovo bi trebalo ili ucitati gotovu tablicu parametara vrijednosti i diajagnoza iz nekog fajla
- * ili ju obnoviti ako ne postoji ili na zahtjev (ako se sadrzaj baze promijenio)
+ * Ova klasa predstavlja bazu caseova i sadrzi
+ * - popis urlova baza (1 ili vise ili edfaultna na Diani)
+ * - listu svih caseova ucitanih iz tih baza
  * 
- * I onda dalje ovo sluzi za vrednovanje korisnickog stabla jer sadrzi sirove info iz caseova
- * pa bi trebalo ici najbrze.
+ * Osim postavljanja i vracanja toga, moze se vratiti i popis dijagnoza
+ * u koje se klasificiraju ucitani caseovi.
+ * 
+ * Moze se dobit i lista caseova za pojedinu bazu odnosno URL
  * 
  * @author juraj
  */
 
-// Klasa CaseBase koja je objekt koji se sastoji od ucitanih caseova
-// Nad ovim objektom se može radit vrednovanje caseova(u ovisnosti o zadanom DTu)
-import com.sun.faces.util.CollectionsUtils;
 import java.io.IOException;
-import java.lang.reflect.Array;
 import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import javax.faces.bean.ManagedBean;
-import javax.faces.bean.SessionScoped;
 import javax.faces.bean.ViewScoped;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
@@ -28,46 +26,47 @@ import org.jsoup.select.Elements;
 @ViewScoped
 public class CaseBase {
     
-    public String url = "http://diana.zesoi.fer.hr/~jpetrovic/case_repository/car_starting/";
+    public ArrayList<String> url = new ArrayList<>();
     public ArrayList<Case> cases  = new ArrayList<>();
-    public ArrayList<String> case_list  = new ArrayList<>();
-    public HashMap<String, DiagnosisCount> diagnosis_count = new HashMap<>();
     
-    public void initialize(String url) throws IOException {
-        this.url = url;
-        initialize();
+    // Inicijalizacija bez argumenta znaci da ce se postaviti defaultna baza na Diani
+    public void initialize() throws IOException {
+        this.url.add("http://diana.zesoi.fer.hr/~jpetrovic/case_repository/car_starting/");
+        initialize(this.url);
     }
     
-    public void initialize() throws IOException {
+    // Inicijalizacija listom baza. Samo izvrtimo inicijalizaciju za svaku redom
+    public void initialize(ArrayList<String> list_of_bases) {
+    
+        for (String url : list_of_bases) {
+            try {
+                initialize(url);
+            } catch (IOException ex) {
+                Logger.getLogger(CaseBase.class.getName()).log(Level.SEVERE, null, ex);
+            }
+        }
+    
+    }
+    
+    //Dodavanje svih caseova s linka u CaseBase i pocetna obradba
+    public void initialize(String url) throws IOException {
         
-        //ArrayList<String> case_list =
-        listCaseBase();
-        for (String case_link : this.case_list) {
+        String case_file_name = "case.txt";
+        this.url.add(url);
+        ArrayList<String> case_list = listCaseBase(url);
+        for (String case_link : case_list) {
             Case new_case = new Case();
-            new_case.initializeCase( case_link.concat("case.txt") );
+            new_case.initializeCase( case_link.concat(case_file_name) );
             this.cases.add(new_case);
         }
     }
     
-    // Ovo vraća popis URL direktorija u svakom od kojih se nalazi 1 case, ocekivano imena case.txt i eventualno s popratnim materijalima
-    public void listCaseBase() {
-        
-        String url = this.url;
-        ArrayList<String> lista_caseova = new ArrayList<>();
-        
-        try {
-            Document doc = Jsoup.connect(url).get();
-            Elements links = doc.select("a[href]");                 //http://jsoup.org/cookbook/extracting-data/example-list-links
-            for (Element link : links) {
-                if (link.attr("href").equals(link.text())) lista_caseova.add(this.url.concat(link.attr("href")));
-            } 
-        } catch (IOException e) {};
-        this.case_list = lista_caseova;
-//        return lista_caseova;
-    }
+    // Ovo vraća ArrayList popis URL direktorija u svakom od kojih se nalazi 1 case
+    // Ocekivano ime casea je case.txt i eventualno su u folderu i popratni materijali
     public ArrayList<String> listCaseBase(String url) {
         
         ArrayList<String> lista_caseova = new ArrayList<>();
+        
         try {
             Document doc = Jsoup.connect(url).get();
             Elements links = doc.select("a[href]");                 //http://jsoup.org/cookbook/extracting-data/example-list-links
@@ -78,33 +77,31 @@ public class CaseBase {
         return lista_caseova;
     }
     
+    // Vraca ArrayList dijagnoza u koje se klasificiraju ucitani caseovi
+    public ArrayList<String> getDiagnosesList () {
+        
+        ArrayList<String> diagnoses_list = new ArrayList<>();
+        for (Case temp_case : this.cases)
+            for (Dijagnoza temp_diag : temp_case.diagnoses) 
+                if ((temp_diag.isCorrect()) && (diagnoses_list.contains(temp_diag.name)))
+                    diagnoses_list.add(temp_diag.name);
+        return diagnoses_list;
+    }
+    
     public Case getCase(int i) {
         return this.cases.get(i);
     }
     public ArrayList<Case> getCases() {
         return this.cases;
     }
-    public String getUrl() {
+    public ArrayList<String> getUrl() {
         return this.url;
-    }
-    public ArrayList<String> getCase_list() {
-        return case_list;
-    }
-    public HashMap<String, DiagnosisCount> getDiagnosis_count() {
-        return diagnosis_count;
-    }
-
-    public void setDiagnosis_count(HashMap<String, DiagnosisCount> diagnosis_count) {
-        this.diagnosis_count = diagnosis_count;
     }
     public void setCases(ArrayList<Case> cases) {
         this.cases = cases;
     }
-    public void setUrl(String url) {
+    public void setUrl(ArrayList<String> url) {
         this.url = url;
-    }
-    public void setCase_list(ArrayList<String> case_list) {
-        this.case_list = case_list;
     }
 
 }

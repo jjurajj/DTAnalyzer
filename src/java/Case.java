@@ -24,9 +24,7 @@ public class Case implements Serializable {
     //private static final long serialVersionUID = 1L;
     
     // Parametri casea:
-    public String url;
-    public String text;                                             // URL case.txt fajla
-    public String introduction, task, explanation;                  // Uvod i zadatak
+    public String url, text, introduction, task, explanation;
     public ArrayList<Dijagnoza> diagnoses = new ArrayList<>();      // Dijagnoza u kojem vec obliku
     public ArrayList<Parametar> parameters = new ArrayList<>();     // Parametri
     public HashMap<String,String> parametersMap= new HashMap<>();   // HMap parametara <ime vrijednost> za parametre casea
