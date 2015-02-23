@@ -94,6 +94,9 @@ public class DT implements Serializable {
                         diagnosis_count.get(temp_diag.name).TP.add(temp_case);
                     } else {                                                                 // ako se krivo klasificira
                         diagnosis_count.get(temp_diag.name).FN.add(temp_case);               // dodaj u FN za trenutnu dijagnozu
+                        if (!diagnosis_count.containsKey(temp_eval.end_node)) {     
+                            diagnosis_count.put(temp_eval.end_node, new DiagnosisCount(temp_eval.end_node));
+                        }
                         diagnosis_count.get(temp_eval.end_node).FP.add(temp_case);           // povecaj FP za dijagnozu di se krivo klasificira
                     }
                     

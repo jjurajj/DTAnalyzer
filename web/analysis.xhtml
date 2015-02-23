@@ -63,18 +63,35 @@ and open the template in the editor.
                 </f:verbatim>
                 
                 <h:form id ="inicijalizacija2">
-                Evaluation case by case (case bases used: 
+                Evaluation <b>case by case</b> (case bases used: 
                 <ui:repeat value="#{CaseBase.url}" var="item" varStatus="rbr">
                      <h:outputLink value="#{item}">B#{rbr.index}</h:outputLink>
                 </ui:repeat>):
                 <ui:repeat value="#{CaseBase.cases}" var="item" varStatus="rbr"> <!--http://stackoverflow.com/questions/20468236/using-foreach-loop-in-jsf-->
                     <br />*    
                     <h:outputLink value="#{item.url}">Case #{rbr.index}</h:outputLink>
-                    <h:outputLabel value=": #{item.evaluateCase(DT).end_node}, #{item.evaluateCase(DT).diagnosed? 'diagnosed':'undiagnosed'}, #{item.evaluateCase(DT).correct? 'correct':'incorrect'})" />
+                    <h:outputLabel value=" (#{item.evaluateCase(DT).end_node}) " rendered="#{item.evaluateCase(DT).diagnosed}" />
+                    <h:graphicImage value="/images/tick.png" width="16" height="16" rendered="#{item.evaluateCase(DT).diagnosed and item.evaluateCase(DT).correct}"/>
+                    <h:graphicImage value="/images/cross.png" width="16" height="16" rendered="#{!item.evaluateCase(DT).diagnosed or !item.evaluateCase(DT).correct}"/>
+                    <!--Ako nije dijagnosticiran. Ovo treba pretvorit u link koji pokazuje stvar detaljnije-->
+                    <h:outputLabel value=" (Undiagnosed)" rendered="#{!item.evaluateCase(DT).diagnosed}" />
+                    <!--Ako je krivo dijagnosticiran-->
+                    <h:outputLabel value=" (Incorrect)" rendered="#{item.evaluateCase(DT).diagnosed and !item.evaluateCase(DT).correct}" />
+                    <h:outputLink value="" onclick="">Case #{rbr.index}</h:outputLink>
+                    
+                    <p:layout id="CAA#{rbr.index}" rendered="false">
+                        <p:layoutUnit position="center">
+                            ssdfgsdfgsdfgsdfgsdf
+                        </p:layoutUnit>
+                    </p:layout>
+                    
                 </ui:repeat>
                 <br /><br />
                 
-                <br />Evaluation per final diagnosis:
+                <br />Evaluation <b>per final diagnosis</b> (case bases used: 
+                <ui:repeat value="#{CaseBase.url}" var="item" varStatus="rbr">
+                     <h:outputLink value="#{item}">B#{rbr.index}</h:outputLink>
+                </ui:repeat>):
                 <ui:repeat value="#{DT.evaluateTreeDecision(CaseBase)}" var="item"> <!--http://stackoverflow.com/questions/20468236/using-foreach-loop-in-jsf-->
                     <br />
                     <h:outputLabel rendered="#{(item.FN.size()==0) or (item.FN.size() != item.undiagnosed.size())}">
