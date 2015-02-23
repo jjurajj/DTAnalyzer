@@ -78,24 +78,23 @@ public class DT implements Serializable {
                 // za svaku tocnu (ocekivano jedinu tocnu dijagnozu)
                 if (temp_diag.isCorrect()) {
                     
-                    // ako ta dijagnoza vec postoji u hashmapu, povecaj joj total vrijednost inace ju inicijaliziraj
-                    if (diagnosis_count.containsKey(temp_diag.name)) {     
-                        diagnosis_count.get(temp_diag.name).N++;
-                    } else {
-                        diagnosis_count.put(temp_diag.name, new DiagnosisCount(temp_diag.name,1,0,0,0,0,0));
+                    // ako ta dijagnoza vec postoji u hashmapu dodaj ju i potom u svakom slucaju dodaj joj trenutni case u total
+                    if (!diagnosis_count.containsKey(temp_diag.name)) {     
+                        diagnosis_count.put(temp_diag.name, new DiagnosisCount(temp_diag.name));
                     }
+                    diagnosis_count.get(temp_diag.name).total.add(temp_case);
                     
                     // Evaluiraj trenutni case i povecaj odgovarajuce vrijednosti (N, Tp, TN, FP, FN, undiagnosed)
                     CaseEvaluation temp_eval = temp_case.evaluateCase(this);
-                    if (!temp_eval.diagnosed) {                                 //ako se ne klsificira povecaj undiagnosed
-                        diagnosis_count.get(temp_diag.name).undiagnosed++;      // i provjeri jel ta dijagnoza uopce postoji u stablu
+                    if (!temp_eval.diagnosed) {                                             //ako se ne klsificira dodaj case u undiagnosed
+                        diagnosis_count.get(temp_diag.name).undiagnosed.add(temp_case);     // i provjeri jel ta dijagnoza uopce postoji u stablu
                         if ((!this.diagnoses.contains(temp_diag.name)) && (!excluded.contains(temp_diag.name)))
                             excluded.add(temp_diag.name);
-                    } else if (temp_eval.correct) {                             // ako se klasifcira i to tocno povecaj TP
-                        diagnosis_count.get(temp_diag.name).TP++;
-                    } else {                                                    // ako se krivo klasificira
-                        diagnosis_count.get(temp_diag.name).FN++;               // povecaj FM za trenutnu dijagnozu
-                        diagnosis_count.get(temp_eval.end_node).FP++;           // povecaj FP za dijagnozu di se krivo klasificira
+                    } else if (temp_eval.correct) {                                         // ako se klasifcira i to tocno dodaj u TP
+                        diagnosis_count.get(temp_diag.name).TP.add(temp_case);
+                    } else {                                                                 // ako se krivo klasificira
+                        diagnosis_count.get(temp_diag.name).FN.add(temp_case);               // dodaj u FN za trenutnu dijagnozu
+                        diagnosis_count.get(temp_eval.end_node).FP.add(temp_case);           // povecaj FP za dijagnozu di se krivo klasificira
                     }
                     
                 }

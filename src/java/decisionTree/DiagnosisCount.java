@@ -1,5 +1,8 @@
 package decisionTree;
 
+import java.util.ArrayList;
+import singleCase.Case;
+
 /*
  * To change this license header, choose License Headers in Project Properties.
  * To change this template file, choose Tools | Templates
@@ -13,32 +16,18 @@ package decisionTree;
 public class DiagnosisCount {
 
     public String name;
-    public int N;       // Koliko ukupno caseova ima ovu dijagnozu? 
-    public int TP;     // Koliko caseova koji iamju ovu dijagnozu se ispravno klasificira?
-    public int FP;   // Koliko caseova koji imaju ovu dijagnoze se dijagnosticira? (Ne zapinje)
-    public int TN;
-    public int FN;
-    public int undiagnosed;
+    
+    public ArrayList<Case> total  = new ArrayList<>();
+    public ArrayList<Case> TP  = new ArrayList<>();
+    public ArrayList<Case> TN  = new ArrayList<>();
+    public ArrayList<Case> FP  = new ArrayList<>();
+    public ArrayList<Case> FN  = new ArrayList<>();
+    public ArrayList<Case> undiagnosed  = new ArrayList<>();
 
-    public DiagnosisCount() {
-        this.name = "";
-        this.N = 0;
-        this.TP = 0;
-        this.FP = 0;
-        this.TN = 0;
-        this.FN = 0;
-        this.undiagnosed = 0;
+    public DiagnosisCount(String name) {
+        this.name = name;
     }
     
-    public DiagnosisCount(String name, int N, int TP, int FP, int TN, int FN, int undiagnosed) {
-        this.name = name;
-        this.N = N;
-        this.TP = TP;
-        this.FP = FP;
-        this.TN = TN;
-        this.FN = FN;
-        this.undiagnosed = undiagnosed;
-    }
 
     public String getName() {
         return name;
@@ -46,41 +35,41 @@ public class DiagnosisCount {
     public void setName(String name) {
         this.name = name;
     }
-    public int getN() {
-        return N;
+    public ArrayList<Case> getTotal() {
+        return total;
     }
-    public void setN(int N) {
-        this.N = N;
+    public void setTotal(ArrayList<Case> total) {
+        this.total = total;
     }
-    public int getTP() {
+    public ArrayList<Case> getTP() {
         return TP;
     }
-    public void setTP(int TP) {
+    public void setTP(ArrayList<Case> TP) {
         this.TP = TP;
     }
-    public int getFP() {
-        return FP;
-    }
-    public void setFP(int FP) {
-        this.FP = FP;
-    }
-    public int getTN() {
+    public ArrayList<Case> getTN() {
         return TN;
     }
-    public void setTN(int TN) {
+    public void setTN(ArrayList<Case> TN) {
         this.TN = TN;
     }
-    public int getFN() {
+    public ArrayList<Case> getFP() {
+        return FP;
+    }
+    public void setFP(ArrayList<Case> FP) {
+        this.FP = FP;
+    }
+    public ArrayList<Case> getFN() {
         return FN;
     }
-    public void setFN(int FN) {
+    public void setFN(ArrayList<Case> FN) {
         this.FN = FN;
     }
-    public int getUndiagnosed() {
+    public ArrayList<Case> getUndiagnosed() {
         return undiagnosed;
     }
-    public void setUndiagnosed(int undiagnosed) {
+    public void setUndiagnosed(ArrayList<Case> undiagnosed) {
         this.undiagnosed = undiagnosed;
     }
-    
+        
 }

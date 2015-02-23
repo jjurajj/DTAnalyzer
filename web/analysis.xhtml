@@ -8,64 +8,64 @@ and open the template in the editor.
 <html xmlns="http://www.w3.org/1999/xhtml"
       xmlns:f="http://java.sun.com/jsf/core"
       xmlns:h="http://xmlns.jcp.org/jsf/html"
-      xmlns:ui="http://xmlns.jcp.org/jsf/facelets">
+      xmlns:ui="http://xmlns.jcp.org/jsf/facelets"
+      xmlns:p="http://primefaces.org/ui"
+      >
 
-    <head>
+    <h:head>
         <title>DT analysis</title>
         <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-    </head>
-    <body>
+    </h:head>
+    <h:body>
         <f:view>
-            
-            <h:form id ="inicijalizacija">
-                <!--
-                <br />{Uploader.getFileContent()}<br />Kraj teksta fajla.{Uploader.file}Neki nesto{Uploader.fileContent}.
-                {assessmentcase.SetCase("C:/Users/juraj/Documents/NetBeansProjects/SkillAssessment/build/web/WEB-INF/classes/resources/case_base/case_2/case.txt")}-->
-                
+        <p:layout fullPage="true">    
+            <p:layoutUnit position="west" resizable="true" size="550" minSize="400" maxSize="900" style="margin-left:20px;margin-right:20px">
+                <h:form id ="inicijalizacija">
                 
                 <f:event listener="#{CaseBase.initialize('http://diana.zesoi.fer.hr/~jpetrovic/case_repository/car_starting/')}" type="preRenderView" />
-                <!--<f:event listener="hash{Case.initializeCase('http://diana.zesoi.fer.hr/~jpetrovic/case_repository/car_starting/case_1/case.txt')}" type="preRenderView" />-->
                 <f:event listener="#{DT.initializeDT(Uploader.fileContent)}" type="preRenderView" />
                 
-                <!--
-                Uploaded DT file (raw propositions):
-                <br />
-                <pre>hash{Uploader.getFileContent()}</pre>
-                <br /><br />*/
-                -->
+                <f:verbatim>
+                <h3>1. Uploaded DT file description</h3>
+                <b>Start node</b>:
+                </f:verbatim>
                 
-                Uploaded DT file description:
-                <br /><br />
+                <ul><li>#{DT.start_node}</li></ul>
                 
-                <b>Start node</b>: #{DT.start_node}<br />
-                <br />
+                <f:verbatim>
+                <b>Parsed propositions</b>:
+                </f:verbatim>
                 
-                <b>Propositions (parsed)</b>:
+                <ul>
                 <ui:repeat value="#{DT.propositions}" var="item"> <!--http://stackoverflow.com/questions/20468236/using-foreach-loop-in-jsf-->
-                    <br />(#{item.concept_one})--(#{item.link})-->(#{item.concept_two})
+                    <li>"#{item.concept_one}"--"#{item.link}"-->"#{item.concept_two}"</li>
                 </ui:repeat>   
-                <br /><br />
+                </ul>
                 
-                <b>Identified possible diagnoses</b> (#{DT.diagnoses.size()}): #{DT.diagnoses}<br />
-                <br />
-                
-                <!--http://stackoverflow.com/questions/20468236/using-foreach-loop-in-jsf-->
-                <!--
-                <br />Popis caseova (foldera): hash{CaseBase.listCaseBase("http://diana.zesoi.fer.hr/~jpetrovic/case_repository/car_starting/")}<br />
-                <br />Drugi popis caseova (foldera):
-                <ui:repeat value="hash{CaseBase.case_list}" var="item"> 
-                    <br />hash{item}
+                <b>Identified possible diagnoses</b>
+                <ul>
+                <ui:repeat value="#{DT.diagnoses}" var="item"> <!--http://stackoverflow.com/questions/20468236/using-foreach-loop-in-jsf-->
+                    <li>"#{item}"</li>
                 </ui:repeat>
-
-                <br /><br />
-                <br />Primjer casea u plain textu:
-                <pre>hash{CaseBase.getCase(0).text}</pre><br />
-                <br /><br />
-                -->
+                </ul>
                 
-                Evaluacija stabla <b>po caseovima</b> (korištene baze: 
+                </h:form>
+            </p:layoutUnit>
+ 
+            <p:layoutUnit position="center">
+
+                <p:layout>
+
+                <p:layoutUnit position="north">
+                
+                <f:verbatim>
+                <h3>2. DT evaluation</h3>
+                </f:verbatim>
+                
+                <h:form id ="inicijalizacija2">
+                Evaluation case by case (case bases used: 
                 <ui:repeat value="#{CaseBase.url}" var="item" varStatus="rbr">
-                     <h:outputLink value="#{item}">Baza #{rbr.index}</h:outputLink>
+                     <h:outputLink value="#{item}">B#{rbr.index}</h:outputLink>
                 </ui:repeat>):
                 <ui:repeat value="#{CaseBase.cases}" var="item" varStatus="rbr"> <!--http://stackoverflow.com/questions/20468236/using-foreach-loop-in-jsf-->
                     <br />*    
@@ -74,25 +74,37 @@ and open the template in the editor.
                 </ui:repeat>
                 <br /><br />
                 
-                <br />Evaluacija stabla <b>po konačnoj odluci</b>:
+                <br />Evaluation per final diagnosis:
                 <ui:repeat value="#{DT.evaluateTreeDecision(CaseBase)}" var="item"> <!--http://stackoverflow.com/questions/20468236/using-foreach-loop-in-jsf-->
                     <br />
-                    <h:outputLabel value="* #{item.name}: total number of cases=#{item.n}, precision=#{item.TP/(item.TP+item.FP)}, recall=#{item.TP/(item.TP+item.TN)}" rendered="#{(item.FN==0) or (item.FN != item.undiagnosed)}" /> 
-                    <h:outputLabel value="* #{item.name} - not included in the DT, but included in everal cases." rendered="#{(item.FN == item.undiagnosed) and (item.FN>0)}"/> 
+                    <h:outputLabel rendered="#{(item.FN.size()==0) or (item.FN.size() != item.undiagnosed.size())}">
+                            * #{item.name}: <h:outputLink onclick="window.open('details.xhtml?foo=#{bean.foo}'', 'Detailed view', 'width=200, height=200, dependent=yes, menubar=no, toolbar=no'); return false;" value="#">N=#{item.total.size()}</h:outputLink>
+                            , precision=#{item.TP.size()/(item.TP.size()+item.FP.size())}, recall=#{item.TP.size()/(item.TP.size()+item.FN.size())}
+                    </h:outputLabel> 
+                    <h:outputLabel value="* #{item.name} - not included in the DT, but included in everal cases." rendered="#{(item.FN.size() == item.undiagnosed.size()) and (item.FN.size()>0)}"/> 
                     <!--h:outputLabel value="hash{row==10? '10' : '15'}"/>-->
+                    
                 </ui:repeat>
 
                 
                 <br /><br /><br /><br />
+                </h:form>
+                </p:layoutUnit>
+                <p:layoutUnit position="center">
+                    
+                <f:verbatim>
+                <h3>3. DT improvements</h3>
+                </f:verbatim>
+                    
+                </p:layoutUnit>
                 
-                
-                
-            </h:form>
-            
-            
-            
-            
-        </f:view>
+                </p:layout>
 
-    </body>
+                    
+            </p:layoutUnit>
+            
+        </p:layout>
+        </f:view>
+        
+    </h:body>
 </html>
