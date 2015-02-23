@@ -1,3 +1,5 @@
+package singleCase;
+
 /*
  * Ovo je klasa za case.
  *
@@ -7,6 +9,8 @@
  * specificno elemente koji mi trebaju za pojedinu primjenu.
  */
 
+import decisionTree.PropositionKey;
+import decisionTree.DT;
 import java.util.ArrayList;
 import java.io.*;
 import java.math.BigDecimal;

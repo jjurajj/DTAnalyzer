@@ -1,3 +1,5 @@
+package singleCase;
+
 
 import java.util.ArrayList;
 
@@ -12,8 +14,8 @@ import java.util.ArrayList;
  */
 public class Dijagnoza {
     
-    String name;
-    boolean correct;
+    public String name;
+    public boolean correct;
 
     public Dijagnoza(String name, boolean correct) {
         this.name = name;

@@ -1,3 +1,5 @@
+package caseBase;
+
 /**
  * Ova klasa predstavlja bazu caseova i sadrzi
  * - popis urlova baza (1 ili vise ili edfaultna na Diani)
@@ -11,6 +13,8 @@
  * @author juraj
  */
 
+import singleCase.Dijagnoza;
+import singleCase.Case;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.logging.Level;

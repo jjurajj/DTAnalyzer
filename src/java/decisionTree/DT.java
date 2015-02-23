@@ -1,7 +1,13 @@
+package decisionTree;
+
 /**
  * @author juraj
  */
 
+import singleCase.Dijagnoza;
+import singleCase.CaseEvaluation;
+import singleCase.Case;
+import caseBase.CaseBase;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.HashMap;
