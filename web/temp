@@ -1,0 +1,18 @@
+<p:layout id="CAA#{rbr.index}" rendered="{CaseDetails.display}">
+                        <p:layoutUnit position="center">
+                            <h:outputLink value="" onclick="">Case #{rbr.index}</h:outputLink>
+                            ssdfgsdfgsdfgsdfgsdf
+                        </p:layoutUnit>
+                    </p:layout>
+                    
+
+
+
+Ovim tu sam prije inicijlaizirao odgovarajuce klase, ali pri bilo kojem kliku na link ili botun bi se cijela stranica refreshala pa sam to maknuo
+dolazi u <f:view>
+
+            <f:metadata>
+                <f:event listener="#{CaseBase.initialize('http://diana.zesoi.fer.hr/~jpetrovic/case_repository/car_starting/')}" type="preRenderView" />
+                <f:event listener="#{DT.initializeDT(Uploader.fileContent)}" type="preRenderView" />
+                <f:event listener="#{CaseDetails.setAll(false, '0')}" type="preRenderView" /> <!--stavio sam eager=true pa ga i tak dobijem-->
+            </f:metadata>

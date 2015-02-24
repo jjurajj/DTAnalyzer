@@ -15,18 +15,24 @@ and open the template in the editor.
     <h:head>
         <title>DT analysis</title>
         <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+        <h:outputScript library="js" name="toggle_details.js" />
     </h:head>
     <h:body>
+
         <f:view>
-        <p:layout fullPage="true">    
-            <p:layoutUnit position="west" resizable="true" size="550" minSize="400" maxSize="900" style="margin-left:20px;margin-right:20px">
-                <h:form id ="inicijalizacija">
+
+            <p:layout fullPage="true">
+            
+            <h:form>
+                #{CaseBase.initialize('http://diana.zesoi.fer.hr/~jpetrovic/case_repository/car_starting/')}
+                #{DT.initializeDT(Uploader.fileContent)}
+                #{CaseDetails.setAll(false, '0')}
+            </h:form>
                 
-                <f:event listener="#{CaseBase.initialize('http://diana.zesoi.fer.hr/~jpetrovic/case_repository/car_starting/')}" type="preRenderView" />
-                <f:event listener="#{DT.initializeDT(Uploader.fileContent)}" type="preRenderView" />
+            <p:layoutUnit position="west" header="Uploaded DT file description" collapsible="true" resizable="true" size="550" minSize="400" maxSize="900" style="margin-left:20px;margin-right:20px">
                 
                 <f:verbatim>
-                <h3>1. Uploaded DT file description</h3>
+                <br />
                 <b>Start node</b>:
                 </f:verbatim>
                 
@@ -49,20 +55,18 @@ and open the template in the editor.
                 </ui:repeat>
                 </ul>
                 
-                </h:form>
             </p:layoutUnit>
  
-            <p:layoutUnit position="center">
+            <p:layoutUnit position="center" >
 
                 <p:layout>
 
-                <p:layoutUnit position="north">
+                <p:layoutUnit position="center" header="DT evaluation" resizable="true" size="550" minSize="400" maxSize="900">
                 
                 <f:verbatim>
-                <h3>2. DT evaluation</h3>
+                <br />
                 </f:verbatim>
                 
-                <h:form id ="inicijalizacija2">
                 Evaluation <b>case by case</b> (case bases used: 
                 <ui:repeat value="#{CaseBase.url}" var="item" varStatus="rbr">
                      <h:outputLink value="#{item}">B#{rbr.index}</h:outputLink>
@@ -73,20 +77,29 @@ and open the template in the editor.
                     <h:outputLabel value=" (#{item.evaluateCase(DT).end_node}) " rendered="#{item.evaluateCase(DT).diagnosed}" />
                     <h:graphicImage value="/images/tick.png" width="16" height="16" rendered="#{item.evaluateCase(DT).diagnosed and item.evaluateCase(DT).correct}"/>
                     <h:graphicImage value="/images/cross.png" width="16" height="16" rendered="#{!item.evaluateCase(DT).diagnosed or !item.evaluateCase(DT).correct}"/>
+                    
                     <!--Ako nije dijagnosticiran. Ovo treba pretvorit u link koji pokazuje stvar detaljnije-->
                     <h:outputLabel value=" (Undiagnosed)" rendered="#{!item.evaluateCase(DT).diagnosed}" />
                     <!--Ako je krivo dijagnosticiran-->
-                    <h:outputLabel value=" (Incorrect)" rendered="#{item.evaluateCase(DT).diagnosed and !item.evaluateCase(DT).correct}" />
-                    <h:outputLink value="" onclick="">Case #{rbr.index}</h:outputLink>
                     
-                    <p:layout id="CAA#{rbr.index}" rendered="false">
-                        <p:layoutUnit position="center">
-                            ssdfgsdfgsdfgsdfgsdf
-                        </p:layoutUnit>
-                    </p:layout>
+                    <!--Render:false nije isto sto i display:none!!!  http://stackoverflow.com/questions/13777678/ajax-render-attribute-doesnt-work-with-rendered-false-component-->
+                    <h:form id="botun">
+                    <h:commandButton  value="Details" action="#{CaseDetails.addDisplay()}">
+                        <f:ajax render="labela" />
+                    </h:commandButton>
+                        <h:outputLabel id="labela">
+                            <h:outputLabel id="labela1" value="Eto me! #{CaseDetails.display}" rendered="#{CaseDetails.display}"/>
+                        </h:outputLabel>
+                    </h:form>
+                    
+                    
+                    
+                    <h:form>
+                        <p:commandLink value="Details" action="#{CaseDetails.addDisplay()}" update=":detailedView" rendered="#{item.evaluateCase(DT).diagnosed and !item.evaluateCase(DT).correct}" />
+                    </h:form>
                     
                 </ui:repeat>
-                <br /><br />
+                <br />
                 
                 <br />Evaluation <b>per final diagnosis</b> (case bases used: 
                 <ui:repeat value="#{CaseBase.url}" var="item" varStatus="rbr">
@@ -102,12 +115,21 @@ and open the template in the editor.
                     <!--h:outputLabel value="hash{row==10? '10' : '15'}"/>-->
                     
                 </ui:repeat>
-
                 
-                <br /><br /><br /><br />
-                </h:form>
                 </p:layoutUnit>
-                <p:layoutUnit position="center">
+                
+                <p:layoutUnit id="detailedView" position="east" header="Detailed view" collapsed="#{not CaseDetails.display}" resizable="true" size="600" minSize="400" maxSize="900">
+                    
+                <f:verbatim>
+                <!--Tu bi trebao prikazivati neki objekt koji se refresha na klik na
+                link u 2. containeru i prikazuje detaljne info o caseu ili dijagnozi-->
+                
+                
+                </f:verbatim>
+                    
+                </p:layoutUnit>
+                    
+                    <p:layoutUnit position="south" resizable="true">
                     
                 <f:verbatim>
                 <h3>3. DT improvements</h3>

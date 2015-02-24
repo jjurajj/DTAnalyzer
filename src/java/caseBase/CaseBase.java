@@ -81,6 +81,13 @@ public class CaseBase {
         return lista_caseova;
     }
     
+    public int myIndexOf(String url) {
+        for (int i=0; i<this.cases.size(); i++)
+            if (this.cases.get(i).url == url)
+                return i;
+        return -1;
+    }
+    
     // Vraca ArrayList dijagnoza u koje se klasificiraju ucitani caseovi
     public ArrayList<String> getDiagnosesList () {
         
