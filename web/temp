@@ -16,3 +16,59 @@ dolazi u <f:view>
                 <f:event listener="#{DT.initializeDT(Uploader.fileContent)}" type="preRenderView" />
                 <f:event listener="#{CaseDetails.setAll(false, '0')}" type="preRenderView" /> <!--stavio sam eager=true pa ga i tak dobijem-->
             </f:metadata>
+
+
+
+Lista caseova, radi, s kvacicama. Maknuo jer nisam mogo dobro apdejtat komponente
+
+<ui:repeat id="case_loop" value="#{CaseBase.cases}" var="item" varStatus="rbr"> <!--http://stackoverflow.com/questions/20468236/using-foreach-loop-in-jsf-->
+                    <br />*    
+                    <h:outputLink value="#{item.url}">Case #{rbr.index}</h:outputLink>
+                    <h:outputLabel value=" (#{item.evaluateCase(DT).end_node}) " rendered="#{item.evaluateCase(DT).diagnosed}" />
+                    <h:graphicImage value="/images/tick.png" width="16" height="16" rendered="#{item.evaluateCase(DT).diagnosed and item.evaluateCase(DT).correct}"/>
+                    <h:graphicImage value="/images/cross.png" width="16" height="16" rendered="#{!item.evaluateCase(DT).diagnosed or !item.evaluateCase(DT).correct}"/>
+                    
+                    <!--Ako nije dijagnosticiran. Ovo treba pretvorit u link koji pokazuje stvar detaljnije-->
+                    <h:outputLabel value=" (Undiagnosed)" rendered="#{!item.evaluateCase(DT).diagnosed}" />
+                    <!--Ako je krivo dijagnosticiran-->
+                    
+                    <!--Render:false nije isto sto i display:none!!!  http://stackoverflow.com/questions/13777678/ajax-render-attribute-doesnt-work-with-rendered-false-component-->
+                    <h:form id="botun">
+                    <h:commandButton  value="Details" action="#{CaseDetails.addDisplay()}">
+                        <f:ajax execute="botun" render="case_loop:labela_ext"/> <!-- ako su u drugim namespaceovima, mora ih se apsolutno adresirat: http://stackoverflow.com/questions/16597542/render-multiple-components-with-fajax-->
+                        <h:outputLabel id="labela">
+                            <h:outputLabel id="labela1" value="Eto me1! #{CaseDetails.display}" rendered="#{CaseDetails.display}"/>
+                        </h:outputLabel>
+                        <h:outputLabel id="labela_ext">
+                            <h:outputLabel id="labela1_ext" value="Eto me2! #{CaseDetails.display}" rendered="#{CaseDetails.display}"/>
+                        </h:outputLabel>
+ 
+                    </h:commandButton>
+                    </h:form>
+
+                    <h:form id="asd">
+                                               
+
+                    </h:form>
+                    
+                    <h:form>
+                        <p:commandLink value="Details" action="#{CaseDetails.addDisplay()}" update=":detailedView" rendered="#{item.evaluateCase(DT).diagnosed and !item.evaluateCase(DT).correct}" />
+                    </h:form>
+                    
+                </ui:repeat>
+                
+
+
+Drugi stari UI:repeat:
+
+<ui:repeat value="#{DT.evaluateTreeDecision(CaseBase)}" var="item"> <!--http://stackoverflow.com/questions/20468236/using-foreach-loop-in-jsf-->
+                    <br />
+                    <h:outputLabel rendered="#{(item.FN.size()==0) or (item.FN.size() != item.undiagnosed.size())}">
+                            * #{item.name}: <h:outputLink onclick="window.open('details.xhtml?foo=#{bean.foo}'', 'Detailed view', 'width=200, height=200, dependent=yes, menubar=no, toolbar=no'); return false;" value="#">N=#{item.total.size()}</h:outputLink>
+                            , precision=#{item.TP.size()/(item.TP.size()+item.FP.size())}, recall=#{item.TP.size()/(item.TP.size()+item.FN.size())}
+                    </h:outputLabel> 
+                    <h:outputLabel value="* #{item.name} - not included in the DT, but included in everal cases." rendered="#{(item.FN.size() == item.undiagnosed.size()) and (item.FN.size()>0)}"/> 
+                    <!--h:outputLabel value="hash{row==10? '10' : '15'}"/>-->
+                    
+                </ui:repeat>
+                

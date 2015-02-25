@@ -17,19 +17,19 @@ and open the template in the editor.
         <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
         <h:outputScript library="js" name="toggle_details.js" />
     </h:head>
-    <h:body>
+    <h:body id="body_id">
 
-        <f:view>
+        <f:view id="view_id">
 
-            <p:layout fullPage="true">
+            <p:layout fullPage="true" id="full_page">
             
-            <h:form>
+            <h:form id="initializer">
                 #{CaseBase.initialize('http://diana.zesoi.fer.hr/~jpetrovic/case_repository/car_starting/')}
                 #{DT.initializeDT(Uploader.fileContent)}
                 #{CaseDetails.setAll(false, '0')}
             </h:form>
                 
-            <p:layoutUnit position="west" header="Uploaded DT file description" collapsible="true" resizable="true" size="550" minSize="400" maxSize="900" style="margin-left:20px;margin-right:20px">
+            <p:layoutUnit id="DT_description" position="west" header="Uploaded DT file description" collapsible="true" resizable="true" size="550" minSize="400" maxSize="900" style="margin-left:20px;margin-right:20px">
                 
                 <f:verbatim>
                 <br />
@@ -57,11 +57,11 @@ and open the template in the editor.
                 
             </p:layoutUnit>
  
-            <p:layoutUnit position="center" >
+            <p:layoutUnit position="center" id="DT_evaluation_main">
 
-                <p:layout>
+                <p:layout id="DT_evaluation_sub">
 
-                <p:layoutUnit position="center" header="DT evaluation" resizable="true" size="550" minSize="400" maxSize="900">
+                <p:layoutUnit id="eval_list" position="center" header="DT evaluation" resizable="true" size="550" minSize="400" maxSize="900">
                 
                 <f:verbatim>
                 <br />
@@ -71,9 +71,12 @@ and open the template in the editor.
                 <ui:repeat value="#{CaseBase.url}" var="item" varStatus="rbr">
                      <h:outputLink value="#{item}">B#{rbr.index}</h:outputLink>
                 </ui:repeat>):
-                <ui:repeat value="#{CaseBase.cases}" var="item" varStatus="rbr"> <!--http://stackoverflow.com/questions/20468236/using-foreach-loop-in-jsf-->
-                    <br />*    
-                    <h:outputLink value="#{item.url}">Case #{rbr.index}</h:outputLink>
+                
+                <ul>
+                <h:dataTable id="case_table" value="#{CaseBase.cases}" var="item" > <!--http://stackoverflow.com/questions/20468236/using-foreach-loop-in-jsf-->
+                    <h:column>
+                    <li>
+                    <h:outputLink value="#{item.url}" target="_blank">Case #{CaseBase.myIndexOf(item.url)}</h:outputLink>
                     <h:outputLabel value=" (#{item.evaluateCase(DT).end_node}) " rendered="#{item.evaluateCase(DT).diagnosed}" />
                     <h:graphicImage value="/images/tick.png" width="16" height="16" rendered="#{item.evaluateCase(DT).diagnosed and item.evaluateCase(DT).correct}"/>
                     <h:graphicImage value="/images/cross.png" width="16" height="16" rendered="#{!item.evaluateCase(DT).diagnosed or !item.evaluateCase(DT).correct}"/>
@@ -83,42 +86,42 @@ and open the template in the editor.
                     <!--Ako je krivo dijagnosticiran-->
                     
                     <!--Render:false nije isto sto i display:none!!!  http://stackoverflow.com/questions/13777678/ajax-render-attribute-doesnt-work-with-rendered-false-component-->
-                    <h:form id="botun">
-                    <h:commandButton  value="Details" action="#{CaseDetails.addDisplay()}">
-                        <f:ajax render="labela" />
-                    </h:commandButton>
-                        <h:outputLabel id="labela">
-                            <h:outputLabel id="labela1" value="Eto me! #{CaseDetails.display}" rendered="#{CaseDetails.display}"/>
-                        </h:outputLabel>
+                    <h:form id="botun" style="display:inline" rendered="#{!item.evaluateCase(DT).diagnosed or !item.evaluateCase(DT).correct}">
+                        <!-- ako su u drugim namespaceovima, mora ih se apsolutno adresirat: http://stackoverflow.com/questions/16597542/render-multiple-components-with-fajax plus sto treba dodat vrapper oblika istog elementa koji se refresha oko njega-->
+                        <!--<h:outputLabel id="labela"><h:outputLabel id="labela1" value="Eto me1!" rendered="hash{CaseDetails.display}"/>-->
+                        <h:commandLink  value="#{!item.evaluateCase(DT).diagnosed ? '(Undiagnosed)':'(Incorrect)'}" action="#{CaseDetails.addDisplay()}">
+                            <f:ajax execute="botun" render="labela :labela_ext"/>   
+                        </h:commandLink>
                     </h:form>
-                    
-                    
-                    
-                    <h:form>
-                        <p:commandLink value="Details" action="#{CaseDetails.addDisplay()}" update=":detailedView" rendered="#{item.evaluateCase(DT).diagnosed and !item.evaluateCase(DT).correct}" />
-                    </h:form>
-                    
-                </ui:repeat>
-                <br />
-                
-                <br />Evaluation <b>per final diagnosis</b> (case bases used: 
+                    </li>
+                    </h:column>
+                </h:dataTable>
+                </ul>
+
+                Evaluation <b>per final diagnosis</b> (case bases used: 
                 <ui:repeat value="#{CaseBase.url}" var="item" varStatus="rbr">
                      <h:outputLink value="#{item}">B#{rbr.index}</h:outputLink>
                 </ui:repeat>):
-                <ui:repeat value="#{DT.evaluateTreeDecision(CaseBase)}" var="item"> <!--http://stackoverflow.com/questions/20468236/using-foreach-loop-in-jsf-->
-                    <br />
+                
+                <ul>
+                <h:dataTable id="diagnosis_table" value="#{DT.evaluateTreeDecision(CaseBase)}" var="item" > <!--http://stackoverflow.com/questions/20468236/using-foreach-loop-in-jsf-->
+                    <h:column>
+                    <li>
                     <h:outputLabel rendered="#{(item.FN.size()==0) or (item.FN.size() != item.undiagnosed.size())}">
-                            * #{item.name}: <h:outputLink onclick="window.open('details.xhtml?foo=#{bean.foo}'', 'Detailed view', 'width=200, height=200, dependent=yes, menubar=no, toolbar=no'); return false;" value="#">N=#{item.total.size()}</h:outputLink>
+                            #{item.name}: <h:outputLink onclick="window.open('details.xhtml?foo=#{bean.foo}'', 'Detailed view', 'width=200, height=200, dependent=yes, menubar=no, toolbar=no'); return false;" value="#">N=#{item.total.size()}</h:outputLink>
                             , precision=#{item.TP.size()/(item.TP.size()+item.FP.size())}, recall=#{item.TP.size()/(item.TP.size()+item.FN.size())}
                     </h:outputLabel> 
                     <h:outputLabel value="* #{item.name} - not included in the DT, but included in everal cases." rendered="#{(item.FN.size() == item.undiagnosed.size()) and (item.FN.size()>0)}"/> 
                     <!--h:outputLabel value="hash{row==10? '10' : '15'}"/>-->
+                    </li>
+                    </h:column>
+                </h:dataTable>
+                </ul>   
+
                     
-                </ui:repeat>
-                
                 </p:layoutUnit>
                 
-                <p:layoutUnit id="detailedView" position="east" header="Detailed view" collapsed="#{not CaseDetails.display}" resizable="true" size="600" minSize="400" maxSize="900">
+                <p:layoutUnit id="detailedView"  position="east" header="Detailed view" collapsed="#{not CaseDetails.display}" resizable="true" size="600" minSize="400" maxSize="900">
                     
                 <f:verbatim>
                 <!--Tu bi trebao prikazivati neki objekt koji se refresha na klik na
@@ -134,6 +137,11 @@ and open the template in the editor.
                 <f:verbatim>
                 <h3>3. DT improvements</h3>
                 </f:verbatim>
+                
+                <h:outputLabel id="labela_ext">
+                    <h:outputLabel id="labela1_ext" value="Eto me2! #{CaseDetails.display}" rendered="#{CaseDetails.display}"/>
+                </h:outputLabel>
+
                     
                 </p:layoutUnit>
                 
