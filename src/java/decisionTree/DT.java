@@ -8,6 +8,8 @@ import singleCase.Dijagnoza;
 import singleCase.CaseEvaluation;
 import singleCase.Case;
 import caseBase.CaseBase;
+import static com.sun.corba.se.impl.util.Utility.printStackTrace;
+import com.sun.faces.util.CollectionsUtils;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -23,7 +25,11 @@ public class DT implements Serializable {
     public ArrayList<Proposition> propositions = new ArrayList<>(); 
     public ArrayList<String> diagnoses = new ArrayList<>();
     public HashMap<PropositionKey, String> propositionsMap= new HashMap<>();
-    
+    public HashMap<String, ArrayList<String>> reachable_diagnoses = new HashMap<>();
+            
+    //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    // Inicijalizacija stabla na temelju tekstualne datoteke koja ga opisuje
     public void initializeDT(String DT_text_file) {
   
       ArrayList<String> left_concepts = new ArrayList<>();      // koncepti s lijeve strane
@@ -57,15 +63,43 @@ public class DT implements Serializable {
           if (left_concepts.contains(concept) == false) leaves.add(concept);
       this.setDiagnoses(leaves);
       
+      // reachable diagnoses
+      setReachableDiagnoses(start_node);
+      
     }
     
-    // Ovo tu evaluira stablo na sebi odnosno na bazi caseova i vraca N, TP, FP, TN, FN za svaku dijagnozu CASEOVA iz baze, NE STABLA
+    // Rekurzija koja postavi hashmap reachable_diagnoses za svu djecu zadanog cvora
+    public ArrayList<String> setReachableDiagnoses (String node) {
+        
+        // Ako se radi o cvoru koji je konacna dijagnoza onda ga vrati
+        if (this.diagnoses.contains(node)) {                        
+            ArrayList<String> temp_list = new ArrayList();
+            temp_list.add(node);
+            return temp_list;
+        // Ako nije terminalni cvor onda su njegove reachable dijagnoze one od sve njegove djece
+        } else {
+            ArrayList<String> next_nodes = new ArrayList<>();
+            ArrayList<String> reachable_diagnoses = new ArrayList<>();
+            next_nodes = getNextConcepts(node);                             // popis djece
+            for (String child : next_nodes) {                               // za svako dijete
+                ArrayList<String> temp = new ArrayList<>();
+                temp = setReachableDiagnoses(child);                        // dobij dijagnoze za to dijete
+                for (String temp_diag : temp) {                             // sve te dijagnoze dodaj u trenutne dijagnoze
+                    if (! reachable_diagnoses.contains(temp_diag))
+                        reachable_diagnoses.add(temp_diag);
+                }
+            }
+            this.reachable_diagnoses.put(node, reachable_diagnoses);        // dodaj to u hashmap
+            return reachable_diagnoses;
+        }
+    }
+    
+    //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    // Analiza stabla na tebelju baze caseova
+    // Vraca liste caseova (N, TP, FP, TN, FN, undiag) za svaku dijagnozu dostupnu u bazi
     public ArrayList<DiagnosisCount> evaluateTreeDecision (CaseBase base) {
     
-        //A sad bi trebalo svaki ovaj int pretvorit u listu caseova!!!!!! mogu i tak dobit njihov broj, a po potrebi pokazivat njihove linkove
-        // isl.
-        
-        // preciznost/odziv za svaku dijagnozu
         ArrayList<DiagnosisCount> diagnosis_count_al = new ArrayList<>();
         ArrayList<String> excluded = new ArrayList<>();
         HashMap<String, DiagnosisCount> diagnosis_count = new HashMap<>();
@@ -78,13 +112,15 @@ public class DT implements Serializable {
                 // za svaku tocnu (ocekivano jedinu tocnu dijagnozu)
                 if (temp_diag.isCorrect()) {
                     
+                    // Statistika po dijagnozama
                     // ako ta dijagnoza vec postoji u hashmapu dodaj ju i potom u svakom slucaju dodaj joj trenutni case u total
                     if (!diagnosis_count.containsKey(temp_diag.name)) {     
                         diagnosis_count.put(temp_diag.name, new DiagnosisCount(temp_diag.name));
                     }
                     diagnosis_count.get(temp_diag.name).total.add(temp_case);
                     
-                    // Evaluiraj trenutni case i povecaj odgovarajuce vrijednosti (N, Tp, TN, FP, FN, undiagnosed)
+                    // Evaluacija casea
+                    // Evaluiraj trenutni case i povecaj odgovarajuce vrijednosti kod klasifikacije (N, Tp, TN, FP, FN, undiagnosed)
                     CaseEvaluation temp_eval = temp_case.evaluateCase(this);
                     if (!temp_eval.diagnosed) {                                             //ako se ne klsificira dodaj case u undiagnosed
                         diagnosis_count.get(temp_diag.name).undiagnosed.add(temp_case);     // i provjeri jel ta dijagnoza uopce postoji u stablu
@@ -112,13 +148,97 @@ public class DT implements Serializable {
         return diagnosis_count_al;
     }
 
-    // Ova funkcija bi zapravo trebala iterativno pozivat onu gore
-    // onu gore ce trebat ipak malo preuredit da se moze sekvencijalno smisleno pozivat
-    public void analyzeNodeByNode (CaseBase base) {
+    // vracam niz propozicija i za svaku popis ostavljenih dobrih dijagnoza, dobro i krivo iskljucenih
+    // pretpostavka: CB ima samo caseove koji se odnose na dijagnoze iz stabla
+    public CaseEvaluation runCase (Case current_case) {
     
-    
+       // Tu bi trebao ici po propozicijama i za svaki novi cvor
+       // naci listu caseova koji imaju do sad utvrdene parametre
+       // naci popis dijagnoza tih caseova
+       ArrayList<Proposition> prop_sequence = new ArrayList<>();
+       CaseEvaluation case_eval = new CaseEvaluation();
+       String next_concept = this.start_node;
+       
+       // key mi je za odredivanje iduceg cvora stabla (par trenutni cvor i vrijednost tog parametra u caseu)
+       PropositionKey key; 
+       key = new PropositionKey(next_concept, current_case.parametersMap.get(next_concept));
+
+       // Prodemo po stablu dok ima sljedeceg koncepta u stablu i dok case ima parametar (kljuc) za njega
+       while ((next_concept != null) && (key.concept != null)) {
+           
+           // Sad prolazim po caseu. Tu radim sve sto trebam raditi:
+           // Sumiram cijenu
+           // Pamtim koje su jos moguce / potrebne / discardible dijagnoze
+
+           String prevoius_concept = next_concept;
+           // Odredi iduci koncept
+           case_eval.end_node = next_concept;                                                      // Do kud je case dosao
+           key = new PropositionKey(next_concept, current_case.parametersMap.get(next_concept));   // Za taj cvor ispitaj vrijednost caseu
+           next_concept = this.propositionsMap.get(key);                                           // Provjeri postoji li za to u stablu iduci cvor
+            
+           // Za taj koncept dohvati moguce dijagnoze na temelju stabla
+           ArrayList<String> reachable_diagnoses = new ArrayList<>();
+           reachable_diagnoses = this.reachable_diagnoses.get(next_concept);
+           // A sad za taj skup parametara dohvati iz baze caseova popis mogucih dijagnoza
+           ArrayList<String> possible_diagnoses = new ArrayList<>();
+           possible_diagnoses = this.reachable_diagnoses.get(next_concept);      // ovo treba iskodirati
+           
+           // Dodaj u case eval:
+           // Trenutnu propoziciju
+           // Trenutno moguce dijagnoze
+           // Potrebne dijagnoze. Tu jos treba rijesit uniju, razliku u presjek
+           case_eval.path.add(new Proposition(key.concept, key.value, next_concept));
+           case_eval.diags_per_node.add(reachable_diagnoses);
+            
+        }
+        
+        //ako je cvor u kojem je klasifikacija stala jedan od terminalnih cvorova stabla
+        if (this.diagnoses.contains(case_eval.end_node)) {
+            case_eval.diagnosed = true;
+            // tu je greska...
+            for (Dijagnoza temp_diag : current_case.diagnoses)
+                if (temp_diag.getName().equals(case_eval.end_node))
+                    case_eval.correct = temp_diag.isCorrect();
+            
+        }
+
+        return case_eval;
     }
     
+    // Vraca sve dijagnoze u koje se moze doci iz trenutnog cvora
+    public ArrayList<String> getPossibleDiagnoses (String node) {
+    
+        ArrayList<String> diagnoses_list = new ArrayList<>();
+        diagnoses_list.add(node);                               // na pocetku lista ima samo pocetni cvor
+        String current_node = node;
+        while (current_node != null) {                          // dok ima cvorova u listi
+            for (Proposition temp_prop : this.propositions) {   // nadi svu djecu trenutnog cvora i dodaj ih u listu
+                if (temp_prop.concept_one == current_node)
+                    diagnoses_list.add(temp_prop.concept_two);
+            }
+            diagnoses_list.remove(current_node);                // makni trenutni cvor iz liste
+            current_node = null;                                // postavi tenutni cvor na null
+            for (String temp_node : diagnoses_list) {           // ako u listi postoji jos cvor koji nije terminalni, onda je on iduci
+                if (!this.diagnoses.contains(temp_node))
+                    current_node = temp_node;
+            }
+        }
+        
+        return diagnoses_list;
+    }
+
+    // Ovo vraća cvorove djecu od zadanog cvora
+    public ArrayList<String> getNextConcepts(String start_concept){
+        ArrayList<String> related_concepts = new ArrayList<>();
+        for (Proposition temp_prop : this.propositions)
+            if (temp_prop.getConcept_one().equals(start_concept))
+                related_concepts.add(temp_prop.concept_two);
+        return related_concepts;
+    }
+    
+    //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    // Getteri i setteri od svojstava klase:
     public String getStart_node() {
         return start_node;
     }
@@ -131,7 +251,13 @@ public class DT implements Serializable {
     public HashMap<PropositionKey, String> getPropositionsMap() {
         return propositionsMap;
     }
-        
+    public HashMap<String, ArrayList<String>> getReachable_diagnoses() {
+        return reachable_diagnoses;
+    }
+
+    public void setReachable_diagnoses(HashMap<String, ArrayList<String>> reachable_diagnoses) {
+        this.reachable_diagnoses = reachable_diagnoses;
+    }
     public void setStart_node(String start_node) {
         this.start_node = start_node;
     }
@@ -143,44 +269,6 @@ public class DT implements Serializable {
     }
     public void setPropositionsMap (HashMap<PropositionKey, String> propositionsMap) {
         this.propositionsMap = propositionsMap;
-    }
-    
-    // Ovo vraća propozicije koje imaju zadani pocetni koncept
-    public ArrayList<Proposition> getNextConcepts(String start_concept){
-    
-        ArrayList<Proposition> related_props = new ArrayList<>();
-        
-        for (int i = 0; i < this.propositions.size(); i++)
-            if (this.propositions.get(i).getConcept_one().equals(start_concept))
-                related_props.add(this.propositions.get(i));
-        return related_props;
-    }
-    
-    // Ovo vraca listove u koje se moze doci iz trenutnog cvora. Reimplementirat s hashmapom
-    public ArrayList<String> getLeavesConcepts(String start_concept){
-
-        ArrayList<String> available_leaves = new ArrayList<>();
-        ArrayList<Proposition> related_props = getNextConcepts(start_concept);
-        
-        // Ako se radi o listu
-        if (related_props.size() == 0) {
-            available_leaves.add(start_concept);
-            return available_leaves;
-        }
-        
-        // Ako ima nekih podcvorova
-        while (related_props.size() > 0){
-            // Razvij jedan cvor: makni ga iz liste i dodaj njegovu djecu
-            Proposition current_prop = related_props.get(0);
-            related_props.remove(current_prop);
-            ArrayList<Proposition> new_props = getNextConcepts(current_prop.concept_two);
-            if (new_props.size() == 0)
-                available_leaves.add(current_prop.concept_two);
-            else
-                related_props.addAll(getNextConcepts(current_prop.concept_two));
-        }
-        return available_leaves;
-
     }
     
 }

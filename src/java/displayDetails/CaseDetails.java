@@ -42,6 +42,9 @@ public class CaseDetails {
     public boolean isDisplay() {
         return display;
     }
+    public void toggleDisplay() {
+        this.display = !this.display;
+    }
     public void setDisplay(boolean display) {
         this.display = display;
     }

@@ -13,6 +13,7 @@ package caseBase;
  * @author juraj
  */
 
+import decisionTree.DT;
 import singleCase.Dijagnoza;
 import singleCase.Case;
 import java.io.IOException;
@@ -61,7 +62,9 @@ public class CaseBase {
         for (String case_link : case_list) {
             Case new_case = new Case();
             new_case.initializeCase( case_link.concat(case_file_name) );
+            
             this.cases.add(new_case);
+            
         }
     }
     
@@ -79,6 +82,14 @@ public class CaseBase {
             } 
         } catch (IOException e) {};
         return lista_caseova;
+    }
+    
+    // Evaluacija baze na stablu. 
+    public void evaluateBase (DT tree) {
+    
+            for (int i=0; i<this.cases.size(); i++) {
+                this.cases.get(i).evaluation = tree.runCase(this.cases.get(i));
+            }
     }
     
     public int myIndexOf(String url) {

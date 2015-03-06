@@ -1,6 +1,8 @@
 package singleCase;
 
 
+import decisionTree.Proposition;
+import java.util.ArrayList;
 import javax.faces.bean.ManagedBean;
 import javax.faces.bean.SessionScoped;
 
@@ -20,22 +22,38 @@ import javax.faces.bean.SessionScoped;
 
 public class CaseEvaluation {
     
-    public boolean diagnosed;
-    public boolean correct;
-    public String end_node;
+    public boolean diagnosed;                                       //Dijagnosticira li se case?
+    public boolean correct;                                         //Dijagnosticira li se tocno?
+    public String end_node;                                         //Konacni cvor za case
+    public ArrayList<Proposition> path = new ArrayList<>();         // Niz propozicija po kojima se dijagnosticira
+    public ArrayList<ArrayList<String>> diags_per_node = new ArrayList<>();  // Za svaku propoziciju popis available/pozeljnih dijagnoza
+    public ArrayList<Double> price_per_node = new ArrayList<>();    // Cijena po cvoru
+    
+    ///////////////////////////////////////////////
+    // Konstruktori
+    ///////////////////////////////////////////////
 
     public CaseEvaluation(boolean diagnosed, boolean correct, String end_concept) {
         this.diagnosed = diagnosed;
         this.correct = correct;
         this.end_node = end_concept;
     }
-
     public CaseEvaluation() {
         this.diagnosed = false;
         this.correct = false;
         this.end_node = "Undefined";
     }  
-    
+
+    ///////////////////////////////////////////////
+    // Getteri i setteri
+    ///////////////////////////////////////////////
+
+    public ArrayList<Proposition> getPath() {
+        return path;
+    }
+    public void setPath(ArrayList<Proposition> path) {
+        this.path = path;
+    }
     public boolean isDiagnosed() {
         return diagnosed;
     }

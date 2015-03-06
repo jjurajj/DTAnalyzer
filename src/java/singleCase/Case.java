@@ -31,17 +31,24 @@ public class Case implements Serializable {
     public String url, text, introduction, task, explanation;
     public ArrayList<Dijagnoza> diagnoses = new ArrayList<>();      // Dijagnoza u kojem vec obliku
     public ArrayList<Parametar> parameters = new ArrayList<>();     // Parametri
-    public HashMap<String,String> parametersMap= new HashMap<>();   // HMap parametara <ime vrijednost> za parametre casea
+    public HashMap<String,String> parametersMap = new HashMap<>();  // HMap parametara <ime vrijednost> za parametre casea
+    public CaseEvaluation evaluation = new CaseEvaluation();
     
-    public void initialize() {
-    }
     
+    /////////////////////////////////////////
+    //Konktrukcija i inicijalizacija
+    /////////////////////////////////////////
+    
+    // Prazni konstruktor
     public Case() {
     
         //this = Case("http://diana.zesoi.fer.hr/~jpetrovic/case_repository/car_starting/case_1/case.txt");
         //Case("http://diana.zesoi.fer.hr/~jpetrovic/case_repository/car_starting/case_1/case.txt");
     }
-    
+
+    // Inicijalizacija na temelju defaultnog linka ili zadanog
+    public void initialize() {
+    }
     public void initializeCase(String url) throws IOException {
 
         this.url = url;
@@ -114,37 +121,7 @@ public class Case implements Serializable {
 
     }
 
-    // evaluacija casea. tu bi trebalo vratit.
-    //(dijagnozu, cijenu, nepotrebni parametri?)
-    //(di je zapelo, procjenu do tamo, nepotrebni parametri)
-    
-    public CaseEvaluation evaluateCase(DT tree) {
-        
-        CaseEvaluation eval = new CaseEvaluation();
-        
-        String next_concept = tree.start_node;                                                  // pocetni cvor stabla
-        PropositionKey key; 
-        key = new PropositionKey(next_concept, parametersMap.get(next_concept));
-        
-        while ((next_concept != null) && (key.concept != null)) {                       // prodi po stablu: sumiraj cijene i dodi do kraja
-            eval.end_node = next_concept;                                           // Odi u iduci cvor stabla
-            key = new PropositionKey(next_concept, parametersMap.get(next_concept));  // Za taj cvor ispitaj vrijednost caseu
-            next_concept = tree.propositionsMap.get(key);                                 // Provjeri postoji li za to u stablu iduci cvor
-        }
-        
-        //ako je cvor u kojem je klasifikacija stala jedan od terminalnih cvorova stabla
-        if (tree.diagnoses.contains(eval.end_node)) {
-            eval.diagnosed = true;
-            // tu je greska...
-            for (Dijagnoza temp_diag : this.diagnoses)
-                if (temp_diag.getName().equals(eval.end_node))
-                    eval.correct = temp_diag.isCorrect();
-            
-        }
-        
-        return eval;
-    }
-    
+    // Tag parser. Tragi vrijednost taga u datoteci (Stringu)
     private ArrayList<String> parseTag(String text, String tag) {
         String temp_text = text;
         String start_tag = "<" + tag + ">";
@@ -163,6 +140,55 @@ public class Case implements Serializable {
         return tag_values;
     }
 
+    
+    
+    /////////////////////////////////////////
+    // Evaluacija casea
+    /////////////////////////////////////////
+    
+    public CaseEvaluation evaluateCase(DT tree) {
+        
+        CaseEvaluation eval = new CaseEvaluation();
+        
+        String next_concept = tree.start_node;                                                  // pocetni cvor stabla
+        PropositionKey key; 
+        key = new PropositionKey(next_concept, parametersMap.get(next_concept));
+        
+        // Provrti case po stablu
+        while ((next_concept != null) && (key.concept != null)) {                       // prodi po stablu: sumiraj cijene i dodi do kraja
+            
+            // Odredi iduci koncept
+            eval.end_node = next_concept;                                               // Odi u iduci cvor stabla
+            key = new PropositionKey(next_concept, parametersMap.get(next_concept));    // Za taj cvor ispitaj vrijednost caseu
+            next_concept = tree.propositionsMap.get(key);                               // Provjeri postoji li za to u stablu iduci cvor
+            
+            // Za taj koncept odredi moguce dijagnoze
+            ArrayList<String> possible_diagnoses = tree.getPossibleDiagnoses(next_concept);
+            
+            
+            
+        }
+        
+        //ako je cvor u kojem je klasifikacija stala jedan od terminalnih cvorova stabla
+        if (tree.diagnoses.contains(eval.end_node)) {
+            eval.diagnosed = true;
+            // tu je greska...
+            for (Dijagnoza temp_diag : this.diagnoses)
+                if (temp_diag.getName().equals(eval.end_node))
+                    eval.correct = temp_diag.isCorrect();
+            
+        }
+        
+        return eval;
+    }
+    
+    
+    
+    
+    /////////////////////////////////////////
+    // Getteri i setteri
+    /////////////////////////////////////////
+    
     public void setUrl(String url) {
         this.url = url;
     }
@@ -187,7 +213,13 @@ public class Case implements Serializable {
     public void setParametersMap(HashMap<String, String> parametersMap) {
         this.parametersMap = parametersMap;
     }
-
+    public void setEvaluation(CaseEvaluation evaluation) {
+        this.evaluation = evaluation;
+    }
+    
+    public CaseEvaluation getEvaluation() {
+        return evaluation;
+    }
     public String getUrl() {
         return url;
     }
