@@ -32,7 +32,8 @@ import org.jsoup.select.Elements;
 public class CaseBase {
     
     public ArrayList<String> url = new ArrayList<>();
-    public ArrayList<Case> cases  = new ArrayList<>();
+    public ArrayList<Case> cases = new ArrayList<>();
+    public ArrayList<Case> display_cases = new ArrayList<>();
     
     // Inicijalizacija bez argumenta znaci da ce se postaviti defaultna baza na Diani
     public void initialize() throws IOException {
@@ -66,6 +67,7 @@ public class CaseBase {
             this.cases.add(new_case);
             
         }
+        this.display_cases = this.cases;
     }
     
     // Ovo vraća ArrayList popis URL direktorija u svakom od kojih se nalazi 1 case
@@ -108,6 +110,14 @@ public class CaseBase {
                 if ((temp_diag.isCorrect()) && (diagnoses_list.contains(temp_diag.name)))
                     diagnoses_list.add(temp_diag.name);
         return diagnoses_list;
+    }
+
+    public ArrayList<Case> getDisplay_cases() {
+        return display_cases;
+    }
+
+    public void setDisplay_cases(ArrayList<Case> display_cases) {
+        this.display_cases = display_cases;
     }
     
     public Case getCase(int i) {

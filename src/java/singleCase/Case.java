@@ -28,8 +28,8 @@ public class Case implements Serializable {
     //private static final long serialVersionUID = 1L;
     
     // Parametri casea:
-    public String url, text, introduction, task, explanation;
-    public ArrayList<Dijagnoza> diagnoses = new ArrayList<>();      // Dijagnoza u kojem vec obliku
+    public String id, url, text, introduction, task, explanation;
+    public ArrayList<Dijagnoza> diagnoses = new ArrayList<>();      // DijagnozE - u kojem vec obliku - ukljucuju info o tocnosti
     public ArrayList<Parametar> parameters = new ArrayList<>();     // Parametri
     public HashMap<String,String> parametersMap = new HashMap<>();  // HMap parametara <ime vrijednost> za parametre casea
     public CaseEvaluation evaluation = new CaseEvaluation();
@@ -62,12 +62,16 @@ public class Case implements Serializable {
             this.text = case_file;
             
             //Tagovi prve razine: introduction, task, parameters, diagnoses, explanation
+            String id = parseTag(case_file, "ID").get(0);
             String introduction = parseTag(case_file, "Introduction").get(0);
             String task = parseTag(case_file, "Task").get(0);
             String parameters = parseTag(case_file, "Parameters").get(0);
             String diagnoses = parseTag(case_file, "Diagnoses").get(0);
             String explanation = parseTag(case_file, "Explanation").get(0);
 
+            //ID
+            this.id =id;
+            
             //Introduction
             this.introduction =introduction;
             
@@ -79,7 +83,7 @@ public class Case implements Serializable {
             for (String temp_parameter : temp_parameters) {
            
                 Parametar temp_parametar = new Parametar();
-           
+       
                 temp_parametar.setName(parseTag(temp_parameter, "Name").get(0));
                 temp_parametar.setSynonims(parseTag(temp_parameter, "Synonims").get(0));
                 temp_parametar.setReal_value(parseTag(temp_parameter, "Real value").get(0));
@@ -216,7 +220,28 @@ public class Case implements Serializable {
     public void setEvaluation(CaseEvaluation evaluation) {
         this.evaluation = evaluation;
     }
+
+    public String getId() {
+        return id;
+    }
+
+    public void setId(String id) {
+        this.id = id;
+    }
     
+    
+    
+    // Vraća PRVU točnu dijagnozu za case ili prazni objekt Dijagnoza ako nista ne nade
+    public Dijagnoza getCorrectDiagnosis() {
+    
+        for (Dijagnoza correct_diagnosis : this.diagnoses ) 
+            if (correct_diagnosis.correct) return correct_diagnosis;
+        
+        // Ako nista nisi nasao onda
+        Dijagnoza error_diagnosis = new Dijagnoza();
+        return error_diagnosis;
+    }
+            
     public CaseEvaluation getEvaluation() {
         return evaluation;
     }

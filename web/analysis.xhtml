@@ -15,33 +15,27 @@ and open the template in the editor.
     <h:head>
         <title>DT analysis</title>
         <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+        <h:outputStylesheet library="css" name="table-style.css"  />
         <h:outputScript library="js" name="toggle_details.js" />
     </h:head>
     <h:body id="body_id">
+    <f:view id="view_id">
 
-        <f:view id="view_id">
-
-            <p:layout id="full_page">
+        <h:form id="initializer">
+            #{CaseBase.initialize('http://diana.zesoi.fer.hr/~jpetrovic/case_repository/car_starting/')}
+            #{DT.initializeDT(Uploader.fileContent)}
+            #{CaseDetails.setAll(false, '0')}
+            #{CaseBase.evaluateBase(DT)}
+            #{PerDiagnosisDetails.setInfo('N/A')}
+        </h:form>
             
-            <h:form id="initializer">
-                #{CaseBase.initialize('http://diana.zesoi.fer.hr/~jpetrovic/case_repository/car_starting/')}
-                #{DT.initializeDT(Uploader.fileContent)}
-                #{CaseDetails.setAll(false, '0')}
-                #{CaseBase.evaluateBase(DT)}
-            </h:form>
+        <p:tabView id="tab_view">
+
+            <p:tab title="(1) Uploaded decision tree" id="DT_tab">
                 
-            <p:layoutUnit id="DT_description" position="west" header="Uploaded DT file description" collapsible="true" resizable="true" size="550" minSize="400" maxSize="900" style="margin-left:20px;margin-right:20px">
-                
-                <f:verbatim>
-                <br />
-                <b>Start node</b>:
-                </f:verbatim>
-                
+                <f:verbatim><br /><b>Start node</b>:</f:verbatim>
                 <ul><li>#{DT.start_node}</li></ul>
-                
-                <f:verbatim>
-                <b>Parsed propositions</b>:
-                </f:verbatim>
+                <f:verbatim><b>Parsed propositions</b>:</f:verbatim>
                 
                 <ul>
                 <ui:repeat value="#{DT.propositions}" var="item"> <!--http://stackoverflow.com/questions/20468236/using-foreach-loop-in-jsf-->
@@ -49,35 +43,28 @@ and open the template in the editor.
                 </ui:repeat>   
                 </ul>
                 
-                <b>Identified possible diagnoses</b>
+                <f:verbatim><b>Identified possible diagnoses</b></f:verbatim>
                 <ul>
                 <ui:repeat value="#{DT.diagnoses}" var="item"> <!--http://stackoverflow.com/questions/20468236/using-foreach-loop-in-jsf-->
                     <li>"#{item}"</li>
                 </ui:repeat>
                 </ul>
                 
-            </p:layoutUnit>
- 
-            <p:layoutUnit  position="center" id="DT_evaluation_main">
-
-                <p:layout id="DT_evaluation_sub" widgetVar="layoutWdgt">
-
-                <p:layoutUnit id="eval_list" position="center" header="DT evaluation" resizable="true" size="550" minSize="400" maxSize="900">
+            </p:tab>
+            
+            <p:tab title="(2) Case solving details" id="per_case_tab">
                 
-                <f:verbatim>
-                <br />
-                </f:verbatim>
-                
-                Evaluation <b>case by case</b> (case bases used: 
+                <f:verbatim><br />Evaluation <b>case by case</b> (case bases used: </f:verbatim>
                 <ui:repeat value="#{CaseBase.url}" var="item" varStatus="rbr">
-                     <h:outputLink value="#{item}">B#{rbr.index}</h:outputLink>
+                    <h:outputLink value="#{item}">B#{rbr.index}</h:outputLink>
                 </ui:repeat>):
                 
                 <ul>
                 <h:dataTable id="case_table" value="#{CaseBase.cases}" var="item" > <!--http://stackoverflow.com/questions/20468236/using-foreach-loop-in-jsf-->
                     <h:column>
                     <li>
-                    <h:outputLink value="#{item.url}" target="_blank">Case #{CaseBase.myIndexOf(item.url)}</h:outputLink>
+                    <!--CaseBase.myIndexOf(item.url) - redni broj inkrementalni-->    
+                    <h:outputLink value="#{item.url}" target="_blank">Case #{item.id}</h:outputLink>
                     <h:outputLabel value=" - Result: #{item.evaluation.end_node} " rendered="#{item.evaluation.diagnosed}" />
                     <h:graphicImage value="/images/tick.png" width="16" height="16" rendered="#{item.evaluation.diagnosed and item.evaluation.correct}"/>
                     <h:graphicImage value="/images/cross.png" width="16" height="16" rendered="#{!item.evaluation.diagnosed or !item.evaluation.correct}"/>
@@ -90,21 +77,58 @@ and open the template in the editor.
                     <h:form id="botun" style="display:inline" rendered="#{!item.evaluation.diagnosed or !item.evaluation.correct}">
                         <!-- ako su u drugim namespaceovima, mora ih se apsolutno adresirat: http://stackoverflow.com/questions/16597542/render-multiple-components-with-fajax plus sto treba dodat vrapper oblika istog elementa koji se refresha oko njega-->
                         <!--<h:outputLabel id="labela"><h:outputLabel id="labela1" value="Eto me1!" rendered="hash{CaseDetails.display}"/>-->
-                        <h:commandLink value="#{!item.evaluation.diagnosed ? '(Undiagnosed)':'(Incorrect)'}" action="#{CaseDetails.toggleDisplay()}">
-                            <f:ajax render="detailsPanel :f1:myPanel "/>
+                        <h:outputLabel>#{!item.evaluation.diagnosed ? '(Undiagnosed - ':'(Incorrect - '}</h:outputLabel>
+                        <h:commandLink value="details)" action="#{CaseDetails.toggleDisplay()}"  >
+                            <f:ajax render="caseDetailsPanel :f1:myPanel "/>
                         </h:commandLink>
-                        <p:panel id="detailsPanel" visible="true" closable="true" toggleable="true" collapsed="false" style="display: inline;border: white;margin: 0px;width: 100%">
-                            <p:panel rendered="#{CaseDetails.display}" >
-                                Prije je ovo bilo u h:commandLink action: #{CaseDetails.display} (odnosno toggleDisplay). Zato tu ispisujem razne stvari
+                        <!--Ako je collapsed postavljen na false, onda se ne vidi prije klikanja-->
+                        <p:panel id="caseDetailsPanel" visible="#{CaseDetails.display}" closable="true" toggleable="true" collapsed="#{!CaseDetails.display}" >
+                                <ui:fragment><b>Case correct solution:</b> #{item.getCorrectDiagnosis().name}</ui:fragment>
+                                <f:verbatim><br /><br /><b>Case evaluation path:</b><br /><br /></f:verbatim>
+                                <ul>
                                 <h:dataTable value="#{item.evaluation.path}" var="dvitem">
                                     <h:column>
-                                        #{dvitem.concept_one} (#{dvitem.link}) -> #{dvitem.concept_two}
+
+                                        <!-- Napisi svor koji se ispituje i vrijednost-->
+                                        <h:outputLabel rendered="#{dvitem.concept_one!=item.evaluation.end_node}" value="#{dvitem.concept_one} - #{dvitem.link} " />
+
+                                        <!-- fragment, OutputText, f:verbatim - http://stackoverflow.com/questions/14647274/houtputtext-is-not-breaking-lines-in-n-->
+                                        <!-- Provjeri je li sada odbačena dobra dijagnoza i to napisi ako je -->
+                                        <ui:fragment rendered="#{!DT.reachable_diagnoses.get(dvitem.concept_two).contains(item.getCorrectDiagnosis().name) and DT.reachable_diagnoses.get(dvitem.concept_one).contains(item.getCorrectDiagnosis().name)}"><ul><li><b>Correct diagnosis (</b><i>#{item.getCorrectDiagnosis().name}</i><b>) discarded.</b></li></ul></ui:fragment>
+
+                                        <!-- Provjeri je li dijagnoza gotova i napisi odgovarajuci zakljucak -->
+                                        <ui:fragment rendered="#{!item.evaluation.correct and (dvitem.concept_two == item.evaluation.end_node)}"><ul><li><b>Incorrect diagnosis reached:</b> <i>#{dvitem.concept_one}</i></li></ul></ui:fragment>
+                                        <f:verbatim rendered="#{!item.evaluation.diagnosed}"><br /><b>Case stuck in the non-diagnosis node!</b></f:verbatim>
+                                        
+                                        
+                                        <ui:remove>
+                                        <!--Ako je tocna dijagnoza iskljucena, onda to napisi-->
+                                        <f:verbatim rendered="#{!DT.reachable_diagnoses.get(dvitem.concept_two).contains(item.diagnoses.get(0))}"><br /><b>Correct diagnosis discarded!</b></f:verbatim>
+                                        <br /><h:outputLabel rendered="#{dvitem.concept_one!=item.evaluation.end_node}" value="#{DT.reachable_diagnoses.get(dvitem.concept_two)}" />
+                                        </ui:remove>
+
                                     </h:column>
-                                    
-                                    
                                 </h:dataTable>
-                            </p:panel>
+                                </ul>
+                                
+                                <f:verbatim><br /><b>DT corrections required:</b></f:verbatim>
+                                <h:dataTable value="#{item.evaluation.path}" var="dvitem">
+                                    <h:column>
+                                        
+                                    </h:column>
+                                
+                                </h:dataTable>
+                                <!-- Tu ispraviti DT i omoguciti preuzimanje-->
+                                
+                                <f:verbatim><ul><li>Tu nades sve caseove u bazi koji imaju iste parametre do sad,</li><li>onda te parametre iskljucis</li><li>i od caseova napravis DT</li><li>i od tog DTa tu ispises put do dijagnoze kojoj pripada ovaj case.</li></ul></f:verbatim>
+                                
+                                <ui:remove>
+                                    <!---->
+                                </ui:remove>
+                                
+                                
                         </p:panel>
+                            
                     </h:form>
                     
                     </li>
@@ -112,64 +136,172 @@ and open the template in the editor.
                 </h:dataTable>
                 </ul>
 
-                Evaluation <b>per final diagnosis</b> (case bases used: 
-                <ui:repeat value="#{CaseBase.url}" var="item" varStatus="rbr">
-                     <h:outputLink value="#{item}">B#{rbr.index}</h:outputLink>
-                </ui:repeat>):
                 
-                <ul>
-                <h:dataTable id="diagnosis_table" value="#{DT.evaluateTreeDecision(CaseBase)}" var="item" > <!--http://stackoverflow.com/questions/20468236/using-foreach-loop-in-jsf-->
-                    <h:column>
-                    <li>
-                    <h:outputLabel rendered="#{(item.FN.size()==0) or (item.FN.size() != item.undiagnosed.size())}">
-                            #{item.name}: <h:outputLink onclick="window.open('details.xhtml?foo=#{bean.foo}'', 'Detailed view', 'width=200, height=200, dependent=yes, menubar=no, toolbar=no'); return false;" value="#">N=#{item.total.size()}</h:outputLink>
-                            , precision=#{item.TP.size()/(item.TP.size()+item.FP.size())}, recall=#{item.TP.size()/(item.TP.size()+item.FN.size())}
-                    </h:outputLabel> 
-                    <h:outputLabel value="* #{item.name} - not included in the DT, but included in everal cases." rendered="#{(item.FN.size() == item.undiagnosed.size()) and (item.FN.size()>0)}"/> 
-                    <!--h:outputLabel value="hash{row==10? '10' : '15'}"/>-->
-                    </li>
-                    </h:column>
-                </h:dataTable>
-                </ul>   
-
-                    
-                </p:layoutUnit>
-                
-                <p:layoutUnit id="details_wrapper" position="east" visible="true" collapsed="false" collapsible="true" header="Details" resizable="true" size="600">    
+                <!--
+                <p:layoutUnit id="details_wrapper" position="east" visible="true" collapsed="false" collapsible="true" header="Case details" resizable="true" size="600">
                     <h:form id="f1">    
                         <p:panel  id="myPanel">
                     
                         <f:verbatim>
-                        <!--Tu bi trebao prikazivati neki objekt koji se refresha na klik na
-                        link u 2. containeru i prikazuje detaljne info o caseu ili dijagnozi-->
-                        fzufzufzufzufzuf #{CaseDetails.display}
+                        fzufzufzufzufzuf {CaseDetails.display}
                         </f:verbatim>
                         
                         </p:panel>
                     </h:form>
                     
                 </p:layoutUnit>
-                    
-                <p:layoutUnit position="south" resizable="true">
-                    
-                <f:verbatim>
-                <h3>3. DT improvements</h3>
-                </f:verbatim>
+                -->
                 
-                <h:outputLabel id="labela_ext">
-                    <h:outputLabel id="labela1_ext" value="Eto me2! #{CaseDetails.display}" rendered="#{CaseDetails.display}"/>
-                </h:outputLabel>
-
-                    
-                </p:layoutUnit>
-                
-                </p:layout>
-
-                    
-            </p:layoutUnit>
+            </p:tab>
             
-        </p:layout>
-        </f:view>
+            <p:tab title="(3) Diagnosis results" id="per_diagnosis_tab">
+                
+                <!-- Popis baza s caseovima -->
+                <f:verbatim><br />Evaluation <b>per final diagnosis</b> (case bases used: </f:verbatim>
+                <ui:repeat value="#{CaseBase.url}" var="item" varStatus="rbr"><h:outputLink value="#{item}">B#{rbr.index}</h:outputLink></ui:repeat>):<br /><br />
+                
+                <!-- Razrada po dijagnozama. Sve su ovo liste caseova, a ja im zasad samo gledam count. Kad kliknem na count onda dobijem  -->
+                <h:dataTable id="diagnosis_table" value="#{DT.evaluateTreeDecision(CaseBase)}" var="item" headerClass="order-table-header" columnClasses="order-table-left-centered-column,order-table-centered-column,order-table-right-centered-column,order-table-right-centered-column,order-table-centered-column,order-table-centered-column,order-table-centered-column,order-table-centered-column,order-table-centered-column"> <!--http://stackoverflow.com/questions/20468236/using-foreach-loop-in-jsf-->
+                    <h:column>
+                        <f:facet name="header">Diagnosis</f:facet>
+                        <ui:fragment>#{item.name}</ui:fragment>
+                    </h:column>
+                    <h:column >
+                        <f:facet name="header">Available test cases</f:facet>
+                        <h:form><p:commandLink rendered="#{item.total.size()>0}" value="#{item.total.size()}" actionListener="#{PerDiagnosisDetails.setAll(item.total,'ATC')}" update=":tab_view:casesPerDiagnosis"/></h:form>
+                        <h:outputText rendered="#{item.total.size()==0}" value="0" />
+                    </h:column>
+                    <h:column >
+                        <f:facet name="header">Precision</f:facet>
+                        #{ item.TP.size()+item.FP.size()>0 ? item.TP.size()*100/(item.TP.size()+item.FP.size()):"0.0"}%
+                    </h:column>
+                    <h:column >
+                        <f:facet name="header">Recall</f:facet>
+                        #{ item.TP.size()+item.FN.size()>0 ? item.TP.size()*100/(item.TP.size()+item.FN.size()):"0.0"}%
+                    </h:column>
+                    <h:column >
+                        <!-- Na temelju ovog sad treba apdejtat neku komponentu s arguemntima item.name i TP (to definira listu caseova)-->
+                        <!--http://stackoverflow.com/questions/8634156/how-to-find-out-client-id-of-component-for-ajax-update-render-cannot-find-compo-->
+                        <f:facet name="header">TP (<h:graphicImage value="/images/tick.png" width="16" height="16" />)</f:facet>
+                        <h:form><p:commandLink rendered="#{item.TP.size()>0}" value="#{item.TP.size()}" actionListener="#{PerDiagnosisDetails.setAll(item.TP,'TP')}" update=":tab_view:casesPerDiagnosis"/></h:form>
+                        <h:outputText rendered="#{item.TP.size()==0}" value="0" />
+                    </h:column>
+                    <h:column>
+                        <f:facet name="header">TN (<h:graphicImage value="/images/tick.png" width="16" height="16" />)</f:facet>
+                        <h:form><p:commandLink rendered="#{item.TN.size()>0}" value="#{item.TN.size()}" actionListener="#{PerDiagnosisDetails.setAll(item.TN,'TN')}" update=":tab_view:casesPerDiagnosis"/></h:form>
+                        <h:outputText rendered="#{item.TN.size()==0}" value="0" />
+                    </h:column>
+                    <h:column>
+                        <f:facet name="header">FP (<h:graphicImage value="/images/cross.png" width="16" height="16" />)</f:facet>
+                        <h:form><p:commandLink rendered="#{item.FP.size()>0}" value="#{item.FP.size()}" actionListener="#{PerDiagnosisDetails.setAll(item.FP,'FP')}" update=":tab_view:casesPerDiagnosis"/></h:form>
+                        <h:outputText rendered="#{item.FP.size()==0}" value="0" />
+                    </h:column>
+                    <h:column >
+                        <f:facet name="header">FN (<h:graphicImage value="/images/cross.png" width="16" height="16" />)</f:facet>
+                        <h:form><p:commandLink rendered="#{item.FN.size()>0}" value="#{item.FN.size()}" actionListener="#{PerDiagnosisDetails.setAll(item.FN,'FN')}" update=":tab_view:casesPerDiagnosis"/></h:form>
+                        <h:outputText rendered="#{item.FN.size()==0}" value="0" />
+                    </h:column>
+                    <h:column >
+                        <f:facet name="header">Undiagnosed (<h:graphicImage value="/images/cross.png" width="16" height="16" />)</f:facet>
+                        <h:form><p:commandLink rendered="#{item.undiagnosed.size()>0}" value="#{item.undiagnosed.size()}" actionListener="#{PerDiagnosisDetails.setAll(item.undiagnosed,'undiagnosed')}" update=":tab_view:casesPerDiagnosis"/></h:form>
+                        <h:outputText rendered="#{item.undiagnosed.size()==0}" value="0" />
+                    </h:column>
+                </h:dataTable>
+                
+                <f:verbatim><br /><br /></f:verbatim>
+                <p:panel id="casesPerDiagnosis" visible="true" closable="true" collapsed="false" toggleable="true" style="border: 0px">
+
+                    <h:outputText rendered="#{PerDiagnosisDetails.info=='FP'}" value="False positives " style="font-weight:bold"/><h:graphicImage value="/images/cross.png" width="16" height="16" rendered="#{PerDiagnosisDetails.info=='FP'}" />
+                    <h:outputText rendered="#{PerDiagnosisDetails.info=='TP'}" value="True positives " style="font-weight:bold"/><h:graphicImage value="/images/tick.png" width="16" height="16" rendered="#{PerDiagnosisDetails.info=='TP'}"/>
+                    <h:outputText rendered="#{PerDiagnosisDetails.info=='FN'}" value="False negatives " style="font-weight:bold"/><h:graphicImage value="/images/cross.png" width="16" height="16" rendered="#{PerDiagnosisDetails.info=='FN'}"/>
+                    <h:outputText rendered="#{PerDiagnosisDetails.info=='TN'}" value="True negatives " style="font-weight:bold"/><h:graphicImage value="/images/tick.png" width="16" height="16" rendered="#{PerDiagnosisDetails.info=='TN'}"/>
+                    <h:outputText rendered="#{PerDiagnosisDetails.info=='ATC'}" value="Available test cases " style="font-weight:bold"/>
+                    <h:outputText rendered="#{PerDiagnosisDetails.info=='UN'}" value="Undiagnosed " style="font-weight:bold"/><h:graphicImage value="/images/cross.png" width="16" height="16" rendered="#{PerDiagnosisDetails.info=='UN'}"/>
+                    <h:outputText rendered="#{PerDiagnosisDetails.info!='N/A'}" value=" for target diagnosis " />
+                    <h:outputText rendered="#{PerDiagnosisDetails.info!='N/A'}" value="#{PerDiagnosisDetails.display_cases.get(0).getCorrectDiagnosis().name}" style="font-weight:bold"/>
+                    <h:outputText rendered="#{PerDiagnosisDetails.info=='N/A'}" value=" click on a link to display details" style="font-style:italic"/>.
+                    <ul>
+                    <h:dataTable value="#{PerDiagnosisDetails.display_cases}" var="case">
+                        <h:column>
+                            <li>
+               
+                            <h:outputLink value="#{case.url}" target="_blank">Case #{case.id}</h:outputLink>
+                            <h:outputLabel value=" - Result: #{case.evaluation.end_node} " />
+                            <h:graphicImage value="/images/tick.png" width="16" height="16" rendered="#{case.evaluation.correct}" />
+                            <h:graphicImage value="/images/cross.png" width="16" height="16" rendered="#{!case.evaluation.correct}" />
+                            <h:outputText rendered="#{!case.evaluation.diagnosed}" value=" (Undiagnosed - " />
+                            <h:outputText rendered="#{case.evaluation.correct}" value=" (Correct - " />
+                            <h:outputText rendered="#{case.evaluation.diagnosed and !case.evaluation.correct}" value=" (Incorrect - " />
+                            <p:commandLink value="details" action="#{CaseDetails.toggleDisplay()}" update="case_details" />
+                            <h:outputText value=")" />
+
+                            <p:panel id="case_details" visible="#{CaseDetails.display}" closable="true" collapsed="#{!CaseDetails.display}" toggleable="true">
+                            
+                                <ui:fragment><b>Case correct solution:</b> #{case.getCorrectDiagnosis().name}</ui:fragment>
+                                <f:verbatim><br /><br /><b>Case evaluation path:</b><br /><br /></f:verbatim>
+                                <ul>
+                                <h:dataTable value="#{case.evaluation.path}" var="dvitem">
+                                    <h:column>
+
+                                        <h:outputLabel rendered="#{dvitem.concept_one!=item.evaluation.end_node}" value="#{dvitem.concept_one} - #{dvitem.link} " />
+                                        <ui:fragment rendered="#{!DT.reachable_diagnoses.get(dvitem.concept_two).contains(item.getCorrectDiagnosis().name) and DT.reachable_diagnoses.get(dvitem.concept_one).contains(item.getCorrectDiagnosis().name)}"><ul><li><b>Correct diagnosis (</b><i>#{item.getCorrectDiagnosis().name}</i><b>) discarded.</b></li></ul></ui:fragment>
+                                        <ui:fragment rendered="#{!item.evaluation.correct and (dvitem.concept_two == item.evaluation.end_node)}"><ul><li><b>Incorrect diagnosis reached:</b> <i>#{dvitem.concept_one}</i></li></ul></ui:fragment>
+                                        <f:verbatim rendered="#{!item.evaluation.diagnosed}"><br /><b>Case stuck in the non-diagnosis node!</b></f:verbatim>
+
+                                    </h:column>
+
+                                </h:dataTable>
+                                </ul>
+                                
+                                <f:verbatim><br /><b>DT corrections required:</b></f:verbatim>
+                                <h:dataTable value="#{item.evaluation.path}" var="dvitem">
+                                    <h:column>
+                                        
+                                    </h:column>
+                                
+                                </h:dataTable>
+                                <!-- Tu ispraviti DT i omoguciti preuzimanje-->
+                                
+                                <f:verbatim><ul><li>Tu nades sve caseove u bazi koji imaju iste parametre do sad,</li><li>onda te parametre iskljucis</li><li>i od caseova napravis DT</li><li>i od tog DTa tu ispises put do dijagnoze kojoj pripada ovaj case.</li></ul></f:verbatim>
+                                
+                                <ui:remove>
+                                    <!---->
+                                </ui:remove>
+
+                            
+                            </p:panel>
+                            </li>
+                        </h:column>
+                    </h:dataTable>
+                               
+                    </ul>
+                </p:panel>
+                
+            </p:tab>
+            
+            <p:tab title="(4) Decision tree analysis">
+                
+                <f:verbatim><b>Start node</b>:</f:verbatim>
+                <ul><li>#{DT.start_node}</li></ul>
+                <f:verbatim><b>Parsed propositions</b>:</f:verbatim>
+                
+                <ul>
+                <ui:repeat value="#{DT.propositions}" var="item"> <!--http://stackoverflow.com/questions/20468236/using-foreach-loop-in-jsf-->
+                    <li>"#{item.concept_one}"--"#{item.link}"-->"#{item.concept_two}"</li>
+                </ui:repeat>   
+                </ul>
+                
+                <f:verbatim><b>Identified possible diagnoses</b></f:verbatim>
+                <ul>
+                <ui:repeat value="#{DT.diagnoses}" var="item"> <!--http://stackoverflow.com/questions/20468236/using-foreach-loop-in-jsf-->
+                    <li>"#{item}"</li>
+                </ui:repeat>
+                </ul>
+                
+            </p:tab>
+            
+        </p:tabView>
         
+    </f:view>
     </h:body>
 </html>

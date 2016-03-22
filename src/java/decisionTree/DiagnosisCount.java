@@ -12,7 +12,9 @@ import singleCase.Case;
 /**
  *
  * @author juraj
- */
+ * Ovaj objekt ima liste caseova koji su TP/NP/FP/FN za dijagnozu name
+*/
+
 public class DiagnosisCount {
 
     public String name;
@@ -27,6 +29,7 @@ public class DiagnosisCount {
     public DiagnosisCount(String name) {
         this.name = name;
     }
+    
     
 
     public String getName() {

@@ -9,6 +9,7 @@ package decisionTree;
 /**
  *
  * @author juraj
+ * klasa propozicija. ima 
  */
 public class Proposition {
     

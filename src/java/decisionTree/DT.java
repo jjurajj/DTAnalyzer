@@ -2,6 +2,7 @@ package decisionTree;
 
 /**
  * @author juraj
+ * klasa koja opisuje DT koje ucita korisnik
  */
 
 import singleCase.Dijagnoza;
@@ -19,13 +20,17 @@ import javax.faces.bean.SessionScoped;
 @ManagedBean (name ="DT", eager = true)
 @SessionScoped
 
+
+// Pretpostavke:
+// Stablo ima jedan početni čvor
+// Smiju li se čvorovi ponavljati? Da, ali ako ih labeliram s #1 #2 #3 itd. I onda to treba implementirat u vrednovanje.
 public class DT implements Serializable {
     
-    public String start_node;
-    public ArrayList<Proposition> propositions = new ArrayList<>(); 
-    public ArrayList<String> diagnoses = new ArrayList<>();
-    public HashMap<PropositionKey, String> propositionsMap= new HashMap<>();
-    public HashMap<String, ArrayList<String>> reachable_diagnoses = new HashMap<>();
+    public String start_node;                                                       // početni čvor
+    public ArrayList<Proposition> propositions = new ArrayList<>();                 // lista svih propozicija
+    public ArrayList<String> diagnoses = new ArrayList<>();                         // lista dijagnoza
+    public HashMap<PropositionKey, String> propositionsMap= new HashMap<>();        // HashMap: ključ(string+value) -> idući čvor
+    public HashMap<String, ArrayList<String>> reachable_diagnoses = new HashMap<>();// HashMap: trenutni cvor -> sve dostupne dijagnoze
             
     //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -255,6 +260,7 @@ public class DT implements Serializable {
         return reachable_diagnoses;
     }
 
+   
     public void setReachable_diagnoses(HashMap<String, ArrayList<String>> reachable_diagnoses) {
         this.reachable_diagnoses = reachable_diagnoses;
     }

@@ -1,0 +1,39 @@
+/*
+To change this license header, choose License Headers in Project Properties.
+To change this template file, choose Tools | Templates
+and open the template in the editor.
+*/
+/* 
+    Created on : Mar 11, 2016, 4:58:23 PM
+    Author     : juraj
+    http://www.mkyong.com/jsf2/jsf-2-datatable-example/
+*/
+
+.order-table{   
+	border-collapse:collapse;
+}
+
+.order-table-header{
+	text-align:center;
+	background:none repeat scroll 0 0 #E5E5E5;
+	border-bottom:1px solid #BBBBBB;
+	padding:16px;
+}
+
+.order-table-centered-column{
+	text-align:center;
+        background:none repeat scroll 0 0 #F9F9F9;
+        border-top:1px solid #BBBBBB;
+}
+
+.order-table-left-centered-column{
+	text-align:left;
+        background:none repeat scroll 0 0 #F9F9F9;
+	border-top:1px solid #BBBBBB;
+}
+
+.order-table-right-centered-column{
+	text-align:right;
+	background:none repeat scroll 0 0 #F9F9F9;
+	border-top:1px solid #BBBBBB;
+}
