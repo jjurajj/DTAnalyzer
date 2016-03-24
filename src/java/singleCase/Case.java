@@ -16,6 +16,7 @@ import java.io.*;
 import java.math.BigDecimal;
 import java.net.URL;
 import java.util.HashMap;
+import java.util.Objects;
 import javax.faces.bean.ManagedBean;
 import java.util.Scanner;
 import javax.faces.bean.SessionScoped;
@@ -270,6 +271,9 @@ public class Case implements Serializable {
         return parametersMap;
     }
     
+    
+    
+    
     /*public String getCasePlainText() throws MalformedURLException {
         String text = "";
         URL case_url;
@@ -294,4 +298,19 @@ public class Case implements Serializable {
             return "NULL";
         }
     }*/
+
+    @Override
+    public boolean equals(Object obj) {
+        if (obj == null) {
+            return false;
+        }
+        if (getClass() != obj.getClass()) {
+            return false;
+        }
+        final Case other = (Case) obj;
+        if (!Objects.equals(this.id, other.id)) {
+            return false;
+        }
+        return true;
+    }
 }

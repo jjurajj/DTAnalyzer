@@ -31,15 +31,20 @@ public class DT implements Serializable {
     public ArrayList<String> diagnoses = new ArrayList<>();                         // lista dijagnoza
     public HashMap<PropositionKey, String> propositionsMap= new HashMap<>();        // HashMap: ključ(string+value) -> idući čvor
     public HashMap<String, ArrayList<String>> reachable_diagnoses = new HashMap<>();// HashMap: trenutni cvor -> sve dostupne dijagnoze
-            
+    public HashMap<String, String> concepts_map= new HashMap<>();                     // HashMap: ključ(string+value) -> idući čvor
+    
     //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     // Inicijalizacija stabla na temelju tekstualne datoteke koja ga opisuje
     public void initializeDT(String DT_text_file) {
   
-      ArrayList<String> left_concepts = new ArrayList<>();      // koncepti s lijeve strane
+      String tree_text = DT_text_file;                                      // plain text propozicije stabla s \t
+      String input_type="txt";
+      
+      if (tree_text.contains("concept-list")) {input_type="cxl";}           // odredi format inputa
+      
+      ArrayList<String> left_concepts = new ArrayList<>();      // koncepti s lijeve strane (za odredivanje pocetnog cvora)
       ArrayList<String> right_concepts = new ArrayList<>();     // koncepti s desne strane
-      String tree_text = DT_text_file;                           // plain text propozicije stabla s \t
       
       String separator = "\r\n";                                // odredi newline znak
       if (tree_text.contains("\r\n")) {separator = "\r\n";}
@@ -47,17 +52,88 @@ public class DT implements Serializable {
       else if (tree_text.contains("\r")) {separator = "\r";}
       else {System.out.println("Unknown newline character!");} 
       
-      String[] lines = tree_text.split(separator);              //splitaj tekst u linije propozicije
       this.propositions.clear();
-      for (String line : lines) {                               
+      
+      if (input_type=="txt") {
+      
+          String[] lines = tree_text.split(separator);              //splitaj tekst u linije propozicije
+
+          for (String line : lines) {                               
+            String[] p_split = line.split("\t");                  // svaku liniju pretvori u C1-L-C2
+            left_concepts.add(p_split[0]);
+            right_concepts.add(p_split[2]);
           
-          String[] p_split = line.split("\t");                  // svaku liniju pretvori u C1-L-C2
-          left_concepts.add(p_split[0]);
-          right_concepts.add(p_split[2]);
+            this.propositions.add(new Proposition(p_split[0], p_split[1], p_split[2]));
+            PropositionKey key = new PropositionKey(p_split[0], p_split[1]);
+            this.propositionsMap.put(key, p_split[2]);            // propozicije stavi i u hashmapu
+            
+            if (!this.concepts_map.containsKey(p_split[0]))
+                this.concepts_map.put(p_split[0],p_split[0]);
+            if (!this.concepts_map.containsKey(p_split[2]))
+                this.concepts_map.put(p_split[2],p_split[2]);
+          }
+      
+      } else if (input_type=="cxl") {                             // Ako je cxl file onda nadi linije koje mi trebaju
+          // concept-list 
+          // linking-phrase-list
+          // connection-list
           
-          this.propositions.add(new Proposition(p_split[0], p_split[1], p_split[2]));
-          PropositionKey key = new PropositionKey(p_split[0], p_split[1]);
-          this.propositionsMap.put(key, p_split[2]);            // propozicije stavi i u hashmapu
+          tree_text=tree_text.replace("&#xa;"," ");
+          
+          String concept_list=(String) tree_text.subSequence(tree_text.indexOf("<concept-list>")+15,tree_text.indexOf("</concept-list>")-1);
+          String tmp_concept_lines=concept_list.substring(concept_list.indexOf("<concept id="),concept_list.lastIndexOf("/>")+2);
+          String[] concept_lines=tmp_concept_lines.split(separator);   
+          
+          String link_list=(String) tree_text.subSequence(tree_text.indexOf("<linking-phrase-list")+21,tree_text.indexOf("</linking-phrase-list>")-1);
+          String tmp_link_lines = link_list.substring(link_list.indexOf("<linking-phrase id="), link_list.lastIndexOf("/>")+2);
+          String[] link_lines=tmp_link_lines.split(separator);   
+          
+          String connection_list=(String) tree_text.subSequence(tree_text.indexOf("<connection-list>")+18,tree_text.indexOf("</connection-list>")-1);
+          String tmp_connection_lines = connection_list.substring(connection_list.indexOf("<connection id="),connection_list.lastIndexOf("/>")+2);
+          String[] connection_lines=tmp_connection_lines.split(separator);
+          
+          for (String line : concept_lines) {
+              if (line.contains("concept id=")) {
+                  String id=(String) line.subSequence(line.indexOf("id=\"")+4, line.indexOf("\" "));
+                  String label=(String) line.subSequence(line.indexOf("label=\"")+7, line.indexOf("\"/>"));
+                  this.concepts_map.put(id, label);
+              }
+          }
+
+          HashMap<String, String> links_map= new HashMap<>();
+          for (String line : link_lines) {
+              if (line.contains("linking-phrase id=")) {
+                  String id=(String) line.subSequence(line.indexOf("id=\"")+4, line.indexOf("\" "));
+                  String label=(String) line.subSequence(line.indexOf("label=\"")+7, line.indexOf("\"/>"));
+                  links_map.put(id, label);
+              }
+          }
+          
+          ArrayList<String> left_con = new ArrayList<>();
+          ArrayList<String> right_con = new ArrayList<>();
+          for (String line : connection_lines) {
+              if (line.contains("connection id=")) {
+                  String from=(String) line.subSequence(line.indexOf("from-id=\"")+9, line.indexOf("\" to-id"));
+                  String to=(String) line.subSequence(line.indexOf("to-id=\"")+7, line.indexOf("\"/>"));
+                  left_con.add(from);
+                  right_con.add(to);
+              }
+          }
+          
+          // pohranjujem propozicije u obliku concept1_id-link_name-concept2_id
+          for (int i=0; i<left_con.size(); i++) {           // Prodi kroz sve lijeve koncepte
+              String left=left_con.get(i);
+              if (this.concepts_map.containsKey(left)) {    // Ako se s lijeve strane nalazi koncept a ne link
+                  String right=right_con.get(left_con.indexOf(right_con.get(i)));
+                  
+                  left_concepts.add(left);
+                  right_concepts.add(right);
+              
+                  this.propositions.add(new Proposition(left, links_map.get(right_con.get(i)), right));
+                  PropositionKey key = new PropositionKey(left, links_map.get(right_con.get(i)));
+                  this.propositionsMap.put(key, right);      // propozicije stavi i u hashmapu
+              }
+          }
       }
       
       for (String concept : left_concepts )                     // Odredimo korijen stabla
@@ -66,11 +142,11 @@ public class DT implements Serializable {
       ArrayList<String> leaves = new ArrayList<>();             // listovi stabla
       for (String concept : right_concepts)                     // su cvorovi koji nikad nisu lijevi
           if (left_concepts.contains(concept) == false) leaves.add(concept);
-      this.setDiagnoses(leaves);
+            this.setDiagnoses(leaves);
       
       // reachable diagnoses
       setReachableDiagnoses(start_node);
-      
+          
     }
     
     // Rekurzija koja postavi hashmap reachable_diagnoses za svu djecu zadanog cvora
@@ -259,8 +335,13 @@ public class DT implements Serializable {
     public HashMap<String, ArrayList<String>> getReachable_diagnoses() {
         return reachable_diagnoses;
     }
-
-   
+    public String getName(String id) {
+        if (this.concepts_map.containsKey(id))
+            return this.concepts_map.get(id);
+        else
+            return "Concetp name not found.";
+    }
+    
     public void setReachable_diagnoses(HashMap<String, ArrayList<String>> reachable_diagnoses) {
         this.reachable_diagnoses = reachable_diagnoses;
     }

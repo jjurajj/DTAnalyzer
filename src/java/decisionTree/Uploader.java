@@ -33,8 +33,6 @@ public class Uploader implements Serializable {
 
     if (file.getSize() > 1024*1024) { // 1 MB je upload limit
         msgs.add(new FacesMessage("File too big! Max upload limit: 1 MB."));
-    } else if (!"text/plain".equals(file.getContentType())) {
-        msgs.add(new FacesMessage("Error! Not a text file."));
     } else if (!msgs.isEmpty()) {
         throw new ValidatorException(msgs);
     } else {                                   // Ako je validacija prosla OK
