@@ -23,7 +23,7 @@ import javax.faces.bean.SessionScoped;
 
 // Pretpostavke:
 // Stablo ima jedan početni čvor
-// Smiju li se čvorovi ponavljati? Da, ali ako ih labeliram s #1 #2 #3 itd. I onda to treba implementirat u vrednovanje.
+// Čvorovi stabla zadani su s IDjem. zato jer se mogu ponavljati nazivi. 
 public class DT implements Serializable {
     
     public String start_node;                                                       // početni čvor
@@ -31,10 +31,8 @@ public class DT implements Serializable {
     public ArrayList<String> diagnoses = new ArrayList<>();                         // lista dijagnoza
     public HashMap<PropositionKey, String> propositionsMap= new HashMap<>();        // HashMap: ključ(string+value) -> idući čvor
     public HashMap<String, ArrayList<String>> reachable_diagnoses = new HashMap<>();// HashMap: trenutni cvor -> sve dostupne dijagnoze
-    public HashMap<String, String> concepts_map= new HashMap<>();                     // HashMap: ključ(string+value) -> idući čvor
+    public HashMap<String, String> concepts_map= new HashMap<>();                   // HashMap: ključ(string+value) -> idući čvor
     
-    //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     // Inicijalizacija stabla na temelju tekstualne datoteke koja ga opisuje
     public void initializeDT(String DT_text_file) {
   
@@ -141,14 +139,13 @@ public class DT implements Serializable {
       
       ArrayList<String> leaves = new ArrayList<>();             // listovi stabla
       for (String concept : right_concepts)                     // su cvorovi koji nikad nisu lijevi
-          if (left_concepts.contains(concept) == false) leaves.add(concept);
-            this.setDiagnoses(leaves);
+          if ((left_concepts.contains(concept) == false) && (leaves.contains(concept)==false)) leaves.add(concept);
+      this.setDiagnoses(leaves);
       
       // reachable diagnoses
       setReachableDiagnoses(start_node);
           
     }
-    
     // Rekurzija koja postavi hashmap reachable_diagnoses za svu djecu zadanog cvora
     public ArrayList<String> setReachableDiagnoses (String node) {
         
@@ -174,9 +171,6 @@ public class DT implements Serializable {
             return reachable_diagnoses;
         }
     }
-    
-    //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     // Analiza stabla na tebelju baze caseova
     // Vraca liste caseova (N, TP, FP, TN, FN, undiag) za svaku dijagnozu dostupnu u bazi
     public ArrayList<DiagnosisCount> evaluateTreeDecision (CaseBase base) {
@@ -202,7 +196,9 @@ public class DT implements Serializable {
                     
                     // Evaluacija casea
                     // Evaluiraj trenutni case i povecaj odgovarajuce vrijednosti kod klasifikacije (N, Tp, TN, FP, FN, undiagnosed)
-                    CaseEvaluation temp_eval = temp_case.evaluateCase(this);
+                    //CaseEvaluation temp_eval = temp_case.evaluateCase(this);
+                    CaseEvaluation temp_eval = temp_case.evaluation;
+                            
                     if (!temp_eval.diagnosed) {                                             //ako se ne klsificira dodaj case u undiagnosed
                         diagnosis_count.get(temp_diag.name).undiagnosed.add(temp_case);     // i provjeri jel ta dijagnoza uopce postoji u stablu
                         if ((!this.diagnoses.contains(temp_diag.name)) && (!excluded.contains(temp_diag.name)))
@@ -242,9 +238,10 @@ public class DT implements Serializable {
        
        // key mi je za odredivanje iduceg cvora stabla (par trenutni cvor i vrijednost tog parametra u caseu)
        PropositionKey key; 
-       key = new PropositionKey(next_concept, current_case.parametersMap.get(next_concept));
+       key = new PropositionKey(next_concept, current_case.parametersMap.get(getName(next_concept)));
 
        // Prodemo po stablu dok ima sljedeceg koncepta u stablu i dok case ima parametar (kljuc) za njega
+       String end_concept=next_concept;
        while ((next_concept != null) && (key.concept != null)) {
            
            // Sad prolazim po caseu. Tu radim sve sto trebam raditi:
@@ -252,10 +249,11 @@ public class DT implements Serializable {
            // Pamtim koje su jos moguce / potrebne / discardible dijagnoze
 
            String prevoius_concept = next_concept;
+           end_concept=next_concept;
            // Odredi iduci koncept
-           case_eval.end_node = next_concept;                                                      // Do kud je case dosao
-           key = new PropositionKey(next_concept, current_case.parametersMap.get(next_concept));   // Za taj cvor ispitaj vrijednost caseu
-           next_concept = this.propositionsMap.get(key);                                           // Provjeri postoji li za to u stablu iduci cvor
+           case_eval.end_node = getName(next_concept);                                                      // Do kud je case dosao
+           key = new PropositionKey(next_concept, current_case.parametersMap.get(getName(next_concept)));   // Za taj cvor ispitaj vrijednost caseu
+           next_concept = this.propositionsMap.get(key);                                                    // Provjeri postoji li za to u stablu iduci cvor
             
            // Za taj koncept dohvati moguce dijagnoze na temelju stabla
            ArrayList<String> reachable_diagnoses = new ArrayList<>();
@@ -268,13 +266,13 @@ public class DT implements Serializable {
            // Trenutnu propoziciju
            // Trenutno moguce dijagnoze
            // Potrebne dijagnoze. Tu jos treba rijesit uniju, razliku u presjek
-           case_eval.path.add(new Proposition(key.concept, key.value, next_concept));
+           case_eval.path.add(new Proposition(getName(key.concept), key.value, getName(next_concept)));
            case_eval.diags_per_node.add(reachable_diagnoses);
             
         }
         
         //ako je cvor u kojem je klasifikacija stala jedan od terminalnih cvorova stabla
-        if (this.diagnoses.contains(case_eval.end_node)) {
+        if (this.diagnoses.contains(end_concept)) {
             case_eval.diagnosed = true;
             // tu je greska...
             for (Dijagnoza temp_diag : current_case.diagnoses)

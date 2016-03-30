@@ -35,18 +35,27 @@ and open the template in the editor.
                 
                 <f:verbatim><br /><b>Start node</b>:</f:verbatim>
                 <ul><li>#{DT.getName(DT.start_node)}</li></ul>
-                <f:verbatim><b>Parsed propositions</b>:</f:verbatim>
+                <f:verbatim><b>Parsed propositions</b>:<br /><br /></f:verbatim>
                 
-                <ul>
-                <ui:repeat value="#{DT.propositions}" var="item"> <!--http://stackoverflow.com/questions/20468236/using-foreach-loop-in-jsf-->
-                    <li>"#{DT.getName(item.concept_one)}"--"#{item.link}"-->"#{DT.getName(item.concept_two)}"</li>
-                </ui:repeat>   
-                </ul>
+                <h:dataTable value="#{DT.propositions}" var="item">
+                    <h:column>
+                        <f:facet name="header">Concept</f:facet>
+                        #{DT.getName(item.concept_one)}
+                    </h:column>
+                    <h:column >
+                        <f:facet name="header">Value</f:facet>
+                        #{item.link}
+                    </h:column>
+                    <h:column >
+                        <f:facet name="header">Next concept</f:facet>
+                        #{DT.getName(item.concept_two)}
+                    </h:column>
+                </h:dataTable>
                 
-                <f:verbatim><b>Identified possible diagnoses</b></f:verbatim>
+                <f:verbatim><br /><b>Identified possible diagnoses:</b></f:verbatim>
                 <ul>
                 <ui:repeat value="#{DT.diagnoses}" var="item"> <!--http://stackoverflow.com/questions/20468236/using-foreach-loop-in-jsf-->
-                    <li>"#{DT.getName(item)}"</li>
+                    <li>#{DT.getName(item)}</li>
                 </ui:repeat>
                 </ul>
                 
@@ -57,58 +66,62 @@ and open the template in the editor.
                 <f:verbatim><br />Evaluation <b>case by case</b> (case bases used: </f:verbatim>
                 <ui:repeat value="#{CaseBase.url}" var="item" varStatus="rbr">
                     <h:outputLink value="#{item}">B#{rbr.index}</h:outputLink>
-                </ui:repeat>):
+                </ui:repeat>
+                <f:verbatim>):<br /><br /></f:verbatim>
                 
-                <ul>
-                <h:dataTable id="case_table" value="#{CaseBase.cases}" var="item" > <!--http://stackoverflow.com/questions/20468236/using-foreach-loop-in-jsf-->
+                <h:dataTable id="perCaseTable" value="#{CaseBase.cases}" var="case" headerClass="order-table-header" columnClasses="order-table-centered-column,order-table-left-centered-column,order-table-centered-column,order-table-left-centered-column,order-table-centered-column">
                     <h:column>
-                    <li>
-                    <!--CaseBase.myIndexOf(item.url) - redni broj inkrementalni-->    
-                    <h:outputLink value="#{item.url}" target="_blank">Case #{item.id}</h:outputLink>
-                    <h:outputLabel value=" - Result: #{item.evaluation.end_node} " rendered="#{item.evaluation.diagnosed}" />
-                    <h:graphicImage value="/images/tick.png" width="16" height="16" rendered="#{item.evaluation.diagnosed and item.evaluation.correct}"/>
-                    <h:graphicImage value="/images/cross.png" width="16" height="16" rendered="#{!item.evaluation.diagnosed or !item.evaluation.correct}"/>
-                    
-                    <!--Ako nije dijagnosticiran. Ovo treba pretvorit u link koji pokazuje stvar detaljnije-->
-                    <h:outputLabel value=" (Undiagnosed)" rendered="#{!item.evaluation.diagnosed}" />
-                    <!--Ako je krivo dijagnosticiran-->
-                    
-                    <!--Render:false nije isto sto i display:none!!!  http://stackoverflow.com/questions/13777678/ajax-render-attribute-doesnt-work-with-rendered-false-component-->
-                    <h:form id="botun" style="display:inline" rendered="#{!item.evaluation.diagnosed or !item.evaluation.correct}">
-                        <!-- ako su u drugim namespaceovima, mora ih se apsolutno adresirat: http://stackoverflow.com/questions/16597542/render-multiple-components-with-fajax plus sto treba dodat vrapper oblika istog elementa koji se refresha oko njega-->
-                        <!--<h:outputLabel id="labela"><h:outputLabel id="labela1" value="Eto me1!" rendered="hash{CaseDetails.display}"/>-->
-                        <h:outputLabel>#{!item.evaluation.diagnosed ? '(Undiagnosed - ':'(Incorrect - '}</h:outputLabel>
-                        <h:commandLink value="details)" action="#{CaseDetails.toggleDisplay()}"  >
-                            <f:ajax render="caseDetailsPanel :f1:myPanel "/>
-                        </h:commandLink>
-                        <!--Ako je collapsed postavljen na false, onda se ne vidi prije klikanja-->
-                        <p:panel id="caseDetailsPanel" visible="#{CaseDetails.display}" closable="true" toggleable="true" collapsed="#{!CaseDetails.display}" >
-                                <ui:fragment><b>Case correct solution:</b> #{item.getCorrectDiagnosis().name}</ui:fragment>
-                                <f:verbatim><br /><br /><b>Case evaluation path:</b><br /><br /></f:verbatim>
+                        <f:facet name="header">Case ID</f:facet>
+                        <ui:fragment>#{case.id}</ui:fragment>
+                    </h:column>
+                    <h:column>
+                        <f:facet name="header">Result</f:facet>
+                        <h:outputLabel value="#{case.evaluation.end_node} " rendered="#{case.evaluation.diagnosed}" />
+                        <h:outputLabel value="#{case.evaluation.end_node} (undiagnosed)" rendered="#{!case.evaluation.diagnosed}" />
+                    </h:column>                        
+                    <h:column>
+                        <f:facet name="header">Correct</f:facet>
+                        <h:graphicImage value="/images/tick.png" width="16" height="16" rendered="#{case.evaluation.diagnosed and case.evaluation.correct}"/>
+                        <h:graphicImage value="/images/cross.png" width="16" height="16" rendered="#{!case.evaluation.diagnosed or !case.evaluation.correct}"/>
+                    </h:column>
+                    <h:column>
+                        <f:facet name="header">Correct solution</f:facet>
+                        <ui:fragment>#{case.getCorrectDiagnosis().name}</ui:fragment>
+                    </h:column>
+                    <h:column>
+                        <f:facet name="header">Investigate</f:facet>
+                        <h:form><h:outputLink value="#{case.url}" target="_blank">Full case</h:outputLink> / <p:commandLink value="Details" actionListener="#{PerDiagnosisDetails.setSingle(case,case.id)}" update=":tab_view:perCaseDetails"/></h:form>
+                    </h:column>
+                </h:dataTable>
+                
+                <f:verbatim><br /><br /></f:verbatim>
+                <p:panel id="perCaseDetails" visible="true" closable="true" collapsed="false" toggleable="true" style="border: 0px">
+                    <h:dataTable value="#{PerDiagnosisDetails.display_cases}" var="case">
+                        <h:column>
+                            <h:outputLink value="#{case.url}" target="_blank">Case #{case.id}</h:outputLink>
+                            <h:outputText value=" - Result: #{case.evaluation.end_node} " />
+                            <h:graphicImage value="/images/tick.png" width="16" height="16" rendered="#{case.evaluation.correct}" />
+                            <h:graphicImage value="/images/cross.png" width="16" height="16" rendered="#{!case.evaluation.correct}" />
+                            <h:outputText rendered="#{!case.evaluation.diagnosed}" value=" (Undiagnosed - " />
+                            <h:outputText rendered="#{case.evaluation.correct}" value=" (Correct - " />
+                            <h:outputText rendered="#{case.evaluation.diagnosed and !case.evaluation.correct}" value=" (Incorrect - " />
+                            <p:commandLink value="details"  action="#{PerDiagnosisDetails.toggleDisplay(case)}" update="case_details" />
+                            <h:outputText value=")" />
+
+                            <p:panel id="case_details" visible="#{PerDiagnosisDetails.getDisplay(case)}" closable="true" toggleable="true">
+                            
+                                <ui:fragment><b>Case correct solution:</b> #{case.getCorrectDiagnosis().name}<br /><br /></ui:fragment>
+                                <ui:fragment><b>Case evaluation path:</b><br /><br /></ui:fragment>
                                 <ul>
-                                <h:dataTable value="#{item.evaluation.path}" var="dvitem">
-                                    <h:column>
+                                <h:dataTable value="#{case.evaluation.path}" var="path_proposition"><h:column>
 
-                                        <!-- Napisi svor koji se ispituje i vrijednost-->
-                                        <h:outputLabel rendered="#{dvitem.concept_one!=item.evaluation.end_node}" value="#{dvitem.concept_one} - #{dvitem.link} " />
+                                        <h:outputText rendered="#{case.evaluation.diagnosed and path_proposition.concept_one!=case.evaluation.end_node or !case.evaluation.diagnosed}" value="#{path_proposition.concept_one} - #{path_proposition.link} " />
+                                        <ui:fragment rendered="#{!DT.reachable_diagnoses.get(path_proposition.concept_two).contains(case.getCorrectDiagnosis().name) and DT.reachable_diagnoses.get(path_proposition.concept_one).contains(case.getCorrectDiagnosis().name)}"><ul><li><b>Correct diagnosis (</b><i>#{case.getCorrectDiagnosis().name}</i><b>) discarded.</b></li></ul></ui:fragment>
+                                        <ui:fragment rendered="#{!case.evaluation.correct and case.evaluation.diagnosed and (path_proposition.concept_two==case.evaluation.end_node)}"><ul><li><b>Incorrect diagnosis reached:</b> <i>#{path_proposition.concept_two}</i></li></ul></ui:fragment>
+                                        <ui:fragment rendered="#{case.evaluation.correct and (path_proposition.concept_two==case.evaluation.end_node)}"><ul><li><b>Correct diagnosis reached:</b> <i>#{path_proposition.concept_two}</i></li></ul></ui:fragment>
+                                        <ui:fragment rendered="#{!case.evaluation.diagnosed and (path_proposition.concept_one==case.evaluation.end_node)}"><ul><li><b>Case stuck in the non-diagnosis node!</b></li></ul></ui:fragment>
 
-                                        <!-- fragment, OutputText, f:verbatim - http://stackoverflow.com/questions/14647274/houtputtext-is-not-breaking-lines-in-n-->
-                                        <!-- Provjeri je li sada odbačena dobra dijagnoza i to napisi ako je -->
-                                        <ui:fragment rendered="#{!DT.reachable_diagnoses.get(dvitem.concept_two).contains(item.getCorrectDiagnosis().name) and DT.reachable_diagnoses.get(dvitem.concept_one).contains(item.getCorrectDiagnosis().name)}"><ul><li><b>Correct diagnosis (</b><i>#{item.getCorrectDiagnosis().name}</i><b>) discarded.</b></li></ul></ui:fragment>
-
-                                        <!-- Provjeri je li dijagnoza gotova i napisi odgovarajuci zakljucak -->
-                                        <ui:fragment rendered="#{!item.evaluation.correct and (dvitem.concept_two == item.evaluation.end_node)}"><ul><li><b>Incorrect diagnosis reached:</b> <i>#{dvitem.concept_one}</i></li></ul></ui:fragment>
-                                        <f:verbatim rendered="#{!item.evaluation.diagnosed}"><br /><b>Case stuck in the non-diagnosis node!</b></f:verbatim>
-                                        
-                                        
-                                        <ui:remove>
-                                        <!--Ako je tocna dijagnoza iskljucena, onda to napisi-->
-                                        <f:verbatim rendered="#{!DT.reachable_diagnoses.get(dvitem.concept_two).contains(item.diagnoses.get(0))}"><br /><b>Correct diagnosis discarded!</b></f:verbatim>
-                                        <br /><h:outputLabel rendered="#{dvitem.concept_one!=item.evaluation.end_node}" value="#{DT.reachable_diagnoses.get(dvitem.concept_two)}" />
-                                        </ui:remove>
-
-                                    </h:column>
-                                </h:dataTable>
+                                </h:column></h:dataTable>
                                 </ul>
                                 
                                 <f:verbatim><br /><b>DT corrections required:</b></f:verbatim>
@@ -125,32 +138,14 @@ and open the template in the editor.
                                 <ui:remove>
                                     <!---->
                                 </ui:remove>
-                                
-                                
-                        </p:panel>
-                            
-                    </h:form>
-                    
-                    </li>
-                    </h:column>
-                </h:dataTable>
-                </ul>
 
+                            
+                            </p:panel>
+                        </h:column>
+                    </h:dataTable>
+                               
+                </p:panel>
                 
-                <!--
-                <p:layoutUnit id="details_wrapper" position="east" visible="true" collapsed="false" collapsible="true" header="Case details" resizable="true" size="600">
-                    <h:form id="f1">    
-                        <p:panel  id="myPanel">
-                    
-                        <f:verbatim>
-                        fzufzufzufzufzuf {CaseDetails.display}
-                        </f:verbatim>
-                        
-                        </p:panel>
-                    </h:form>
-                    
-                </p:layoutUnit>
-                -->
                 
             </p:tab>
             
@@ -219,7 +214,7 @@ and open the template in the editor.
                     <h:outputText rendered="#{PerDiagnosisDetails.info=='UN'}" value="Undiagnosed " style="font-weight:bold"/><h:graphicImage value="/images/cross.png" width="16" height="16" rendered="#{PerDiagnosisDetails.info=='UN'}"/>
                     <h:outputText rendered="#{PerDiagnosisDetails.info!='N/A'}" value=" for target diagnosis " />
                     <h:outputText rendered="#{PerDiagnosisDetails.info!='N/A'}" value="#{PerDiagnosisDetails.display_cases.get(0).getCorrectDiagnosis().name}" style="font-weight:bold"/>
-                    <h:outputText rendered="#{PerDiagnosisDetails.info=='N/A'}" value=" click on a link to display details" style="font-style:italic"/>.
+                    <h:outputText rendered="#{PerDiagnosisDetails.info=='N/A'}" value=" Click on a link to display details" style="font-style:italic"/>.
                     <ul>
                     <h:dataTable value="#{PerDiagnosisDetails.display_cases}" var="case">
                         <h:column>
@@ -242,11 +237,11 @@ and open the template in the editor.
                                 <ul>
                                 <h:dataTable value="#{case.evaluation.path}" var="path_proposition"><h:column>
 
-                                        <h:outputText rendered="#{path_proposition.concept_one!=case.evaluation.end_node}" value="#{path_proposition.concept_one} - #{path_proposition.link} " />
+                                        <h:outputText rendered="#{case.evaluation.diagnosed and path_proposition.concept_one!=case.evaluation.end_node or !case.evaluation.diagnosed}" value="#{path_proposition.concept_one} - #{path_proposition.link} " />
                                         <ui:fragment rendered="#{!DT.reachable_diagnoses.get(path_proposition.concept_two).contains(case.getCorrectDiagnosis().name) and DT.reachable_diagnoses.get(path_proposition.concept_one).contains(case.getCorrectDiagnosis().name)}"><ul><li><b>Correct diagnosis (</b><i>#{case.getCorrectDiagnosis().name}</i><b>) discarded.</b></li></ul></ui:fragment>
-                                        <ui:fragment rendered="#{!case.evaluation.correct and (path_proposition.concept_two==case.evaluation.end_node)}"><ul><li><b>Incorrect diagnosis reached:</b> <i>#{path_proposition.concept_one}</i></li></ul></ui:fragment>
-                                        <ui:fragment rendered="#{case.evaluation.correct and (path_proposition.concept_two==case.evaluation.end_node)}"><ul><li><b>Correct diagnosis reached:</b> <i>#{path_proposition.concept_one}</i></li></ul></ui:fragment>
-                                        <ui:fragment rendered="#{!case.evaluation.diagnosed and (path_proposition.concept_two==case.evaluation.end_node)}"><ul><li><b>Case stuck in the non-diagnosis node!</b></li></ul></ui:fragment>
+                                        <ui:fragment rendered="#{!case.evaluation.correct and case.evaluation.diagnosed and (path_proposition.concept_two==case.evaluation.end_node)}"><ul><li><b>Incorrect diagnosis reached:</b> <i>#{path_proposition.concept_two}</i></li></ul></ui:fragment>
+                                        <ui:fragment rendered="#{case.evaluation.correct and (path_proposition.concept_two==case.evaluation.end_node)}"><ul><li><b>Correct diagnosis reached:</b> <i>#{path_proposition.concept_two}</i></li></ul></ui:fragment>
+                                        <ui:fragment rendered="#{!case.evaluation.diagnosed and (path_proposition.concept_one==case.evaluation.end_node)}"><ul><li><b>Case stuck in the non-diagnosis node!</b></li></ul></ui:fragment>
 
                                 </h:column></h:dataTable>
                                 </ul>

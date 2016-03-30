@@ -38,6 +38,17 @@ public class PerDiagnosisDetails {
             this.display.add(false);
         }
     }
+
+    public void setSingle(Case display_case, String info) {
+        this.info=info;
+        
+        this.display_cases = new ArrayList<>();
+        this.display_cases.add(display_case);
+        
+        this.display = new ArrayList<Boolean>();
+        this.display.add(true);
+    }
+
     
     public String getInfo() {
         return info;
