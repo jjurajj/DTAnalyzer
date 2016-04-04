@@ -9,16 +9,14 @@ import singleCase.Dijagnoza;
 import singleCase.CaseEvaluation;
 import singleCase.Case;
 import caseBase.CaseBase;
-import static com.sun.corba.se.impl.util.Utility.printStackTrace;
-import com.sun.faces.util.CollectionsUtils;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.HashMap;
 import javax.faces.bean.ManagedBean;
-import javax.faces.bean.SessionScoped;
+import javax.faces.bean.ViewScoped;
 
 @ManagedBean (name ="DT", eager = true)
-@SessionScoped
+@ViewScoped
 
 
 // Pretpostavke:
@@ -28,12 +26,14 @@ public class DT implements Serializable {
     
     public String start_node;                                                       // početni čvor
     public ArrayList<Proposition> propositions = new ArrayList<>();                 // lista svih propozicija
-    public ArrayList<String> diagnoses = new ArrayList<>();                         // lista dijagnoza
-    public HashMap<PropositionKey, String> propositionsMap= new HashMap<>();        // HashMap: ključ(string+value) -> idući čvor
-    public HashMap<String, ArrayList<String>> reachable_diagnoses = new HashMap<>();// HashMap: trenutni cvor -> sve dostupne dijagnoze
-    public HashMap<String, String> concepts_map= new HashMap<>();                   // HashMap: ključ(string+value) -> idući čvor
+    public ArrayList<Proposition> active_tree = new ArrayList<>();                  // Ovo je display tree - njegove propozicije
     
-    // Inicijalizacija stabla na temelju tekstualne datoteke koja ga opisuje
+    public ArrayList<String> diagnoses = new ArrayList<>();                         // lista dijagnoza
+    public HashMap<PropositionKey, String> propositionsMap= new HashMap<>();        // HashMap: ID koncepta + value -> ID idućeg koncepta
+    public HashMap<String, ArrayList<String>> reachable_diagnoses = new HashMap<>();// HashMap: ID koncepta -> Sve dostupne dijagnoze
+    public HashMap<String, String> concepts_map= new HashMap<>();                   // HashMap: ID koncepta -> Ime koncepta
+    
+    // Inicijalizacija stabla na temelju tekstualne datoteke (propozicije ili CXL)
     public void initializeDT(String DT_text_file) {
   
       String tree_text = DT_text_file;                                      // plain text propozicije stabla s \t
@@ -144,35 +144,12 @@ public class DT implements Serializable {
       
       // reachable diagnoses
       setReachableDiagnoses(start_node);
-          
+      
+      //
+      expandLeaves();
     }
-    // Rekurzija koja postavi hashmap reachable_diagnoses za svu djecu zadanog cvora
-    public ArrayList<String> setReachableDiagnoses (String node) {
-        
-        // Ako se radi o cvoru koji je konacna dijagnoza onda ga vrati
-        if (this.diagnoses.contains(node)) {                        
-            ArrayList<String> temp_list = new ArrayList();
-            temp_list.add(node);
-            return temp_list;
-        // Ako nije terminalni cvor onda su njegove reachable dijagnoze one od sve njegove djece
-        } else {
-            ArrayList<String> next_nodes = new ArrayList<>();
-            ArrayList<String> reachable_diagnoses = new ArrayList<>();
-            next_nodes = getNextConcepts(node);                             // popis djece
-            for (String child : next_nodes) {                               // za svako dijete
-                ArrayList<String> temp = new ArrayList<>();
-                temp = setReachableDiagnoses(child);                        // dobij dijagnoze za to dijete
-                for (String temp_diag : temp) {                             // sve te dijagnoze dodaj u trenutne dijagnoze
-                    if (! reachable_diagnoses.contains(temp_diag))
-                        reachable_diagnoses.add(temp_diag);
-                }
-            }
-            this.reachable_diagnoses.put(node, reachable_diagnoses);        // dodaj to u hashmap
-            return reachable_diagnoses;
-        }
-    }
-    // Analiza stabla na tebelju baze caseova
-    // Vraca liste caseova (N, TP, FP, TN, FN, undiag) za svaku dijagnozu dostupnu u bazi
+
+    // Analiza stabla na tebelju baze caseova vraca liste caseova (N, TP, FP, TN, FN, undiag) za svaku dostupnu dijagnozu
     public ArrayList<DiagnosisCount> evaluateTreeDecision (CaseBase base) {
     
         ArrayList<DiagnosisCount> diagnosis_count_al = new ArrayList<>();
@@ -224,7 +201,144 @@ public class DT implements Serializable {
 
         return diagnosis_count_al;
     }
+    
+    // Dodaj idući koncept u active_tree
+    public void expandLeaves() {
+        /** Ako nema propozicija u active tree-u, dodaj sve propozicije koje idu iz pocetnog cvora.
+         * Inace, nadi sve listove active tree-a
+         * Za svaku propoziciju stabla, ako je prvi koncept propozicije medu listovima, dodaj propoziciju
+        */
+        
+        if (this.active_tree.size()==0) {
+            for (Proposition proposition : this.propositions)
+                if (proposition.concept_one.equals(this.start_node))
+                    this.active_tree.add(proposition);
+        } else {
+            ArrayList<String> leaves = getLeaves(this.active_tree);
+            for (Proposition DT_proposition : this.propositions)
+                if (leaves.contains(DT_proposition.concept_one))
+                    this.active_tree.add(DT_proposition);
+        }
+        
+    }
+    
+    public void expandSingle(String concept){
+        for (Proposition proposition : this.propositions)
+            if (proposition.concept_one.equals(concept))
+                this.active_tree.add(proposition);
+    }
 
+    // Gradi stablo od početka na temelju active tree propozicija, ali ne razvijaj zadani cvor
+    public void pruneSingle(String concept) {
+
+        ArrayList<String> active_nodes = new ArrayList<>();
+        active_nodes.add(this.start_node);
+        ArrayList new_active_tree = new ArrayList<>();
+        
+        while (active_nodes.size()>0) {
+            String temp_concept=active_nodes.get('0');
+            active_nodes.remove('0');
+            for (Proposition proposition : this.active_tree)
+                if ((proposition.concept_one.equals(temp_concept)) && (!proposition.concept_one.equals(temp_concept))) {
+                    new_active_tree.add(proposition);
+                    active_nodes.add(proposition.concept_two);
+                }
+        }
+    }
+    
+    // Ukloni listove iz active_tree stabla
+    public void pruneLeaves() {
+    /* Ako stablo ima samo korijenski cvor onda ne radi nista
+     * Inace nadi sve listove u stablu i ukloni sve propozicije kojima
+    */
+        ArrayList new_active_tree = new ArrayList<>();
+        ArrayList<String> leaves = getLeaves(this.active_tree);
+        Integer max_depth=0;
+        
+        for (String leaf : leaves) {
+            Integer temp_depth=getNodeDepth(leaf);
+            if (max_depth<temp_depth)
+                max_depth=temp_depth;
+        }
+            
+        for (Proposition proposition : this.active_tree)
+            if ((!leaves.contains(proposition.concept_two)) || (getNodeDepth(proposition.concept_two)<max_depth))
+                new_active_tree.add(proposition);
+        this.active_tree=new_active_tree;
+    }
+    
+    public int getNodeDepth(String node) {
+
+        int depth=0;
+        ArrayList<String> active_nodes=new ArrayList<>();
+        active_nodes.add(this.start_node);
+        ArrayList<Integer> all_depths=new ArrayList<Integer>();
+        
+        while (active_nodes.size()>0) {
+            ArrayList<String> temp_active_nodes=new ArrayList<>();
+            depth++;
+            for (String active_node : active_nodes)
+                for (Proposition proposition : this.propositions)
+                    if (proposition.concept_one.equals(active_node))
+                        temp_active_nodes.add(proposition.concept_two);
+                
+            if (temp_active_nodes.contains(node))
+                all_depths.add(depth);
+            active_nodes=temp_active_nodes;
+        }
+        
+        Integer final_depth=0;
+        for (Integer max_depth : all_depths)
+            if (max_depth>final_depth)
+                final_depth=max_depth;
+        
+        return final_depth;
+    }
+    
+    // Prima listu propozicija, vraca listu IDjeva cvorova koji su listovi (ili praznu listu)
+    private ArrayList<String> getLeaves(ArrayList<Proposition> propositions) {
+
+        // Listovi su koncepti koji se u propozicijama nalaze samo s desne strane
+        // Tu U listu dodam desni i maknem lijevi cvor za sve propozicije
+        
+        ArrayList<String> leaves = new ArrayList<>();
+        if (propositions.size()==0) return leaves;
+        
+        for (Proposition proposition : propositions) {
+            leaves.add(proposition.concept_two);
+            leaves.remove(proposition.concept_one);
+        }
+        
+        return leaves;
+    }
+    
+
+    // Rekurzija koja postavi hashmap reachable_diagnoses za svu djecu zadanog cvora. Poziva se iz inicijalizatora DTa
+    private ArrayList<String> setReachableDiagnoses (String node) {
+        
+        // Ako se radi o cvoru koji je konacna dijagnoza onda ga vrati
+        if (this.diagnoses.contains(node)) {                        
+            ArrayList<String> temp_list = new ArrayList();
+            temp_list.add(node);
+            return temp_list;
+        // Ako nije terminalni cvor onda su njegove reachable dijagnoze one od sve njegove djece
+        } else {
+            ArrayList<String> next_nodes = new ArrayList<>();
+            ArrayList<String> reachable_diagnoses = new ArrayList<>();
+            next_nodes = getNextConcepts(node);                             // popis djece
+            for (String child : next_nodes) {                               // za svako dijete
+                ArrayList<String> temp = new ArrayList<>();
+                temp = setReachableDiagnoses(child);                        // dobij dijagnoze za to dijete
+                for (String temp_diag : temp) {                             // sve te dijagnoze dodaj u trenutne dijagnoze
+                    if (! reachable_diagnoses.contains(temp_diag))
+                        reachable_diagnoses.add(temp_diag);
+                }
+            }
+            this.reachable_diagnoses.put(node, reachable_diagnoses);        // dodaj to u hashmap
+            return reachable_diagnoses;
+        }
+    }
+    
     // vracam niz propozicija i za svaku popis ostavljenih dobrih dijagnoza, dobro i krivo iskljucenih
     // pretpostavka: CB ima samo caseove koji se odnose na dijagnoze iz stabla
     public CaseEvaluation runCase (Case current_case) {
@@ -338,6 +452,22 @@ public class DT implements Serializable {
             return this.concepts_map.get(id);
         else
             return "Concetp name not found.";
+    }
+
+    public ArrayList<Proposition> getActive_tree() {
+        return active_tree;
+    }
+
+    public void setActive_tree(ArrayList<Proposition> active_tree) {
+        this.active_tree = active_tree;
+    }
+
+    public HashMap<String, String> getConcepts_map() {
+        return concepts_map;
+    }
+
+    public void setConcepts_map(HashMap<String, String> concepts_map) {
+        this.concepts_map = concepts_map;
     }
     
     public void setReachable_diagnoses(HashMap<String, ArrayList<String>> reachable_diagnoses) {

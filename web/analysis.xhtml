@@ -21,11 +21,12 @@ and open the template in the editor.
     <h:body id="body_id">
     <f:view id="view_id">
 
+        <!-- Ne moze se instancirati vise objekata iste klase, eventualno napravit apstraktnu klasu i u njoj vise -->
         <h:form id="initializer">
             #{CaseBase.initialize('http://diana.zesoi.fer.hr/~jpetrovic/case_repository/car_starting/')}
             #{DT.initializeDT(Uploader.fileContent)}
-            #{CaseDetails.setAll(false, '0')}
             #{CaseBase.evaluateBase(DT)}
+            #{ActiveDT.activeDT(DT.start_node)}
             #{PerDiagnosisDetails.setInfo('N/A')}
         </h:form>
             
@@ -278,12 +279,20 @@ and open the template in the editor.
                 <ul><li>#{DT.start_node}</li></ul>
                 <f:verbatim><b>Parsed propositions</b>:</f:verbatim>
                 
+                <h:form>
+                    <p:commandLink value="Expand" actionListener="#{DT.expandLeaves()}" update=":tab_view:activeTree"/>
+                    <p:commandLink value="Contract" actionListener="#{DT.pruneLeaves()}" update=":tab_view:activeTree"/>
+                </h:form>
+                
+                
+                <p:panel id="activeTree" visible="true" closable="true" collapsed="false" toggleable="true" style="border: 0px">
                 <ul>
-                <ui:repeat value="#{DT.propositions}" var="item"> <!--http://stackoverflow.com/questions/20468236/using-foreach-loop-in-jsf-->
-                    <li>"#{item.concept_one}"--"#{item.link}"-->"#{item.concept_two}"</li>
+                <ui:repeat value="#{DT.active_tree}" var="item"> <!--http://stackoverflow.com/questions/20468236/using-foreach-loop-in-jsf-->
+                    <li>"#{DT.getName(item.concept_one)}"--"#{item.link}"-->"#{DT.getName(item.concept_two)}"</li>
                 </ui:repeat>   
                 </ul>
-                
+                </p:panel>
+                    
                 <f:verbatim><b>Identified possible diagnoses</b></f:verbatim>
                 <ul>
                 <ui:repeat value="#{DT.diagnoses}" var="item"> <!--http://stackoverflow.com/questions/20468236/using-foreach-loop-in-jsf-->
