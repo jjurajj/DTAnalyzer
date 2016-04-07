@@ -14,6 +14,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import javax.faces.bean.ManagedBean;
 import javax.faces.bean.ViewScoped;
+import jdk.nashorn.internal.codegen.CompilerConstants;
 
 @ManagedBean (name ="DT", eager = true)
 @ViewScoped
@@ -28,10 +29,10 @@ public class DT implements Serializable {
     public ArrayList<Proposition> propositions = new ArrayList<>();                 // lista svih propozicija
     public ArrayList<Proposition> active_tree = new ArrayList<>();                  // Ovo je display tree - njegove propozicije
     
-    public ArrayList<String> diagnoses = new ArrayList<>();                         // lista dijagnoza
+    public ArrayList<String> diagnoses = new ArrayList<>();                         // lista IDjeva dijagnoza
     public HashMap<PropositionKey, String> propositionsMap= new HashMap<>();        // HashMap: ID koncepta + value -> ID idućeg koncepta
     public HashMap<String, ArrayList<String>> reachable_diagnoses = new HashMap<>();// HashMap: ID koncepta -> Sve dostupne dijagnoze
-    public HashMap<String, String> concepts_map= new HashMap<>();                   // HashMap: ID koncepta -> Ime koncepta
+    public HashMap<String, String> concepts_map= new HashMap<>();                   // HashMap: ID koncepta/dijagnoze -> Ime koncepta/dijagnoze
     
     // Inicijalizacija stabla na temelju tekstualne datoteke (propozicije ili CXL)
     public void initializeDT(String DT_text_file) {
@@ -78,31 +79,31 @@ public class DT implements Serializable {
           
           tree_text=tree_text.replace("&#xa;"," ");
           
-          String concept_list=(String) tree_text.subSequence(tree_text.indexOf("<concept-list>")+15,tree_text.indexOf("</concept-list>")-1);
+          String concept_list=(String) tree_text.subSequence(tree_text.indexOf("<concept-list>")+14,tree_text.indexOf("</concept-list>"));
           String tmp_concept_lines=concept_list.substring(concept_list.indexOf("<concept id="),concept_list.lastIndexOf("/>")+2);
-          String[] concept_lines=tmp_concept_lines.split(separator);   
+          String[] concept_lines=tmp_concept_lines.split("/><concept");   
           
-          String link_list=(String) tree_text.subSequence(tree_text.indexOf("<linking-phrase-list")+21,tree_text.indexOf("</linking-phrase-list>")-1);
+          String link_list=(String) tree_text.subSequence(tree_text.indexOf("<linking-phrase-list")+20,tree_text.indexOf("</linking-phrase-list>"));
           String tmp_link_lines = link_list.substring(link_list.indexOf("<linking-phrase id="), link_list.lastIndexOf("/>")+2);
-          String[] link_lines=tmp_link_lines.split(separator);   
+          String[] link_lines=tmp_link_lines.split("/><linking-phrase");   
           
-          String connection_list=(String) tree_text.subSequence(tree_text.indexOf("<connection-list>")+18,tree_text.indexOf("</connection-list>")-1);
+          String connection_list=(String) tree_text.subSequence(tree_text.indexOf("<connection-list>")+17,tree_text.indexOf("</connection-list>"));
           String tmp_connection_lines = connection_list.substring(connection_list.indexOf("<connection id="),connection_list.lastIndexOf("/>")+2);
-          String[] connection_lines=tmp_connection_lines.split(separator);
+          String[] connection_lines=tmp_connection_lines.split("/><connection");
           
           for (String line : concept_lines) {
-              if (line.contains("concept id=")) {
+              if (line.contains("id=")) {
                   String id=(String) line.subSequence(line.indexOf("id=\"")+4, line.indexOf("\" "));
-                  String label=(String) line.subSequence(line.indexOf("label=\"")+7, line.indexOf("\"/>"));
+                  String label=(String) line.subSequence(line.indexOf("label=\"")+7, line.lastIndexOf("\""));
                   this.concepts_map.put(id, label);
               }
           }
 
           HashMap<String, String> links_map= new HashMap<>();
           for (String line : link_lines) {
-              if (line.contains("linking-phrase id=")) {
+              if (line.contains("id=")) {
                   String id=(String) line.subSequence(line.indexOf("id=\"")+4, line.indexOf("\" "));
-                  String label=(String) line.subSequence(line.indexOf("label=\"")+7, line.indexOf("\"/>"));
+                  String label=(String) line.subSequence(line.indexOf("label=\"")+7, line.lastIndexOf("\""));
                   links_map.put(id, label);
               }
           }
@@ -110,9 +111,9 @@ public class DT implements Serializable {
           ArrayList<String> left_con = new ArrayList<>();
           ArrayList<String> right_con = new ArrayList<>();
           for (String line : connection_lines) {
-              if (line.contains("connection id=")) {
+              if (line.contains("id=")) {
                   String from=(String) line.subSequence(line.indexOf("from-id=\"")+9, line.indexOf("\" to-id"));
-                  String to=(String) line.subSequence(line.indexOf("to-id=\"")+7, line.indexOf("\"/>"));
+                  String to=(String) line.subSequence(line.indexOf("to-id=\"")+7, line.lastIndexOf("\""));
                   left_con.add(from);
                   right_con.add(to);
               }
@@ -380,7 +381,7 @@ public class DT implements Serializable {
            // Trenutnu propoziciju
            // Trenutno moguce dijagnoze
            // Potrebne dijagnoze. Tu jos treba rijesit uniju, razliku u presjek
-           case_eval.path.add(new Proposition(getName(key.concept), key.value, getName(next_concept)));
+           case_eval.path.add(new Proposition(key.concept, key.value, next_concept));
            case_eval.diags_per_node.add(reachable_diagnoses);
             
         }
@@ -399,21 +400,21 @@ public class DT implements Serializable {
     }
     
     // Vraca sve dijagnoze u koje se moze doci iz trenutnog cvora
-    public ArrayList<String> getPossibleDiagnoses (String node) {
+    public ArrayList<String> getReachableDiagnoses (String node_ID) {
     
         ArrayList<String> diagnoses_list = new ArrayList<>();
-        diagnoses_list.add(node);                               // na pocetku lista ima samo pocetni cvor
-        String current_node = node;
+        diagnoses_list.add(node_ID);                               // na pocetku lista ima samo pocetni cvor
+        String current_node = node_ID;
         while (current_node != null) {                          // dok ima cvorova u listi
             for (Proposition temp_prop : this.propositions) {   // nadi svu djecu trenutnog cvora i dodaj ih u listu
-                if (temp_prop.concept_one == current_node)
+                if (temp_prop.concept_one.equals(current_node))
                     diagnoses_list.add(temp_prop.concept_two);
             }
             diagnoses_list.remove(current_node);                // makni trenutni cvor iz liste
             current_node = null;                                // postavi tenutni cvor na null
             for (String temp_node : diagnoses_list) {           // ako u listi postoji jos cvor koji nije terminalni, onda je on iduci
                 if (!this.diagnoses.contains(temp_node))
-                    current_node = temp_node;
+                    current_node=temp_node;
             }
         }
         
@@ -457,6 +458,15 @@ public class DT implements Serializable {
     public ArrayList<Proposition> getActive_tree() {
         return active_tree;
     }
+    
+    public String getConceptID(String concept) {
+    
+        for (String key : this.concepts_map.keySet())
+            if (this.getConcepts_map().get(key).equals(concept))
+                return key;
+        return "Unable to find concept ID!";
+        
+    }
 
     public void setActive_tree(ArrayList<Proposition> active_tree) {
         this.active_tree = active_tree;
@@ -486,4 +496,11 @@ public class DT implements Serializable {
         this.propositionsMap = propositionsMap;
     }
     
+    // Can the target diagnosis be reached from the concept?
+    public boolean checkReachability(String concept_ID, String diagnosis_name) {
+        if (this.getReachableDiagnoses(concept_ID).contains(this.getConceptID(diagnosis_name)))
+            return true;
+        else
+            return false;
+    }
 }

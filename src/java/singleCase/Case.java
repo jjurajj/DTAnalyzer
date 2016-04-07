@@ -168,7 +168,7 @@ public class Case implements Serializable {
             next_concept = tree.propositionsMap.get(key);                               // Provjeri postoji li za to u stablu iduci cvor
             
             // Za taj koncept odredi moguce dijagnoze
-            ArrayList<String> possible_diagnoses = tree.getPossibleDiagnoses(next_concept);
+            ArrayList<String> possible_diagnoses = tree.getReachableDiagnoses(next_concept);
             
             
             

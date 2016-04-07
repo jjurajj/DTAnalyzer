@@ -76,7 +76,7 @@ and open the template in the editor.
                         <ui:fragment>#{case.id}</ui:fragment>
                     </h:column>
                     <h:column>
-                        <f:facet name="header">Result</f:facet>
+                        <f:facet name="header">Your solution</f:facet>
                         <h:outputLabel value="#{case.evaluation.end_node} " rendered="#{case.evaluation.diagnosed}" />
                         <h:outputLabel value="#{case.evaluation.end_node} (undiagnosed)" rendered="#{!case.evaluation.diagnosed}" />
                     </h:column>                        
@@ -116,11 +116,12 @@ and open the template in the editor.
                                 <ul>
                                 <h:dataTable value="#{case.evaluation.path}" var="path_proposition"><h:column>
 
-                                        <h:outputText rendered="#{case.evaluation.diagnosed and path_proposition.concept_one!=case.evaluation.end_node or !case.evaluation.diagnosed}" value="#{path_proposition.concept_one} - #{path_proposition.link} " />
-                                        <ui:fragment rendered="#{!DT.reachable_diagnoses.get(path_proposition.concept_two).contains(case.getCorrectDiagnosis().name) and DT.reachable_diagnoses.get(path_proposition.concept_one).contains(case.getCorrectDiagnosis().name)}"><ul><li><b>Correct diagnosis (</b><i>#{case.getCorrectDiagnosis().name}</i><b>) discarded.</b></li></ul></ui:fragment>
-                                        <ui:fragment rendered="#{!case.evaluation.correct and case.evaluation.diagnosed and (path_proposition.concept_two==case.evaluation.end_node)}"><ul><li><b>Incorrect diagnosis reached:</b> <i>#{path_proposition.concept_two}</i></li></ul></ui:fragment>
-                                        <ui:fragment rendered="#{case.evaluation.correct and (path_proposition.concept_two==case.evaluation.end_node)}"><ul><li><b>Correct diagnosis reached:</b> <i>#{path_proposition.concept_two}</i></li></ul></ui:fragment>
-                                        <ui:fragment rendered="#{!case.evaluation.diagnosed and (path_proposition.concept_one==case.evaluation.end_node)}"><ul><li><b>Case stuck in the non-diagnosis node!</b></li></ul></ui:fragment>
+                                        <h:outputText rendered="#{case.evaluation.diagnosed and !DT.getName(path_proposition.concept_one).equals(case.evaluation.end_node) or !case.evaluation.diagnosed}" value="#{DT.getName(path_proposition.concept_one)} - #{path_proposition.link} " />
+                                        
+                                        <ui:fragment rendered="#{!DT.checkReachability(path_proposition.concept_two,case.getCorrectDiagnosis().name) and DT.checkReachability(path_proposition.concept_one,case.getCorrectDiagnosis().name) and !case.evaluation.correct}"><ul><li><b>Correct diagnosis (</b><i>#{case.getCorrectDiagnosis().name}</i><b>) discarded.</b></li></ul></ui:fragment>
+                                        <ui:fragment rendered="#{!case.evaluation.correct and case.evaluation.diagnosed and (DT.getName(path_proposition.concept_two)==case.evaluation.end_node)}"><ul><li><b>Incorrect diagnosis </b>(<i>#{DT.getName(path_proposition.concept_two)}</i><b>) set.</b></li></ul></ui:fragment>
+                                        <ui:fragment rendered="#{case.evaluation.correct and DT.getName(path_proposition.concept_two).equals(case.evaluation.end_node)}"><ul><li><b>Correct diagnosis </b> (<i>#{DT.getName(path_proposition.concept_two)}</i>)<b> reached.</b></li></ul></ui:fragment>
+                                        <ui:fragment rendered="#{!case.evaluation.diagnosed and (DT.getName(path_proposition.concept_one).equals(case.evaluation.end_node))}"><ul><li><b>Case stuck in the non-diagnosis node!</b></li></ul></ui:fragment>
 
                                 </h:column></h:dataTable>
                                 </ul>
