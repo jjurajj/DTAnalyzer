@@ -35,21 +35,18 @@ public class Case implements Serializable {
     public HashMap<String,String> parametersMap = new HashMap<>();  // HMap parametara <ime vrijednost> za parametre casea
     public CaseEvaluation evaluation = new CaseEvaluation();
     
-    
-    /////////////////////////////////////////
-    //Konktrukcija i inicijalizacija
-    /////////////////////////////////////////
-    
+    ////////////////////////////////////////////////////////////////////////////
     // Prazni konstruktor
     public Case() {
     
         //this = Case("http://diana.zesoi.fer.hr/~jpetrovic/case_repository/car_starting/case_1/case.txt");
         //Case("http://diana.zesoi.fer.hr/~jpetrovic/case_repository/car_starting/case_1/case.txt");
     }
-
+    ////////////////////////////////////////////////////////////////////////////
+    
+    ////////////////////////////////////////////////////////////////////////////
     // Inicijalizacija na temelju defaultnog linka ili zadanog
-    public void initialize() {
-    }
+    public void initialize() {}
     public void initializeCase(String url) throws IOException {
 
         this.url = url;
@@ -70,13 +67,8 @@ public class Case implements Serializable {
             String diagnoses = parseTag(case_file, "Diagnoses").get(0);
             String explanation = parseTag(case_file, "Explanation").get(0);
 
-            //ID
             this.id =id;
-            
-            //Introduction
             this.introduction =introduction;
-            
-            //Task
             this.task = task;
         
             // Parameters
@@ -125,8 +117,10 @@ public class Case implements Serializable {
         }
 
     }
-
-    // Tag parser. Tragi vrijednost taga u datoteci (Stringu)
+    ////////////////////////////////////////////////////////////////////////////
+    
+    ////////////////////////////////////////////////////////////////////////////
+    // Pomoćne metode. Tag parser. Tragi vrijednost taga u datoteci (Stringu)
     private ArrayList<String> parseTag(String text, String tag) {
         String temp_text = text;
         String start_tag = "<" + tag + ">";
@@ -144,13 +138,6 @@ public class Case implements Serializable {
         }
         return tag_values;
     }
-
-    
-    
-    /////////////////////////////////////////
-    // Evaluacija casea
-    /////////////////////////////////////////
-    
     public CaseEvaluation evaluateCase(DT tree) {
         
         CaseEvaluation eval = new CaseEvaluation();
@@ -169,9 +156,6 @@ public class Case implements Serializable {
             
             // Za taj koncept odredi moguce dijagnoze
             ArrayList<String> possible_diagnoses = tree.getReachableDiagnoses(next_concept);
-            
-            
-            
         }
         
         //ako je cvor u kojem je klasifikacija stala jedan od terminalnih cvorova stabla
@@ -186,53 +170,6 @@ public class Case implements Serializable {
         
         return eval;
     }
-    
-    
-    
-    
-    /////////////////////////////////////////
-    // Getteri i setteri
-    /////////////////////////////////////////
-    
-    public void setUrl(String url) {
-        this.url = url;
-    }
-    public void setIntroduction(String introduction) {
-        this.introduction = introduction;
-    }
-    public void setTask(String task) {
-        this.task = task;
-    }
-    public void setParameters(ArrayList<Parametar> parameters) {
-        this.parameters = parameters;
-    }
-    public void setDiagnoses(ArrayList<Dijagnoza> diagnoses) {
-        this.diagnoses = diagnoses;
-    }
-    public void setExplanation(String explanation) {
-        this.explanation = explanation;
-    }
-    public void setText(String text) {
-        this.text = text;
-    }
-    public void setParametersMap(HashMap<String, String> parametersMap) {
-        this.parametersMap = parametersMap;
-    }
-    public void setEvaluation(CaseEvaluation evaluation) {
-        this.evaluation = evaluation;
-    }
-
-    public String getId() {
-        return id;
-    }
-
-    public void setId(String id) {
-        this.id = id;
-    }
-    
-    
-    
-    // Vraća PRVU točnu dijagnozu za case ili prazni objekt Dijagnoza ako nista ne nade
     public Dijagnoza getCorrectDiagnosis() {
     
         for (Dijagnoza correct_diagnosis : this.diagnoses ) 
@@ -242,37 +179,31 @@ public class Case implements Serializable {
         Dijagnoza error_diagnosis = new Dijagnoza();
         return error_diagnosis;
     }
-            
-    public CaseEvaluation getEvaluation() {
-        return evaluation;
-    }
-    public String getUrl() {
-        return url;
-    }
-    public String getIntroduction() {
-        return introduction;
-    }
-    public String getTask() {
-        return task;
-    }
-    public ArrayList<Parametar> getParameters() {
-        return this.parameters;
-    }
-    public ArrayList<Dijagnoza> getDiagnoses() {
-        return this.diagnoses;
-    }
-    public String getExplanation() {
-        return explanation;
-    }
-    public String getText() {
-        return text;
-    }
-    public HashMap<String, String> getParametersMap() {
-        return parametersMap;
-    }
+    ////////////////////////////////////////////////////////////////////////////
     
+    ////////////////////////////////////////////////////////////////////////////
+    // Getteri i setteri
+    public void setURL(String url) { this.url = url; }
+    public void setIntroduction(String introduction) { this.introduction = introduction; }
+    public void setTask(String task) { this.task = task; }
+    public void setParameters(ArrayList<Parametar> parameters) { this.parameters = parameters; }
+    public void setDiagnoses(ArrayList<Dijagnoza> diagnoses) { this.diagnoses = diagnoses; }
+    public void setExplanation(String explanation) { this.explanation = explanation; }
+    public void setText(String text) { this.text = text; }
+    public void setParametersMap(HashMap<String, String> parametersMap) { this.parametersMap = parametersMap; }
+    public void setEvaluation(CaseEvaluation evaluation) { this.evaluation = evaluation; }
+    public void setID(String id) { this.id = id; }
     
-    
+    public String getID() { return id; }
+    public CaseEvaluation getEvaluation() { return evaluation; }
+    public String getURL() { return url; }
+    public String getIntroduction() { return introduction; }
+    public String getTask() { return task; }
+    public ArrayList<Parametar> getParameters() { return parameters; }
+    public ArrayList<Dijagnoza> getDiagnoses() { return diagnoses; }
+    public String getExplanation() { return explanation; }
+    public String getText() { return text; }
+    public HashMap<String, String> getParametersMap() { return parametersMap; }
     
     /*public String getCasePlainText() throws MalformedURLException {
         String text = "";

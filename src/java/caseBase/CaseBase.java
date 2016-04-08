@@ -112,11 +112,8 @@ public class CaseBase {
         return diagnoses_list;
     }
 
-    public ArrayList<Case> getDisplay_cases() {
-        return display_cases;
-    }
-
-    public void setDisplay_cases(ArrayList<Case> display_cases) {
+    
+    public void setDisplayCases(ArrayList<Case> display_cases) {
         this.display_cases = display_cases;
     }
     
@@ -126,7 +123,7 @@ public class CaseBase {
     public ArrayList<Case> getCases() {
         return this.cases;
     }
-    public ArrayList<String> getUrl() {
+    public ArrayList<String> getURL() {
         return this.url;
     }
     public void setCases(ArrayList<Case> cases) {

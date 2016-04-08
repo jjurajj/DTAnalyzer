@@ -3,7 +3,10 @@ package decisionTree;
 /**
  * @author juraj
  * klasa koja opisuje DT koje ucita korisnik
- */
+ * Pretpostavke:
+ * Stablo ima jedan početni čvor
+ *  Čvorovi stabla zadani su s IDjem. zato jer se mogu ponavljati nazivi. 
+*/
 
 import singleCase.Dijagnoza;
 import singleCase.CaseEvaluation;
@@ -14,29 +17,29 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import javax.faces.bean.ManagedBean;
 import javax.faces.bean.ViewScoped;
-import jdk.nashorn.internal.codegen.CompilerConstants;
 
 @ManagedBean (name ="DT", eager = true)
 @ViewScoped
 
-
-// Pretpostavke:
-// Stablo ima jedan početni čvor
-// Čvorovi stabla zadani su s IDjem. zato jer se mogu ponavljati nazivi. 
 public class DT implements Serializable {
     
-    public String start_node;                                                       // početni čvor
-    public ArrayList<Proposition> propositions = new ArrayList<>();                 // lista svih propozicija
-    public ArrayList<Proposition> active_tree = new ArrayList<>();                  // Ovo je display tree - njegove propozicije
     
-    public ArrayList<String> diagnoses = new ArrayList<>();                         // lista IDjeva dijagnoza
+    public String start_node;                                                       // ID početnog čvora
+    public ArrayList<Proposition> propositions = new ArrayList<>();                 // Lista svih propozicija (ID, vrijednost linka, ID)
+    public ArrayList<Proposition> active_tree = new ArrayList<>();                  // Reprezentacija stabla za aktivni prikaz
+    
+    public ArrayList<String> diagnoses = new ArrayList<>();                         // Lista ID-jeva dijagnoza
     public HashMap<PropositionKey, String> propositionsMap= new HashMap<>();        // HashMap: ID koncepta + value -> ID idućeg koncepta
     public HashMap<String, ArrayList<String>> reachable_diagnoses = new HashMap<>();// HashMap: ID koncepta -> Sve dostupne dijagnoze
     public HashMap<String, String> concepts_map= new HashMap<>();                   // HashMap: ID koncepta/dijagnoze -> Ime koncepta/dijagnoze
     
-    // Inicijalizacija stabla na temelju tekstualne datoteke (propozicije ili CXL)
+    
+    ////////////////////////////////////////////////////////////////////////////
+    // Inicijalizacija i vrednovanje stabla    
     public void initializeDT(String DT_text_file) {
   
+      // Inicijalizacija stabla na temelju tekstualne datoteke (propozicije ili CXL)
+        
       String tree_text = DT_text_file;                                      // plain text propozicije stabla s \t
       String input_type="txt";
       
@@ -136,7 +139,7 @@ public class DT implements Serializable {
       }
       
       for (String concept : left_concepts )                     // Odredimo korijen stabla
-          if (right_concepts.contains(concept) == false) {this.setStart_node(concept);}
+          if (right_concepts.contains(concept) == false) {this.setStartNode(concept);}
       
       ArrayList<String> leaves = new ArrayList<>();             // listovi stabla
       for (String concept : right_concepts)                     // su cvorovi koji nikad nisu lijevi
@@ -149,10 +152,8 @@ public class DT implements Serializable {
       //
       expandLeaves();
     }
-
-    // Analiza stabla na tebelju baze caseova vraca liste caseova (N, TP, FP, TN, FN, undiag) za svaku dostupnu dijagnozu
     public ArrayList<DiagnosisCount> evaluateTreeDecision (CaseBase base) {
-    
+    // Analiza stabla na tebelju baze caseova vraca liste caseova (N, TP, FP, TN, FN, undiag) za svaku dostupnu dijagnozu
         ArrayList<DiagnosisCount> diagnosis_count_al = new ArrayList<>();
         ArrayList<String> excluded = new ArrayList<>();
         HashMap<String, DiagnosisCount> diagnosis_count = new HashMap<>();
@@ -202,121 +203,8 @@ public class DT implements Serializable {
 
         return diagnosis_count_al;
     }
-    
-    // Dodaj idući koncept u active_tree
-    public void expandLeaves() {
-        /** Ako nema propozicija u active tree-u, dodaj sve propozicije koje idu iz pocetnog cvora.
-         * Inace, nadi sve listove active tree-a
-         * Za svaku propoziciju stabla, ako je prvi koncept propozicije medu listovima, dodaj propoziciju
-        */
-        
-        if (this.active_tree.size()==0) {
-            for (Proposition proposition : this.propositions)
-                if (proposition.concept_one.equals(this.start_node))
-                    this.active_tree.add(proposition);
-        } else {
-            ArrayList<String> leaves = getLeaves(this.active_tree);
-            for (Proposition DT_proposition : this.propositions)
-                if (leaves.contains(DT_proposition.concept_one))
-                    this.active_tree.add(DT_proposition);
-        }
-        
-    }
-    
-    public void expandSingle(String concept){
-        for (Proposition proposition : this.propositions)
-            if (proposition.concept_one.equals(concept))
-                this.active_tree.add(proposition);
-    }
-
-    // Gradi stablo od početka na temelju active tree propozicija, ali ne razvijaj zadani cvor
-    public void pruneSingle(String concept) {
-
-        ArrayList<String> active_nodes = new ArrayList<>();
-        active_nodes.add(this.start_node);
-        ArrayList new_active_tree = new ArrayList<>();
-        
-        while (active_nodes.size()>0) {
-            String temp_concept=active_nodes.get('0');
-            active_nodes.remove('0');
-            for (Proposition proposition : this.active_tree)
-                if ((proposition.concept_one.equals(temp_concept)) && (!proposition.concept_one.equals(temp_concept))) {
-                    new_active_tree.add(proposition);
-                    active_nodes.add(proposition.concept_two);
-                }
-        }
-    }
-    
-    // Ukloni listove iz active_tree stabla
-    public void pruneLeaves() {
-    /* Ako stablo ima samo korijenski cvor onda ne radi nista
-     * Inace nadi sve listove u stablu i ukloni sve propozicije kojima
-    */
-        ArrayList new_active_tree = new ArrayList<>();
-        ArrayList<String> leaves = getLeaves(this.active_tree);
-        Integer max_depth=0;
-        
-        for (String leaf : leaves) {
-            Integer temp_depth=getNodeDepth(leaf);
-            if (max_depth<temp_depth)
-                max_depth=temp_depth;
-        }
-            
-        for (Proposition proposition : this.active_tree)
-            if ((!leaves.contains(proposition.concept_two)) || (getNodeDepth(proposition.concept_two)<max_depth))
-                new_active_tree.add(proposition);
-        this.active_tree=new_active_tree;
-    }
-    
-    public int getNodeDepth(String node) {
-
-        int depth=0;
-        ArrayList<String> active_nodes=new ArrayList<>();
-        active_nodes.add(this.start_node);
-        ArrayList<Integer> all_depths=new ArrayList<Integer>();
-        
-        while (active_nodes.size()>0) {
-            ArrayList<String> temp_active_nodes=new ArrayList<>();
-            depth++;
-            for (String active_node : active_nodes)
-                for (Proposition proposition : this.propositions)
-                    if (proposition.concept_one.equals(active_node))
-                        temp_active_nodes.add(proposition.concept_two);
-                
-            if (temp_active_nodes.contains(node))
-                all_depths.add(depth);
-            active_nodes=temp_active_nodes;
-        }
-        
-        Integer final_depth=0;
-        for (Integer max_depth : all_depths)
-            if (max_depth>final_depth)
-                final_depth=max_depth;
-        
-        return final_depth;
-    }
-    
-    // Prima listu propozicija, vraca listu IDjeva cvorova koji su listovi (ili praznu listu)
-    private ArrayList<String> getLeaves(ArrayList<Proposition> propositions) {
-
-        // Listovi su koncepti koji se u propozicijama nalaze samo s desne strane
-        // Tu U listu dodam desni i maknem lijevi cvor za sve propozicije
-        
-        ArrayList<String> leaves = new ArrayList<>();
-        if (propositions.size()==0) return leaves;
-        
-        for (Proposition proposition : propositions) {
-            leaves.add(proposition.concept_two);
-            leaves.remove(proposition.concept_one);
-        }
-        
-        return leaves;
-    }
-    
-
-    // Rekurzija koja postavi hashmap reachable_diagnoses za svu djecu zadanog cvora. Poziva se iz inicijalizatora DTa
     private ArrayList<String> setReachableDiagnoses (String node) {
-        
+        // Rekurzija koja postavi hashmap reachable_diagnoses za svu djecu zadanog cvora. Poziva se iz inicijalizatora DTa
         // Ako se radi o cvoru koji je konacna dijagnoza onda ga vrati
         if (this.diagnoses.contains(node)) {                        
             ArrayList<String> temp_list = new ArrayList();
@@ -339,11 +227,10 @@ public class DT implements Serializable {
             return reachable_diagnoses;
         }
     }
-    
-    // vracam niz propozicija i za svaku popis ostavljenih dobrih dijagnoza, dobro i krivo iskljucenih
-    // pretpostavka: CB ima samo caseove koji se odnose na dijagnoze iz stabla
     public CaseEvaluation runCase (Case current_case) {
-    
+        // vracam niz propozicija i za svaku popis ostavljenih dobrih dijagnoza, dobro i krivo iskljucenih
+        // pretpostavka: CB ima samo caseove koji se odnose na dijagnoze iz stabla
+
        // Tu bi trebao ici po propozicijama i za svaki novi cvor
        // naci listu caseova koji imaju do sad utvrdene parametre
        // naci popis dijagnoza tih caseova
@@ -353,7 +240,7 @@ public class DT implements Serializable {
        
        // key mi je za odredivanje iduceg cvora stabla (par trenutni cvor i vrijednost tog parametra u caseu)
        PropositionKey key; 
-       key = new PropositionKey(next_concept, current_case.parametersMap.get(getName(next_concept)));
+       key = new PropositionKey(next_concept, current_case.parametersMap.get(getNodeNameFromID(next_concept)));
 
        // Prodemo po stablu dok ima sljedeceg koncepta u stablu i dok case ima parametar (kljuc) za njega
        String end_concept=next_concept;
@@ -366,8 +253,8 @@ public class DT implements Serializable {
            String prevoius_concept = next_concept;
            end_concept=next_concept;
            // Odredi iduci koncept
-           case_eval.end_node = getName(next_concept);                                                      // Do kud je case dosao
-           key = new PropositionKey(next_concept, current_case.parametersMap.get(getName(next_concept)));   // Za taj cvor ispitaj vrijednost caseu
+           case_eval.end_node = getNodeNameFromID(next_concept);                                                      // Do kud je case dosao
+           key = new PropositionKey(next_concept, current_case.parametersMap.get(getNodeNameFromID(next_concept)));   // Za taj cvor ispitaj vrijednost caseu
            next_concept = this.propositionsMap.get(key);                                                    // Provjeri postoji li za to u stablu iduci cvor
             
            // Za taj koncept dohvati moguce dijagnoze na temelju stabla
@@ -398,10 +285,121 @@ public class DT implements Serializable {
 
         return case_eval;
     }
+    ////////////////////////////////////////////////////////////////////////////
     
-    // Vraca sve dijagnoze u koje se moze doci iz trenutnog cvora
+    
+    ////////////////////////////////////////////////////////////////////////////
+    // Funkcije za razvijanje i skracianje active tree reprezentacije stabla
+    public void expandLeaves() {
+        /** Ako nema propozicija u active tree-u, dodaj sve propozicije koje idu iz pocetnog cvora.
+         * Inace, nadi sve listove active tree-a
+         * Za svaku propoziciju stabla, ako je prvi koncept propozicije medu listovima, dodaj propoziciju
+        */
+        
+        if (this.active_tree.size()==0) {
+            for (Proposition proposition : this.propositions)
+                if (proposition.concept_one.equals(this.start_node))
+                    this.active_tree.add(proposition);
+        } else {
+            ArrayList<String> leaves = getLeaves(this.active_tree);
+            for (Proposition DT_proposition : this.propositions)
+                if (leaves.contains(DT_proposition.concept_one))
+                    this.active_tree.add(DT_proposition);
+        }
+        
+    }
+    public void expandSingle(String concept){
+        for (Proposition proposition : this.propositions)
+            if (proposition.concept_one.equals(concept))
+                this.active_tree.add(proposition);
+    }
+    public void pruneSingle(String concept) {
+
+        // Gradi stablo od početka na temelju active tree propozicija, ali ne razvijaj zadani cvor
+
+        ArrayList<String> active_nodes = new ArrayList<>();
+        active_nodes.add(this.start_node);
+        ArrayList new_active_tree = new ArrayList<>();
+        
+        while (active_nodes.size()>0) {
+            String temp_concept=active_nodes.get('0');
+            active_nodes.remove('0');
+            for (Proposition proposition : this.active_tree)
+                if ((proposition.concept_one.equals(temp_concept)) && (!proposition.concept_one.equals(temp_concept))) {
+                    new_active_tree.add(proposition);
+                    active_nodes.add(proposition.concept_two);
+                }
+        }
+    }
+    public void pruneLeaves() {
+    // Ukloni listove iz active_tree stabla
+    /* Ako stablo ima samo korijenski cvor onda ne radi nista
+     * Inace nadi sve listove u stablu i ukloni sve propozicije kojima
+    */
+        ArrayList new_active_tree = new ArrayList<>();
+        ArrayList<String> leaves = getLeaves(this.active_tree);
+        Integer max_depth=0;
+        
+        for (String leaf : leaves) {
+            Integer temp_depth=getNodeDepth(leaf);
+            if (max_depth<temp_depth)
+                max_depth=temp_depth;
+        }
+            
+        for (Proposition proposition : this.active_tree)
+            if ((!leaves.contains(proposition.concept_two)) || (getNodeDepth(proposition.concept_two)<max_depth))
+                new_active_tree.add(proposition);
+        this.active_tree=new_active_tree;
+    }
+    ////////////////////////////////////////////////////////////////////////////
+    
+    
+    ////////////////////////////////////////////////////////////////////////////
+    //  Razno
+    public int getNodeDepth(String node) {
+
+        int depth=0;
+        ArrayList<String> active_nodes=new ArrayList<>();
+        active_nodes.add(this.start_node);
+        ArrayList<Integer> all_depths=new ArrayList<Integer>();
+        
+        while (active_nodes.size()>0) {
+            ArrayList<String> temp_active_nodes=new ArrayList<>();
+            depth++;
+            for (String active_node : active_nodes)
+                for (Proposition proposition : this.propositions)
+                    if (proposition.concept_one.equals(active_node))
+                        temp_active_nodes.add(proposition.concept_two);
+                
+            if (temp_active_nodes.contains(node))
+                all_depths.add(depth);
+            active_nodes=temp_active_nodes;
+        }
+        
+        Integer final_depth=0;
+        for (Integer max_depth : all_depths)
+            if (max_depth>final_depth)
+                final_depth=max_depth;
+        
+        return final_depth;
+    }
+    private ArrayList<String> getLeaves(ArrayList<Proposition> propositions) {
+    // Prima listu propozicija, vraca listu IDjeva cvorova koji su listovi (ili praznu listu)
+        // Listovi su koncepti koji se u propozicijama nalaze samo s desne strane
+        // Tu U listu dodam desni i maknem lijevi cvor za sve propozicije
+        
+        ArrayList<String> leaves = new ArrayList<>();
+        if (propositions.size()==0) return leaves;
+        
+        for (Proposition proposition : propositions) {
+            leaves.add(proposition.concept_two);
+            leaves.remove(proposition.concept_one);
+        }
+        
+        return leaves;
+    }
     public ArrayList<String> getReachableDiagnoses (String node_ID) {
-    
+        // Vraca sve dijagnoze u koje se moze doci iz trenutnog cvora
         ArrayList<String> diagnoses_list = new ArrayList<>();
         diagnoses_list.add(node_ID);                               // na pocetku lista ima samo pocetni cvor
         String current_node = node_ID;
@@ -420,87 +418,54 @@ public class DT implements Serializable {
         
         return diagnoses_list;
     }
-
-    // Ovo vraća cvorove djecu od zadanog cvora
     public ArrayList<String> getNextConcepts(String start_concept){
+        // Ovo vraća cvorove djecu od zadanog cvora
         ArrayList<String> related_concepts = new ArrayList<>();
         for (Proposition temp_prop : this.propositions)
             if (temp_prop.getConcept_one().equals(start_concept))
                 related_concepts.add(temp_prop.concept_two);
         return related_concepts;
     }
-    
-    //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-    // Getteri i setteri od svojstava klase:
-    public String getStart_node() {
-        return start_node;
-    }
-    public ArrayList<Proposition> getPropositions() {
-        return propositions;
-    }
-    public ArrayList<String> getDiagnoses() {
-        return diagnoses;
-    }
-    public HashMap<PropositionKey, String> getPropositionsMap() {
-        return propositionsMap;
-    }
-    public HashMap<String, ArrayList<String>> getReachable_diagnoses() {
-        return reachable_diagnoses;
-    }
-    public String getName(String id) {
-        if (this.concepts_map.containsKey(id))
-            return this.concepts_map.get(id);
-        else
-            return "Concetp name not found.";
-    }
-
-    public ArrayList<Proposition> getActive_tree() {
-        return active_tree;
-    }
-    
-    public String getConceptID(String concept) {
-    
-        for (String key : this.concepts_map.keySet())
-            if (this.getConcepts_map().get(key).equals(concept))
-                return key;
-        return "Unable to find concept ID!";
-        
-    }
-
-    public void setActive_tree(ArrayList<Proposition> active_tree) {
-        this.active_tree = active_tree;
-    }
-
-    public HashMap<String, String> getConcepts_map() {
-        return concepts_map;
-    }
-
-    public void setConcepts_map(HashMap<String, String> concepts_map) {
-        this.concepts_map = concepts_map;
-    }
-    
-    public void setReachable_diagnoses(HashMap<String, ArrayList<String>> reachable_diagnoses) {
-        this.reachable_diagnoses = reachable_diagnoses;
-    }
-    public void setStart_node(String start_node) {
-        this.start_node = start_node;
-    }
-    public void setDiagnoses(ArrayList<String> diagnoses) {
-        this.diagnoses = diagnoses;
-    }
-    public void setPropositions(ArrayList<Proposition> propositions) {
-        this.propositions = propositions;
-    }
-    public void setPropositionsMap (HashMap<PropositionKey, String> propositionsMap) {
-        this.propositionsMap = propositionsMap;
-    }
-    
-    // Can the target diagnosis be reached from the concept?
     public boolean checkReachability(String concept_ID, String diagnosis_name) {
-        if (this.getReachableDiagnoses(concept_ID).contains(this.getConceptID(diagnosis_name)))
+        // Can the target diagnosis be reached from the concept?
+        if (this.getReachableDiagnoses(concept_ID).contains(this.getNodeIDFromName(diagnosis_name)))
             return true;
         else
             return false;
     }
+    ////////////////////////////////////////////////////////////////////////////
+    
+    
+    ////////////////////////////////////////////////////////////////////////////
+    // Getteri i setteri od svojstava klase:
+    public String getStartNodeName() { return this.getConceptsMap().get(this.start_node); }
+    public String getStartNodeID() { return this.start_node; }
+
+    public String getNodeNameFromID (String id) {
+        String name = this.concepts_map.containsKey(id) ? this.concepts_map.get(id) : "Concetp name not found.";
+        return name;
+    }
+    public String getNodeIDFromName(String name) {
+        for (String key : this.concepts_map.keySet())
+            if (this.concepts_map.get(key).equals(name))
+                return key;
+        return "Node ID not found for ";
+    }
+    
+    public ArrayList<Proposition> getPropositions() { return propositions; }
+    public ArrayList<String> getDiagnoses() { return diagnoses; }
+    public HashMap<PropositionKey, String> getPropositionsMap() { return propositionsMap; }
+    public HashMap<String, ArrayList<String>> getReachableDiagnoses() { return reachable_diagnoses; }
+    public ArrayList<Proposition> getActiveTree() { return active_tree; }
+    public HashMap<String, String> getConceptsMap() { return concepts_map; }
+
+    public void setActiveTree(ArrayList<Proposition> active_tree) { this.active_tree = active_tree; }
+    public void setConceptsMap(HashMap<String, String> concepts_map) { this.concepts_map = concepts_map; }
+    public void setReachableDiagnoses(HashMap<String, ArrayList<String>> reachable_diagnoses) { this.reachable_diagnoses = reachable_diagnoses; }
+    public void setStartNode(String start_node) { this.start_node = start_node; }
+    public void setDiagnoses(ArrayList<String> diagnoses) { this.diagnoses = diagnoses; }
+    public void setPropositions(ArrayList<Proposition> propositions) { this.propositions = propositions; }
+    public void setPropositionsMap (HashMap<PropositionKey, String> propositionsMap) { this.propositionsMap = propositionsMap; }
+    ////////////////////////////////////////////////////////////////////////////
+    
 }

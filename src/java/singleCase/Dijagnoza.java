@@ -3,14 +3,8 @@ package singleCase;
 
 import java.util.ArrayList;
 
-/*
- * To change this template, choose Tools | Templates
- * and open the template in the editor.
- */
-
 /**
- *
- * @author Blondie
+ * @author
  */
 public class Dijagnoza {
     
@@ -21,26 +15,15 @@ public class Dijagnoza {
         this.name = name;
         this.correct = correct;
     }
-
     public Dijagnoza() {
         this.name = "Undefined";
         this.correct = false;
     }
     
-    public boolean isCorrect() {
-        return this.correct;
-    }
+    public boolean isCorrect() { return this.correct; }
+    public String getName() { return this.name; }
 
-    public String getName() {
-        return name;
-    }
-    
-    public void setName(String name) {
-        this.name = name;
-    }
-    
-    public void setCorrect(boolean correct) {
-        this.correct = correct;
-    }
+    public void setName(String name) { this.name = name; }
+    public void setCorrect(boolean correct) { this.correct = correct; }
     
 }

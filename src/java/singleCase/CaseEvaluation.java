@@ -49,13 +49,13 @@ public class CaseEvaluation {
     ///////////////////////////////////////////////
 
     public ArrayList<Proposition> getPath() {
-        return path;
+        return this.path;
     }
     public void setPath(ArrayList<Proposition> path) {
         this.path = path;
     }
     public boolean isDiagnosed() {
-        return diagnosed;
+        return this.diagnosed;
     }
     public void setDiagnosed(boolean diagnosed) {
         this.diagnosed = diagnosed;
@@ -64,14 +64,38 @@ public class CaseEvaluation {
         this.correct = correct;
     }
 
-    public String getEnd_node() {
-        return end_node;
+    public String getEndNode() {
+        return this.end_node;
     }
-    public void setEnd_node(String end_node) {
+    public void setEndNode(String end_node) {
         this.end_node = end_node;
     }
     public boolean isCorrect() {
-        return correct;
+        return this.correct;
+    }
+
+    public String getEnd_node() {
+        return end_node;
+    }
+
+    public void setEnd_node(String end_node) {
+        this.end_node = end_node;
+    }
+
+    public ArrayList<ArrayList<String>> getDiags_per_node() {
+        return diags_per_node;
+    }
+
+    public void setDiags_per_node(ArrayList<ArrayList<String>> diags_per_node) {
+        this.diags_per_node = diags_per_node;
+    }
+
+    public ArrayList<Double> getPrice_per_node() {
+        return price_per_node;
+    }
+
+    public void setPrice_per_node(ArrayList<Double> price_per_node) {
+        this.price_per_node = price_per_node;
     }
     
 }
