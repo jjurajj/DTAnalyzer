@@ -285,11 +285,12 @@ and open the template in the editor.
                 
                 <f:verbatim><b>Start node</b>:</f:verbatim>
                 <ul><li>#{DT.getStartNodeName()}</li></ul>
-                <f:verbatim><b>Parsed propositions</b>:</f:verbatim>
+                <f:verbatim><b>Decision tree building</b>:<br /><br /></f:verbatim>
                 
                 <h:form>
-                    <p:commandLink value="Expand" actionListener="#{DT.expandLeaves()}" update=":tab_view:activeTree"/>
-                    <p:commandLink value="Contract" actionListener="#{DT.pruneLeaves()}" update=":tab_view:activeTree"/>
+                    <p:commandLink actionListener="#{DT.pruneLeaves()}" update=":tab_view:activeTree"><h:graphicImage value="/images/arrow_l.png" width="16" height="16" style="border-spacing: 20px"/>Contract one level</p:commandLink>
+                    <f:verbatim> -- </f:verbatim>
+                    <p:commandLink actionListener="#{DT.expandLeaves()}" update=":tab_view:activeTree">Expand one level<h:graphicImage value="/images/arrow_r.png" width="16" height="16"/></p:commandLink>
                 </h:form>
                 
                 
@@ -301,13 +302,7 @@ and open the template in the editor.
                 </ul>
                 </p:panel>
                     
-                <f:verbatim><b>Identified possible diagnoses</b></f:verbatim>
-                <ul>
-                <ui:repeat value="#{DT.diagnoses}" var="item"> <!--http://stackoverflow.com/questions/20468236/using-foreach-loop-in-jsf-->
-                    <li>"#{item}"</li>
-                </ui:repeat>
-                </ul>
-                
+               
             </p:tab>
             
         </p:tabView>
