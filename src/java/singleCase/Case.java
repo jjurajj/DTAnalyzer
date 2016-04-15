@@ -11,6 +11,7 @@ package singleCase;
 
 import decisionTree.PropositionKey;
 import decisionTree.DT;
+import decisionTree.Proposition;
 import java.util.ArrayList;
 import java.io.*;
 import java.math.BigDecimal;
@@ -179,7 +180,27 @@ public class Case implements Serializable {
         Dijagnoza error_diagnosis = new Dijagnoza();
         return error_diagnosis;
     }
-    ////////////////////////////////////////////////////////////////////////////
+    public boolean containsParameterValues(ArrayList<Parametar> parameters) {
+        for (Parametar parametar_query : parameters)
+            if (!this.getParametersMap().containsKey(parametar_query.getName()) || (this.getParametersMap().get(parametar_query.getName()).equals(parametar_query.getAssigned_value())))
+                return false;
+        return true;
+    }
+
+////////////////////////////////////////////////////////////////////////////
+    
+    public ArrayList<Parametar> getRequestedParameters(Proposition last_proposition) {
+    // Zadajem input poslijednju propoziciju do koje sam stigao rjesavajuci case po zadanom stablu
+    // Kao autout vracam sve parametre koje sam prikupio po putu do te propozicije
+    
+        ArrayList<Parametar> return_parameters_list = new ArrayList<>();
+        for (Proposition p : this.evaluation.getPath())
+            if (p.equals(last_proposition))
+                break;
+            else
+                return_parameters_list.add(getParametarByName(p.getConcept_one()));
+        return return_parameters_list;
+    }
     
     ////////////////////////////////////////////////////////////////////////////
     // Getteri i setteri
@@ -194,6 +215,12 @@ public class Case implements Serializable {
     public void setEvaluation(CaseEvaluation evaluation) { this.evaluation = evaluation; }
     public void setID(String id) { this.id = id; }
     
+    public Parametar getParametarByName(String name){
+        for (Parametar p : this.parameters)
+            if (p.getName().equals(name))
+                return p;
+        return new Parametar();
+    }
     public String getID() { return id; }
     public CaseEvaluation getEvaluation() { return evaluation; }
     public String getURL() { return url; }

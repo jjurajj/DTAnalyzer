@@ -1,5 +1,7 @@
 package decisionTree;
 
+import java.util.Objects;
+
 /*
  * To change this license header, choose License Headers in Project Properties.
  * To change this template file, choose Tools | Templates
@@ -48,6 +50,29 @@ public class Proposition {
     public String getConcept_two() {
         return concept_two;
     }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (obj == null) {
+            return false;
+        }
+        if (getClass() != obj.getClass()) {
+            return false;
+        }
+        final Proposition other = (Proposition) obj;
+        if (!Objects.equals(this.concept_one, other.concept_one)) {
+            return false;
+        }
+        if (!Objects.equals(this.concept_two, other.concept_two)) {
+            return false;
+        }
+        if (!Objects.equals(this.link, other.link)) {
+            return false;
+        }
+        return true;
+    }
+    
+    
 
 }
 

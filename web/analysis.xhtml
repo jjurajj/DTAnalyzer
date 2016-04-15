@@ -90,8 +90,8 @@ and open the template in the editor.
                         <ui:fragment>#{case.getCorrectDiagnosis().getName()}</ui:fragment>
                     </h:column>
                     <h:column>
-                        <f:facet name="header">Investigate</f:facet>
-                        <h:form><h:outputLink value="#{case.getURL()}" target="_blank">Full case</h:outputLink> / <p:commandLink value="Details" actionListener="#{PerDiagnosisDetails.setSingle(case,case.getID())}" update=":tab_view:perCaseDetails" /></h:form>
+                        <f:facet name="header">Actions</f:facet>
+                        <h:form><p:commandLink value="Details" actionListener="#{PerDiagnosisDetails.setSingle(case,case.getID())}" update=":tab_view:perCaseDetails" /> / <h:outputLink value="#{case.getURL()}" target="_blank">Full case</h:outputLink> / Solve single case </h:form>
                     </h:column>
                 </h:dataTable>
                 
@@ -116,25 +116,59 @@ and open the template in the editor.
                                 <ul>
                                 <h:dataTable value="#{case.getEvaluation().getPath()}" var="path_proposition"><h:column>
 
+                                        <!--Output propozicije-->
                                         <h:outputText rendered="#{case.getEvaluation().isDiagnosed() and !DT.getNodeNameFromID(path_proposition.concept_one).equals(case.getEvaluation().getEndNode()) or !case.getEvaluation().isDiagnosed()}" value="#{DT.getNodeNameFromID(path_proposition.concept_one)} - #{path_proposition.link} " />
-                                        <ui:fragment rendered="#{!DT.checkReachability(path_proposition.concept_two,case.getCorrectDiagnosis().name) and DT.checkReachability(path_proposition.concept_one,case.getCorrectDiagnosis().name) and !case.getEvaluation().isCorrect()}"><ul><li><b>Correct diagnosis (</b><i>#{case.getCorrectDiagnosis().getName()}</i><b>) discarded.</b></li></ul></ui:fragment>
-                                        <ui:fragment rendered="#{!case.getEvaluation().isCorrect() and case.getEvaluation().isDiagnosed() and (DT.getNodeNameFromID(path_proposition.concept_two)==case.getEvaluation().getEndNode())}"><ul><li><b>Incorrect diagnosis </b>(<i>#{DT.getNodeNameFromID(path_proposition.concept_two)}</i><b>) set.</b></li></ul></ui:fragment>
-                                        <ui:fragment rendered="#{case.getEvaluation().isCorrect() and DT.getNodeNameFromID(path_proposition.concept_two).equals(case.getEvaluation().getEndNode())}"><ul><li><b>Correct diagnosis </b> (<i>#{DT.getNodeNameFromID(path_proposition.concept_two)}</i>)<b> reached.</b></li></ul></ui:fragment>
-                                        <ui:fragment rendered="#{!case.getEvaluation().isDiagnosed() and (DT.getNodeNameFromID(path_proposition.concept_one).equals(case.getEvaluation().getEndNode()))}"><ul><li><b>Case stuck in the non-diagnosis node!</b></li></ul></ui:fragment>
+                                        
+                                        <!--Correct diagnosis discarded-->
+                                        <ui:fragment rendered="#{!DT.checkReachability(path_proposition.concept_two,case.getCorrectDiagnosis().name) and DT.checkReachability(path_proposition.concept_one,case.getCorrectDiagnosis().name) and !case.getEvaluation().isCorrect()}">
+                                                <ul>
+                                                    <li><b>Correct diagnosis (</b><i>#{case.getCorrectDiagnosis().getName()}</i><b>) discarded.</b></li>
+                                                    <li>This decision is incorrect since
+                                                        --#{case.getRequestedParameters(path_proposition).get(0).name}--
+                                                        #{CaseBase.getCasesWithDiagnosisAndParameters(case.getCorrectDiagnosis().getName(),case.getRequestedParameters(path_proposition)).size()}
+                                                        X/#{CaseBase.getCasesWithDiagnosis(case.getCorrectDiagnosis().getName()).size()}
+                                                        available cases with <i>#{case.getCorrectDiagnosis().getName()}</i> diagnosis have the same parameter values as identified here.</li>
+                                                </ul>
+                                        </ui:fragment>
+
+                                        <!--Check if user's solution could be discarded here-->
+                                        <!--Dohvati sve caseove s dijagnozom koju je korisnik krivo postavio i provjeri koliko njih ima iste parametre. Tu info mozes napisati u svakom koraku-->
+                                        <ui:fragment rendered="#{!case.getEvaluation().isCorrect() and case.getEvaluation().isDiagnosed() and (DT.getNodeNameFromID(path_proposition.concept_two)==case.getEvaluation().getEndNode())}">
+                                                <ul></ul>
+                                        </ui:fragment>
+                                        
+                                        <!--Incorrect diagnosis reached-->
+                                        <ui:fragment rendered="#{!case.getEvaluation().isCorrect() and case.getEvaluation().isDiagnosed() and (DT.getNodeNameFromID(path_proposition.concept_two)==case.getEvaluation().getEndNode())}">
+                                                <ul><li><b>Incorrect diagnosis </b>(<i>#{DT.getNodeNameFromID(path_proposition.concept_two)}</i><b>) set.</b></li></ul>
+                                        </ui:fragment>
+                                        
+                                        <!--Correct diagnosis reached-->
+                                        <ui:fragment rendered="#{case.getEvaluation().isCorrect() and DT.getNodeNameFromID(path_proposition.concept_two).equals(case.getEvaluation().getEndNode())}">
+                                            <ul><li><b>Correct diagnosis </b> (<i>#{DT.getNodeNameFromID(path_proposition.concept_two)}</i>)<b> reached.</b></li></ul>
+                                        </ui:fragment>
+                                        
+                                        <!--Case stuck in non-diagnosis node-->
+                                        <ui:fragment rendered="#{!case.getEvaluation().isDiagnosed() and (DT.getNodeNameFromID(path_proposition.concept_one).equals(case.getEvaluation().getEndNode()))}">
+                                            <ul><li><b>No next node - case stuck in a non-diagnosis node!</b></li></ul>
+                                        </ui:fragment>
                                         
                                 </h:column></h:dataTable>
                                 </ul>
                                 
-                                <f:verbatim><br /><b>DT corrections required:</b></f:verbatim>
+                                <f:verbatim><br /><b>More details:</b></f:verbatim>
                                 <h:dataTable value="#{item.getEvaluation().path}" var="dvitem">
                                     <h:column>
-                                        
                                     </h:column>
-                                
                                 </h:dataTable>
                                 <!-- Tu ispraviti DT i omoguciti preuzimanje-->
                                 
-                                <f:verbatim><ul><li>Tu nades sve caseove u bazi koji imaju iste parametre do sad,</li><li>onda te parametre iskljucis</li><li>i od caseova napravis DT</li><li>i od tog DTa tu ispises put do dijagnoze kojoj pripada ovaj case.</li></ul></f:verbatim>
+                                <f:verbatim>
+                                    <ul>
+                                        <li>U trenutku kada je discardana točna dijagnoza:</li>
+                                        
+                                        <li>U trenutku kada bi mogla biti discardana korisnikova konačna dijagnoza</li>
+                                    </ul>
+                                </f:verbatim>
                                 
                                 <ui:remove>
                                     <!---->
@@ -250,7 +284,7 @@ and open the template in the editor.
                                         <ui:fragment rendered="#{!DT.checkReachability(path_proposition.concept_two,case.getCorrectDiagnosis().name) and DT.checkReachability(path_proposition.concept_one,case.getCorrectDiagnosis().name) and !case.getEvaluation().isCorrect()}"><ul><li><b>Correct diagnosis (</b><i>#{case.getCorrectDiagnosis().getName()}</i><b>) discarded.</b></li></ul></ui:fragment>
                                         <ui:fragment rendered="#{!case.getEvaluation().isCorrect() and case.getEvaluation().isDiagnosed() and (DT.getNodeNameFromID(path_proposition.concept_two)==case.getEvaluation().getEndNode())}"><ul><li><b>Incorrect diagnosis </b>(<i>#{DT.getNodeNameFromID(path_proposition.concept_two)}</i><b>) set.</b></li></ul></ui:fragment>
                                         <ui:fragment rendered="#{case.getEvaluation().isCorrect() and DT.getNodeNameFromID(path_proposition.concept_two).equals(case.getEvaluation().getEndNode())}"><ul><li><b>Correct diagnosis </b> (<i>#{DT.getNodeNameFromID(path_proposition.concept_two)}</i>)<b> reached.</b></li></ul></ui:fragment>
-                                        <ui:fragment rendered="#{!case.getEvaluation().isDiagnosed() and (DT.getNodeNameFromID(path_proposition.concept_one).equals(case.getEvaluation().getEndNode()))}"><ul><li><b>Case stuck in the non-diagnosis node!</b></li></ul></ui:fragment>
+                                        <ui:fragment rendered="#{!case.getEvaluation().isDiagnosed() and (DT.getNodeNameFromID(path_proposition.concept_one).equals(case.getEvaluation().getEndNode()))}"><ul><li><b>No next node - case stuck in the non-diagnosis node!</b></li></ul></ui:fragment>
                                         
                                 </h:column></h:dataTable>
                                 </ul>

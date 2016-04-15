@@ -26,6 +26,7 @@ import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
+import singleCase.Parametar;
 
 @ManagedBean (name = "CaseBase", eager = true)
 @ViewScoped
@@ -112,6 +113,31 @@ public class CaseBase {
         return diagnoses_list;
     }
 
+    public ArrayList<Case> getCasesWithDiagnosis(String diagnosis) {
+        ArrayList<Case> list = new ArrayList<>();
+        for (Case case_from_base : this.cases)
+            if (case_from_base.getCorrectDiagnosis().getName().equals(diagnosis))
+                list.add(case_from_base);
+        return list;
+    }
+    
+    public ArrayList<Case> getCasesWithParameters(ArrayList<Parametar> parameters) {
+        ArrayList<Case> return_cases_list = new ArrayList<>();
+        for (Case temp_case : this.cases)
+            if (temp_case.containsParameterValues(parameters))
+                return_cases_list.add(temp_case);
+        return return_cases_list;
+    }
+    
+    public ArrayList<Case> getCasesWithDiagnosisAndParameters(String diagnosis, ArrayList<Parametar> parameters) {
+        ArrayList<Case> cases_with_diagnosis = getCasesWithDiagnosis(diagnosis);
+        ArrayList<Case> cases_with_parameters = getCasesWithParameters(parameters);
+        ArrayList<Case> cases_with_parameters_and_parameters = new ArrayList<>();
+        for (Case temp_case : cases_with_diagnosis)
+            if (cases_with_parameters.contains(temp_case))
+                cases_with_parameters_and_parameters.add(temp_case);
+        return cases_with_parameters_and_parameters;
+    }
     
     public void setDisplayCases(ArrayList<Case> display_cases) {
         this.display_cases = display_cases;

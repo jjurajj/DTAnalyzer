@@ -25,7 +25,7 @@ public class CaseEvaluation {
     public boolean diagnosed;                                       //Dijagnosticira li se case?
     public boolean correct;                                         //Dijagnosticira li se tocno?
     public String end_node;                                         //Konacni cvor za case
-    public ArrayList<Proposition> path = new ArrayList<>();         // Niz propozicija po kojima se dijagnosticira
+    public ArrayList<Proposition> path = new ArrayList<>();         // Niz propozicija u ispravnom redu po kojima se dijagnosticira
     public ArrayList<ArrayList<String>> diags_per_node = new ArrayList<>();  // Za svaku propoziciju popis available/pozeljnih dijagnoza
     public ArrayList<Double> price_per_node = new ArrayList<>();    // Cijena po cvoru
     
