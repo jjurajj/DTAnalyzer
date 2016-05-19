@@ -17,10 +17,11 @@ and open the template in the editor.
         <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
         <h:outputStylesheet library="css" name="table-style.css"  />
         <h:outputScript library="js" name="toggle_details.js" />
+        <h:outputScript library="js" name="dt.js" />
+        <h:outputScript library="js" name="contextmenu.js" />
     </h:head>
     <h:body id="body_id">
     <f:view id="view_id">
-
         <!-- Ne moze se instancirati vise objekata iste klase, eventualno napravit apstraktnu klasu i u njoj vise -->
         <h:form id="initializer">
             #{CaseBase.initialize('http://diana.zesoi.fer.hr/~jpetrovic/case_repository/car_starting/')}
@@ -28,6 +29,7 @@ and open the template in the editor.
             #{CaseBase.evaluateBase(DT)}
             #{ActiveDT.activeDT(DT.getStartNodeID())}
             #{PerDiagnosisDetails.setInfo('N/A')}
+            #{treeDrawer.init(DT)}
         </h:form>
             
         <p:tabView id="tab_view">
@@ -100,9 +102,15 @@ and open the template in the editor.
                     <h:dataTable value="#{PerDiagnosisDetails.getDisplayCases()}" var="case">
                         <h:column>
                             <h:outputLink value="#{case.getURL()}" target="_blank">Case #{case.getID()}</h:outputLink>
-                            <h:outputText value=" - Result: #{case.getEvaluation().getEndNode()} " />
+                            <h:outputText value=" - Result: " />
+                            <ui:fragment rendered="#{case.getEvaluation().isCorrect()}"><span style="color:green;">#{case.getEvaluation().getEndNode()} </span></ui:fragment>
+                            <ui:fragment rendered="#{!case.getEvaluation().isCorrect()}"><span style="color:red;">#{case.getEvaluation().getEndNode()} </span></ui:fragment>
+                            
+                            <ui:remove>
                             <h:graphicImage value="/images/tick.png" width="16" height="16" rendered="#{case.getEvaluation().isCorrect()}" />
                             <h:graphicImage value="/images/cross.png" width="16" height="16" rendered="#{!case.getEvaluation().isCorrect()}" />
+                            </ui:remove>
+                            
                             <h:outputText rendered="#{!case.getEvaluation().isDiagnosed()}" value=" (Undiagnosed - " />
                             <h:outputText rendered="#{case.getEvaluation().isCorrect()}" value=" (Correct - " />
                             <h:outputText rendered="#{case.getEvaluation().isDiagnosed() and !case.getEvaluation().isCorrect()}" value=" (Incorrect - " />
@@ -111,23 +119,37 @@ and open the template in the editor.
 
                             <p:panel id="case_details" visible="#{PerDiagnosisDetails.getDisplay(case)}" closable="true" toggleable="true">
                             
-                                <ui:fragment><b>Case correct solution:</b> #{case.getCorrectDiagnosis().getName()}<br /><br /></ui:fragment>
+                                <ui:fragment><b>Case correct solution:</b> <span style="color:green;">#{case.getCorrectDiagnosis().getName()}</span><br /><br /></ui:fragment>
                                 <ui:fragment><b>Case evaluation path:</b><br /><br /></ui:fragment>
                                 <ul>
                                 <h:dataTable value="#{case.getEvaluation().getPath()}" var="path_proposition"><h:column>
 
                                         <!--Output propozicije-->
-                                        <h:outputText rendered="#{case.getEvaluation().isDiagnosed() and !DT.getNodeNameFromID(path_proposition.concept_one).equals(case.getEvaluation().getEndNode()) or !case.getEvaluation().isDiagnosed()}" value="#{DT.getNodeNameFromID(path_proposition.concept_one)} - #{path_proposition.link} " />
+                                        <h:panelGroup rendered="#{case.getEvaluation().isDiagnosed() and !DT.getNodeNameFromID(path_proposition.concept_one).equals(case.getEvaluation().getEndNode()) or !case.getEvaluation().isDiagnosed()}">
+                                            <h:graphicImage value="/images/arrow_r.png" width="16" height="16" style="border-spacing: 20px"/>
+                                            <h:outputText value="  #{DT.getNodeNameFromID(path_proposition.concept_one)} - #{path_proposition.link} " />
+                                        </h:panelGroup>
+
+                                        <!-- Koliko caseova s postavljenom neispravnom dijagnozom dolazi dovde?
+                                        Ovo moze biti misleading jer ne uzima u obzir druge dijagnoze koje treba discardati pa sam maknuo.
+                                        Za postavljanje dijagnoze gledati iduci tab i stabla. -->
+                                        <ui:remove>
+                                        <ui:fragment>
+                                                <ul><li>
+                                                        #{CaseBase.getCasesWithDiagnosisAndParameters(case.getEvaluation().getEndNode(),case.getRequestedParameters(DT.decodeProposition(path_proposition))).size()}/#{CaseBase.getCasesWithDiagnosis(case.getEvaluation().getEndNode()).size()}
+                                                        (#{CaseBase.getCasesWithDiagnosis(case.getCorrectDiagnosis().getName()).size()>0 ? (CaseBase.getCasesWithDiagnosisAndParameters(case.getEvaluation().getEndNode(),case.getRequestedParameters(DT.decodeProposition(path_proposition))).size()*100/CaseBase.getCasesWithDiagnosis(case.getCorrectDiagnosis().getName()).size()):"0.0"}%)
+                                                        available cases with <i>#{case.getEvaluation().getEndNode()}</i> diagnosis <br />have the same parameter values as here.
+                                                </li></ul>
+                                        </ui:fragment>
+                                        </ui:remove>
                                         
                                         <!--Correct diagnosis discarded-->
                                         <ui:fragment rendered="#{!DT.checkReachability(path_proposition.concept_two,case.getCorrectDiagnosis().name) and DT.checkReachability(path_proposition.concept_one,case.getCorrectDiagnosis().name) and !case.getEvaluation().isCorrect()}">
                                                 <ul>
-                                                    <li><b>Correct diagnosis (</b><i>#{case.getCorrectDiagnosis().getName()}</i><b>) discarded.</b></li>
-                                                    <li>This decision is incorrect since
-                                                        --#{case.getRequestedParameters(path_proposition).get(0).name}--
-                                                        #{CaseBase.getCasesWithDiagnosisAndParameters(case.getCorrectDiagnosis().getName(),case.getRequestedParameters(path_proposition)).size()}
-                                                        X/#{CaseBase.getCasesWithDiagnosis(case.getCorrectDiagnosis().getName()).size()}
-                                                        available cases with <i>#{case.getCorrectDiagnosis().getName()}</i> diagnosis have the same parameter values as identified here.</li>
+                                                    <li><b>Correct diagnosis</b> (<span style="color:green;"><i>#{case.getCorrectDiagnosis().getName()}</i></span>) <b>discarded.</b></li>
+                                                    <li>#{CaseBase.getCasesWithDiagnosisAndParameters(case.getCorrectDiagnosis().getName(),case.getRequestedParameters(DT.decodeProposition(path_proposition))).size()}/#{CaseBase.getCasesWithDiagnosis(case.getCorrectDiagnosis().getName()).size()}
+                                                        (#{CaseBase.getCasesWithDiagnosis(case.getCorrectDiagnosis().getName()).size()>0 ? (CaseBase.getCasesWithDiagnosisAndParameters(case.getCorrectDiagnosis().getName(),case.getRequestedParameters(DT.decodeProposition(path_proposition))).size()*100/CaseBase.getCasesWithDiagnosis(case.getCorrectDiagnosis().getName()).size()):"0.0"}%)
+                                                        available cases with <i>#{case.getCorrectDiagnosis().getName()}</i> diagnosis <br />have the same parameter values as here.</li>
                                                 </ul>
                                         </ui:fragment>
 
@@ -139,12 +161,18 @@ and open the template in the editor.
                                         
                                         <!--Incorrect diagnosis reached-->
                                         <ui:fragment rendered="#{!case.getEvaluation().isCorrect() and case.getEvaluation().isDiagnosed() and (DT.getNodeNameFromID(path_proposition.concept_two)==case.getEvaluation().getEndNode())}">
-                                                <ul><li><b>Incorrect diagnosis </b>(<i>#{DT.getNodeNameFromID(path_proposition.concept_two)}</i><b>) set.</b></li></ul>
+                                            <ul><li><b>Incorrect diagnosis </b>(<span style="color:red;"><i>#{DT.getNodeNameFromID(path_proposition.concept_two)}</i></span>) <b>set.</b></li>
+                                                <li>#{CaseBase.getCasesWithDiagnosisAndParameters(case.getEvaluation().getEndNode(),case.getRequestedParameters(DT.decodeProposition(path_proposition))).size()}/#{CaseBase.getCasesWithDiagnosis(case.getEvaluation().getEndNode()).size()}
+                                                        (#{CaseBase.getCasesWithDiagnosis(case.getCorrectDiagnosis().getName()).size()>0 ? (CaseBase.getCasesWithDiagnosisAndParameters(case.getEvaluation().getEndNode(),case.getRequestedParameters(DT.decodeProposition(path_proposition))).size()*100/CaseBase.getCasesWithDiagnosis(case.getCorrectDiagnosis().getName()).size()):"0.0"}%)
+                                                        available cases with <span style="color:red;"><i>#{case.getEvaluation().getEndNode()}</i></span> diagnosis <br />have the same parameter values as here.</li>
+
+                                                </ul>
+                                                
                                         </ui:fragment>
                                         
                                         <!--Correct diagnosis reached-->
                                         <ui:fragment rendered="#{case.getEvaluation().isCorrect() and DT.getNodeNameFromID(path_proposition.concept_two).equals(case.getEvaluation().getEndNode())}">
-                                            <ul><li><b>Correct diagnosis </b> (<i>#{DT.getNodeNameFromID(path_proposition.concept_two)}</i>)<b> reached.</b></li></ul>
+                                            <ul><li><b>Correct diagnosis </b> (<span style="color:green;"><i>#{DT.getNodeNameFromID(path_proposition.concept_two)}</i></span>)<b> reached.</b></li></ul>
                                         </ui:fragment>
                                         
                                         <!--Case stuck in non-diagnosis node-->
@@ -154,21 +182,6 @@ and open the template in the editor.
                                         
                                 </h:column></h:dataTable>
                                 </ul>
-                                
-                                <f:verbatim><br /><b>More details:</b></f:verbatim>
-                                <h:dataTable value="#{item.getEvaluation().path}" var="dvitem">
-                                    <h:column>
-                                    </h:column>
-                                </h:dataTable>
-                                <!-- Tu ispraviti DT i omoguciti preuzimanje-->
-                                
-                                <f:verbatim>
-                                    <ul>
-                                        <li>U trenutku kada je discardana točna dijagnoza:</li>
-                                        
-                                        <li>U trenutku kada bi mogla biti discardana korisnikova konačna dijagnoza</li>
-                                    </ul>
-                                </f:verbatim>
                                 
                                 <ui:remove>
                                     <!---->
@@ -184,7 +197,7 @@ and open the template in the editor.
                 
             </p:tab>
             
-            <p:tab title="(3) Diagnosis results" id="per_diagnosis_tab">
+            <p:tab title="(3) Diagnosis results" id="per_diagnosis_tab" >
                 
                 <!-- Popis baza s caseovima -->
                 <f:verbatim><br />Evaluation <b>per final diagnosis</b> (case bases used: </f:verbatim>
@@ -264,9 +277,15 @@ and open the template in the editor.
                     <h:dataTable value="#{PerDiagnosisDetails.getDisplayCases()}" var="case">
                         <h:column>
                             <h:outputLink value="#{case.getURL()}" target="_blank">Case #{case.getID()}</h:outputLink>
-                            <h:outputText value=" - Result: #{case.getEvaluation().getEndNode()} " />
-                            <h:graphicImage value="/images/tick.png" width="16" height="16" rendered="#{case.getEvaluation().isCorrect()}" />
-                            <h:graphicImage value="/images/cross.png" width="16" height="16" rendered="#{!case.getEvaluation().isCorrect()}" />
+                            <h:outputText value=" - Result: " />
+                            <ui:fragment rendered="#{case.getEvaluation().isCorrect()}"><span style="color:green;">#{case.getEvaluation().getEndNode()} </span></ui:fragment>
+                            <ui:fragment rendered="#{!case.getEvaluation().isCorrect()}"><span style="color:red;">#{case.getEvaluation().getEndNode()} </span></ui:fragment>
+                            
+                            <ui:remove>
+                                <h:graphicImage value="/images/tick.png" width="16" height="16" rendered="#{case.getEvaluation().isCorrect()}" />
+                                <h:graphicImage value="/images/cross.png" width="16" height="16" rendered="#{!case.getEvaluation().isCorrect()}" />
+                            </ui:remove>
+                                
                             <h:outputText rendered="#{!case.getEvaluation().isDiagnosed()}" value=" (Undiagnosed - " />
                             <h:outputText rendered="#{case.getEvaluation().isCorrect()}" value=" (Correct - " />
                             <h:outputText rendered="#{case.getEvaluation().isDiagnosed() and !case.getEvaluation().isCorrect()}" value=" (Incorrect - " />
@@ -280,30 +299,66 @@ and open the template in the editor.
                                 <ul>
                                 <h:dataTable value="#{case.getEvaluation().getPath()}" var="path_proposition"><h:column>
 
-                                        <h:outputText rendered="#{case.getEvaluation().isDiagnosed() and !DT.getNodeNameFromID(path_proposition.concept_one).equals(case.getEvaluation().getEndNode()) or !case.getEvaluation().isDiagnosed()}" value="#{DT.getNodeNameFromID(path_proposition.concept_one)} - #{path_proposition.link} " />
-                                        <ui:fragment rendered="#{!DT.checkReachability(path_proposition.concept_two,case.getCorrectDiagnosis().name) and DT.checkReachability(path_proposition.concept_one,case.getCorrectDiagnosis().name) and !case.getEvaluation().isCorrect()}"><ul><li><b>Correct diagnosis (</b><i>#{case.getCorrectDiagnosis().getName()}</i><b>) discarded.</b></li></ul></ui:fragment>
-                                        <ui:fragment rendered="#{!case.getEvaluation().isCorrect() and case.getEvaluation().isDiagnosed() and (DT.getNodeNameFromID(path_proposition.concept_two)==case.getEvaluation().getEndNode())}"><ul><li><b>Incorrect diagnosis </b>(<i>#{DT.getNodeNameFromID(path_proposition.concept_two)}</i><b>) set.</b></li></ul></ui:fragment>
-                                        <ui:fragment rendered="#{case.getEvaluation().isCorrect() and DT.getNodeNameFromID(path_proposition.concept_two).equals(case.getEvaluation().getEndNode())}"><ul><li><b>Correct diagnosis </b> (<i>#{DT.getNodeNameFromID(path_proposition.concept_two)}</i>)<b> reached.</b></li></ul></ui:fragment>
-                                        <ui:fragment rendered="#{!case.getEvaluation().isDiagnosed() and (DT.getNodeNameFromID(path_proposition.concept_one).equals(case.getEvaluation().getEndNode()))}"><ul><li><b>No next node - case stuck in the non-diagnosis node!</b></li></ul></ui:fragment>
+                                        <!--Output propozicije-->
+                                        <h:panelGroup rendered="#{case.getEvaluation().isDiagnosed() and !DT.getNodeNameFromID(path_proposition.concept_one).equals(case.getEvaluation().getEndNode()) or !case.getEvaluation().isDiagnosed()}">
+                                            <h:graphicImage value="/images/arrow_r.png" width="16" height="16" style="border-spacing: 20px"/>
+                                            <h:outputText value="  #{DT.getNodeNameFromID(path_proposition.concept_one)} - #{path_proposition.link} " />
+                                        </h:panelGroup>
+
+                                        <!-- Koliko caseova s postavljenom neispravnom dijagnozom dolazi dovde?
+                                        Ovo moze biti misleading jer ne uzima u obzir druge dijagnoze koje treba discardati pa sam maknuo.
+                                        Za postavljanje dijagnoze gledati iduci tab i stabla. -->
+                                        <ui:remove>
+                                        <ui:fragment>
+                                                <ul><li>
+                                                        #{CaseBase.getCasesWithDiagnosisAndParameters(case.getEvaluation().getEndNode(),case.getRequestedParameters(DT.decodeProposition(path_proposition))).size()}/#{CaseBase.getCasesWithDiagnosis(case.getEvaluation().getEndNode()).size()}
+                                                        (#{CaseBase.getCasesWithDiagnosis(case.getCorrectDiagnosis().getName()).size()>0 ? (CaseBase.getCasesWithDiagnosisAndParameters(case.getEvaluation().getEndNode(),case.getRequestedParameters(DT.decodeProposition(path_proposition))).size()*100/CaseBase.getCasesWithDiagnosis(case.getCorrectDiagnosis().getName()).size()):"0.0"}%)
+                                                        available cases with <i>#{case.getEvaluation().getEndNode()}</i> diagnosis <br />have the same parameter values as here.
+                                                </li></ul>
+                                        </ui:fragment>
+                                        </ui:remove>
+                                        
+                                        <!--Correct diagnosis discarded-->
+                                        <ui:fragment rendered="#{!DT.checkReachability(path_proposition.concept_two,case.getCorrectDiagnosis().name) and DT.checkReachability(path_proposition.concept_one,case.getCorrectDiagnosis().name) and !case.getEvaluation().isCorrect()}">
+                                                <ul>
+                                                    <li><b>Correct diagnosis</b> (<span style="color:green;"><i>#{case.getCorrectDiagnosis().getName()}</i></span>) <b>discarded.</b></li>
+                                                    <li>#{CaseBase.getCasesWithDiagnosisAndParameters(case.getCorrectDiagnosis().getName(),case.getRequestedParameters(DT.decodeProposition(path_proposition))).size()}/#{CaseBase.getCasesWithDiagnosis(case.getCorrectDiagnosis().getName()).size()}
+                                                        (#{CaseBase.getCasesWithDiagnosis(case.getCorrectDiagnosis().getName()).size()>0 ? (CaseBase.getCasesWithDiagnosisAndParameters(case.getCorrectDiagnosis().getName(),case.getRequestedParameters(DT.decodeProposition(path_proposition))).size()*100/CaseBase.getCasesWithDiagnosis(case.getCorrectDiagnosis().getName()).size()):"0.0"}%)
+                                                        available cases with <i>#{case.getCorrectDiagnosis().getName()}</i> diagnosis <br />have the same parameter values as here.</li>
+                                                </ul>
+                                        </ui:fragment>
+
+                                        <!--Check if user's solution could be discarded here-->
+                                        <!--Dohvati sve caseove s dijagnozom koju je korisnik krivo postavio i provjeri koliko njih ima iste parametre. Tu info mozes napisati u svakom koraku-->
+                                        <ui:fragment rendered="#{!case.getEvaluation().isCorrect() and case.getEvaluation().isDiagnosed() and (DT.getNodeNameFromID(path_proposition.concept_two)==case.getEvaluation().getEndNode())}">
+                                                <ul></ul>
+                                        </ui:fragment>
+                                        
+                                        <!--Incorrect diagnosis reached-->
+                                        <ui:fragment rendered="#{!case.getEvaluation().isCorrect() and case.getEvaluation().isDiagnosed() and (DT.getNodeNameFromID(path_proposition.concept_two)==case.getEvaluation().getEndNode())}">
+                                            <ul><li><b>Incorrect diagnosis </b>(<span style="color:red;"><i>#{DT.getNodeNameFromID(path_proposition.concept_two)}</i></span>) <b>set.</b></li>
+                                                <li>#{CaseBase.getCasesWithDiagnosisAndParameters(case.getEvaluation().getEndNode(),case.getRequestedParameters(DT.decodeProposition(path_proposition))).size()}/#{CaseBase.getCasesWithDiagnosis(case.getEvaluation().getEndNode()).size()}
+                                                        (#{CaseBase.getCasesWithDiagnosis(case.getCorrectDiagnosis().getName()).size()>0 ? (CaseBase.getCasesWithDiagnosisAndParameters(case.getEvaluation().getEndNode(),case.getRequestedParameters(DT.decodeProposition(path_proposition))).size()*100/CaseBase.getCasesWithDiagnosis(case.getCorrectDiagnosis().getName()).size()):"0.0"}%)
+                                                        available cases with <span style="color:red;"><i>#{case.getEvaluation().getEndNode()}</i></span> diagnosis <br />have the same parameter values as here.</li>
+
+                                                </ul>
+                                                
+                                        </ui:fragment>
+                                        
+                                        <!--Correct diagnosis reached-->
+                                        <ui:fragment rendered="#{case.getEvaluation().isCorrect() and DT.getNodeNameFromID(path_proposition.concept_two).equals(case.getEvaluation().getEndNode())}">
+                                            <ul><li><b>Correct diagnosis </b> (<span style="color:green;"><i>#{DT.getNodeNameFromID(path_proposition.concept_two)}</i></span>)<b> reached.</b></li></ul>
+                                        </ui:fragment>
+                                        
+                                        <!--Case stuck in non-diagnosis node-->
+                                        <ui:fragment rendered="#{!case.getEvaluation().isDiagnosed() and (DT.getNodeNameFromID(path_proposition.concept_one).equals(case.getEvaluation().getEndNode()))}">
+                                            <ul><li><b>No next node - case stuck in a non-diagnosis node!</b></li></ul>
+                                        </ui:fragment>
                                         
                                 </h:column></h:dataTable>
                                 </ul>
                                 
-                                <f:verbatim><br /><b>DT corrections required:</b></f:verbatim>
-                                <h:dataTable value="#{item.getEvaluation().getPath()}" var="dvitem">
-                                    <h:column>
-                                        
-                                    </h:column>
                                 
-                                </h:dataTable>
-                                <!-- Tu ispraviti DT i omoguciti preuzimanje-->
-                                
-                                <f:verbatim><ul><li>Tu nades sve caseove u bazi koji imaju iste parametre do sad,</li><li>onda te parametre iskljucis</li><li>i od caseova napravis DT</li><li>i od tog DTa tu ispises put do dijagnoze kojoj pripada ovaj case.</li></ul></f:verbatim>
-                                
-                                <ui:remove>
-                                    <!---->
-                                </ui:remove>
-
                             
                             </p:panel>
                         </h:column>
@@ -315,29 +370,21 @@ and open the template in the editor.
                 
             </p:tab>
             
-            <p:tab title="(4) Decision tree analysis">
                 
-                <f:verbatim><b>Start node</b>:</f:verbatim>
-                <ul><li>#{DT.getStartNodeName()}</li></ul>
+            <p:tab title="(4) Decision tree analysis" id="graph_tab">
+                
                 <f:verbatim><b>Decision tree building</b>:<br /><br /></f:verbatim>
                 
                 <h:form>
-                    <p:commandLink actionListener="#{DT.pruneLeaves()}" update=":tab_view:activeTree"><h:graphicImage value="/images/arrow_l.png" width="16" height="16" style="border-spacing: 20px"/>Contract one level</p:commandLink>
+                    <p:commandLink actionListener="#{treeDrawer.pruneLeaves()}" update=":tab_view:activeTree"><h:graphicImage value="/images/arrow_l.png" width="16" height="16" style="border-spacing: 20px"/>Contract one level</p:commandLink>
                     <f:verbatim> -- </f:verbatim>
-                    <p:commandLink actionListener="#{DT.expandLeaves()}" update=":tab_view:activeTree">Expand one level<h:graphicImage value="/images/arrow_r.png" width="16" height="16"/></p:commandLink>
+                    <p:commandLink actionListener="#{treeDrawer.expandLeaves()}" update=":tab_view:activeTree">Expand one level<h:graphicImage value="/images/arrow_r.png" width="16" height="16"/></p:commandLink>
                 </h:form>
+            
+                <p:diagram id="activeTree" value="#{treeDrawer.getModel()}" style="height:600px;width:100%" styleClass="ui-widget-content" />
                 
-                
-                <p:panel id="activeTree" visible="true" closable="true" collapsed="false" toggleable="true" style="border: 0px">
-                <ul>
-                <ui:repeat value="#{DT.getActiveTree()}" var="item"> <!--http://stackoverflow.com/questions/20468236/using-foreach-loop-in-jsf-->
-                    <li>"#{DT.getNodeNameFromID(item.concept_one)}"--"#{item.link}"-->"#{DT.getNodeNameFromID(item.concept_two)}"</li>
-                </ui:repeat>   
-                </ul>
-                </p:panel>
-                    
-               
             </p:tab>
+            
             
         </p:tabView>
         

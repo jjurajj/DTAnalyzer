@@ -8,10 +8,26 @@
     </h:head>
     <h:body>
         <f:view>
-            <h:outputText value="Ovo je početna stranica na koju se može aploudati tekstualni fajl s prpopozicijama koje cine stablo odluke."/><br />
-            <br /><br />
-            <h:outputText value="Zasad je podrzan samo izlazni format iz CMAPToolsa." />
-            <br /><br />
+            <br />
+            <h:outputText value="Ovo je početna stranica DTAnalyzer aplikacije. Ideja aplikacije je:"/><br />
+            <f:verbatim>
+                <ul>
+                    <li>pružiti ispitaniku povratnu informaciju o njegovom znanju i pogreškama koje radi</li>
+                    <li>u postupku donošenja zaključaka na temelju dostupnih informacija (npr. tehnička ili druga dijagnostika)</li>
+                    <li>i to na temelju stabla odluke koje definira ispitanik,</li>
+                    <li>a koje se provjerava pomoću baze predefiniranih primjera (caseova).</li>
+                </ul>
+            </f:verbatim>
+            Za demonstraciju rada aplikacije možete:
+            <f:verbatim>
+                <ol>
+                    <li>preuzeti <a href="http://diana.zesoi.fer.hr/~jpetrovic/case_repository/carWontStart_template.cxl">ovaj predložak </a>,</li>
+                    <li>učitati predložak u <a href="https://cmapcloud.ihmc.us/">Online</a> ili <a href="http://cmap.ihmc.us/cmaptools/cmaptools-download/">Desktop</a> Cmap tools alatu,</li>
+                    <li>od elemenata iz predloška uz dodavanje "Yes" ili "No" veza definirati vlastito stablo odluke za dijagnostiku problema pri paljenju auta,</li>
+                    <li>izvesti stablo u .cxl (ili .txt) formatu,</li>
+                    <li>uploadati u formu u nastavku za analizu.</li>
+                </ol>
+            </f:verbatim>
             <h:form id="form" enctype="multipart/form-data">
                 <h:inputFile id="file" value="#{Uploader.file}" validator="#{Uploader.validateFile}" />
                 

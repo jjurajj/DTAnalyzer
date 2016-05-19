@@ -181,9 +181,15 @@ public class Case implements Serializable {
         return error_diagnosis;
     }
     public boolean containsParameterValues(ArrayList<Parametar> parameters) {
-        for (Parametar parametar_query : parameters)
-            if (!this.getParametersMap().containsKey(parametar_query.getName()) || (this.getParametersMap().get(parametar_query.getName()).equals(parametar_query.getAssigned_value())))
-                return false;
+        // Ispituje sadrzi li case predefinirane vrijednosti parametara. Radi za stvarne vrijednosti, ne IDjeve
+        for (Parametar parametar_query : parameters) {
+            boolean case_contains_key = this.getParametersMap().containsKey(parametar_query.getName());
+            // Ako za SVE arametre case ima taj parametar i istu real vrijednost
+            String value_in_case = this.getParametersMap().get(parametar_query.getName());
+            String value_in_parameters = parametar_query.getAssigned_value();
+            if (!(case_contains_key) || !(value_in_case.equals(value_in_parameters)))
+            { return false; }
+        }
         return true;
     }
 
@@ -191,14 +197,18 @@ public class Case implements Serializable {
     
     public ArrayList<Parametar> getRequestedParameters(Proposition last_proposition) {
     // Zadajem input poslijednju propoziciju do koje sam stigao rjesavajuci case po zadanom stablu
-    // Kao autout vracam sve parametre koje sam prikupio po putu do te propozicije
+    // Kao output vracam sve parametre koje sam prikupio po putu do te propozicije
+    // Ovo radi u plain textu (parametri imaju imena, ne IDjeve)
     
         ArrayList<Parametar> return_parameters_list = new ArrayList<>();
-        for (Proposition p : this.evaluation.getPath())
-            if (p.equals(last_proposition))
+        for (Proposition p : this.evaluation.getPath_name()) {
+            if (p.equals(last_proposition)) {
+                return_parameters_list.add(getParametarByName(p.getConcept_one()));
                 break;
+            }
             else
                 return_parameters_list.add(getParametarByName(p.getConcept_one()));
+        }
         return return_parameters_list;
     }
     
@@ -214,13 +224,13 @@ public class Case implements Serializable {
     public void setParametersMap(HashMap<String, String> parametersMap) { this.parametersMap = parametersMap; }
     public void setEvaluation(CaseEvaluation evaluation) { this.evaluation = evaluation; }
     public void setID(String id) { this.id = id; }
-    
     public Parametar getParametarByName(String name){
         for (Parametar p : this.parameters)
             if (p.getName().equals(name))
                 return p;
         return new Parametar();
     }
+
     public String getID() { return id; }
     public CaseEvaluation getEvaluation() { return evaluation; }
     public String getURL() { return url; }

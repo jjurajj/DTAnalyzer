@@ -84,15 +84,15 @@ public class DT implements Serializable {
           
           String concept_list=(String) tree_text.subSequence(tree_text.indexOf("<concept-list>")+14,tree_text.indexOf("</concept-list>"));
           String tmp_concept_lines=concept_list.substring(concept_list.indexOf("<concept id="),concept_list.lastIndexOf("/>")+2);
-          String[] concept_lines=tmp_concept_lines.split("/><concept");   
+          String[] concept_lines=tmp_concept_lines.split("/>");   
           
           String link_list=(String) tree_text.subSequence(tree_text.indexOf("<linking-phrase-list")+20,tree_text.indexOf("</linking-phrase-list>"));
           String tmp_link_lines = link_list.substring(link_list.indexOf("<linking-phrase id="), link_list.lastIndexOf("/>")+2);
-          String[] link_lines=tmp_link_lines.split("/><linking-phrase");   
+          String[] link_lines=tmp_link_lines.split("/>");   
           
           String connection_list=(String) tree_text.subSequence(tree_text.indexOf("<connection-list>")+17,tree_text.indexOf("</connection-list>"));
           String tmp_connection_lines = connection_list.substring(connection_list.indexOf("<connection id="),connection_list.lastIndexOf("/>")+2);
-          String[] connection_lines=tmp_connection_lines.split("/><connection");
+          String[] connection_lines=tmp_connection_lines.split("/>");
           
           for (String line : concept_lines) {
               if (line.contains("id=")) {
@@ -269,6 +269,8 @@ public class DT implements Serializable {
            // Trenutno moguce dijagnoze
            // Potrebne dijagnoze. Tu jos treba rijesit uniju, razliku u presjek
            case_eval.path.add(new Proposition(key.concept, key.value, next_concept));
+           case_eval.path_name.add(new Proposition(getNodeNameFromID(key.concept), key.value, getNodeNameFromID(next_concept)));
+           
            case_eval.diags_per_node.add(reachable_diagnoses);
             
         }
@@ -356,6 +358,22 @@ public class DT implements Serializable {
     
     ////////////////////////////////////////////////////////////////////////////
     //  Razno
+    
+    public ArrayList<String> getElements(String text, String element) {
+        ArrayList elements = new ArrayList<>();
+        String end_indicator="\"/>";
+        
+        while (text.indexOf("<".concat(element)) > -1) {
+            int start_index=text.indexOf("<".concat(text));
+            int end_index=text.indexOf(end_indicator)+end_indicator.length();
+            elements.add(text.substring(start_index,end_index));
+            text=text.substring(end_index);
+        }
+        
+        return elements;
+        
+    }
+    
     public int getNodeDepth(String node) {
 
         int depth=0;
@@ -435,6 +453,14 @@ public class DT implements Serializable {
     }
     ////////////////////////////////////////////////////////////////////////////
     
+    
+    public Proposition decodeProposition(Proposition p) {
+        Proposition decoded = new Proposition();
+        decoded.setConcept_one(this.getNodeNameFromID(p.getConcept_one()));
+        decoded.setConcept_two(this.getNodeNameFromID(p.getConcept_two()));
+        decoded.setLink(p.getLink());
+        return decoded;
+    }
     
     ////////////////////////////////////////////////////////////////////////////
     // Getteri i setteri od svojstava klase:

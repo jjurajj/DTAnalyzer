@@ -26,6 +26,7 @@ public class CaseEvaluation {
     public boolean correct;                                         //Dijagnosticira li se tocno?
     public String end_node;                                         //Konacni cvor za case
     public ArrayList<Proposition> path = new ArrayList<>();         // Niz propozicija u ispravnom redu po kojima se dijagnosticira
+    public ArrayList<Proposition> path_name = new ArrayList<>();        // Niz propozicija u ispravnom redu po kojima se dijagnosticira
     public ArrayList<ArrayList<String>> diags_per_node = new ArrayList<>();  // Za svaku propoziciju popis available/pozeljnih dijagnoza
     public ArrayList<Double> price_per_node = new ArrayList<>();    // Cijena po cvoru
     
@@ -96,6 +97,14 @@ public class CaseEvaluation {
 
     public void setPrice_per_node(ArrayList<Double> price_per_node) {
         this.price_per_node = price_per_node;
+    }
+
+    public ArrayList<Proposition> getPath_name() {
+        return path_name;
+    }
+
+    public void setPath_name(ArrayList<Proposition> path_name) {
+        this.path_name = path_name;
     }
     
 }
