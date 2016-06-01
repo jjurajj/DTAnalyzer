@@ -378,7 +378,7 @@ and open the template in the editor.
                 <h:form>
                     <p:commandLink actionListener="#{treeDrawer.pruneLeaves()}" update=":tab_view:activeTree"><h:graphicImage value="/images/arrow_l.png" width="16" height="16" style="border-spacing: 20px"/>Contract one level</p:commandLink>
                     <f:verbatim> -- </f:verbatim>
-                    <p:commandLink actionListener="#{treeDrawer.expandLeaves()}" update=":tab_view:activeTree">Expand one level<h:graphicImage value="/images/arrow_r.png" width="16" height="16"/></p:commandLink>
+                    <p:commandLink actionListener="#{treeDrawer.newExpandLeaves()}" update=":tab_view:activeTree">Expand one level<h:graphicImage value="/images/arrow_r.png" width="16" height="16"/></p:commandLink>
                 </h:form>
             
                 <p:diagram id="activeTree" value="#{treeDrawer.getModel()}" style="height:600px;width:100%" styleClass="ui-widget-content" />

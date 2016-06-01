@@ -374,6 +374,15 @@ public class DT implements Serializable {
         
     }
     
+    
+    public ArrayList<Proposition> getChildrenPropositions(String concept_ID) {
+        ArrayList children_propositions = new ArrayList<>();
+        for (Proposition proposition : this.propositions)
+            if (proposition.getConcept_one().equals(concept_ID))
+                    children_propositions.add(proposition);
+        return children_propositions;
+    }
+        
     public int getNodeDepth(String node) {
 
         int depth=0;
