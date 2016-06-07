@@ -34,22 +34,27 @@ public class treeDrawer {
     
     public void init(DT decision_tree) {
         
+        active_tree = new ArrayList<>();
+        nodes_per_level = new ArrayList<>();
+         
         this.tree = decision_tree;
         this.screen_x=1200;
-        this.step_y=70;
+        this.step_y=90;
         
         model = new DefaultDiagramModel();
         model.setMaxConnections(-1);
          
         FlowChartConnector connector = new FlowChartConnector();
-        connector.setPaintStyle("{strokeStyle:'#C7B097',lineWidth:2}");
+        connector.setPaintStyle("{strokeStyle:'#d8ccc0',lineWidth:2}");
         model.setDefaultConnector(connector);
         
         Element start = new Element(tree.getStartNodeName(), Integer.toString(screen_x/2).concat("px"), "10px");
         start.addEndPoint(new BlankEndPoint(EndPointAnchor.TOP));
         start.addEndPoint(new BlankEndPoint(EndPointAnchor.BOTTOM));
         start.setId(tree.getStartNodeID());
+        start.setStyleClass("ui-diagram-start");
         model.addElement(start);
+        
     }
     
     private ArrayList<String> getLeaves() {
@@ -77,8 +82,8 @@ public class treeDrawer {
     
     }
    
-    public void addNode() {
-        Element tmp_element = new Element("ASDASDA", "5em", "1em");
+    public void addNode(String name) {
+        Element tmp_element = new Element(name, "5em", "1em");
         tmp_element.addEndPoint(new BlankEndPoint(EndPointAnchor.TOP));
         tmp_element.addEndPoint(new BlankEndPoint(EndPointAnchor.BOTTOM));
         this.model.addElement(tmp_element);
@@ -91,6 +96,9 @@ public class treeDrawer {
         new_child.setId(proposition.getConcept_two());
         new_child.addEndPoint(new BlankEndPoint(EndPointAnchor.TOP));
         new_child.addEndPoint(new BlankEndPoint(EndPointAnchor.BOTTOM));
+        if (tree.diagnoses.contains(proposition.getConcept_two()))
+            new_child.setStyleClass("ui-diagram-end");
+        
         
         // Nađi roditelja po IDju i poveži ga s čvorom
         for (Element node : model.getElements())
@@ -101,10 +109,9 @@ public class treeDrawer {
         
     }
     
-    public void newExpandLeaves() {
+    public void expandLeaves() {
     
         ArrayList<Proposition> new_propositions = new ArrayList<>(); 
-        
         
         // Razvij korijesnki cvor ili sve listove redom kojim se javljaju
         if (this.active_tree.size()==0) {
@@ -130,56 +137,30 @@ public class treeDrawer {
                         node.setX(Integer.toString(x_scale++*screen_x/(leaves.size()+1)).concat("px"));                                // Po x osi
                         node.setY(Integer.toString((tree.getNodeDepth(node.getId()))*step_y).concat("px")); // Po y osi
                     }
-
+        
+    } 
+    public void pruneLeaves() {
+        
+        ArrayList<Proposition> new_active_tree = new ArrayList<>();
+        for (int i=0; i<active_tree.size(); i++ )
+            if (i<active_tree.size() - nodes_per_level.get(nodes_per_level.size()-1))
+                new_active_tree.add(active_tree.get(i));
+            else
+                this.model.removeElement(this.model.findElement(active_tree.get(i).getConcept_two()));
+            
+        active_tree=new_active_tree;
+        nodes_per_level.remove(nodes_per_level.size()-1);
+    }
+    public void buildFullTree() {
+        
+        ArrayList<Proposition> last_propositions = new ArrayList<>();
+        do  {
+            expandLeaves();
+        } while (active_tree.size() != tree.propositions.size());
+    
     }
     
-    public void expandLeaves() {
-        /** Ako nema propozicija u active tree-u, dodaj sve propozicije koje idu iz pocetnog cvora.
-         * Inace, nadi sve listove active tree-a
-         * Za svaku propoziciju stabla, ako je prvi koncept propozicije medu listovima, dodaj propoziciju
-        */
-        
-        ArrayList<Proposition> new_propositions = new ArrayList<>(); 
-        ArrayList<String> leaves = getLeaves();
-
-        for (Proposition proposition : tree.propositions)
-            if ((this.active_tree.size()==0) & (proposition.getConcept_one().equals(tree.getStartNodeID()))     // Ako je stablo praznoi
-                    || (leaves.contains(proposition.getConcept_one()))) {                                       // Ili je prvi clan proipozicije list
-                addPropositionToGraph(proposition);
-                new_propositions.add(proposition);
-            }
-        this.active_tree.addAll(new_propositions);
-    }
-       
-    public void pruneLeaves() {
-    // Ukloni listove iz active_tree stabla
-    /* Ako stablo ima samo korijenski cvor onda ne radi nista
-     * Inace nadi sve listove u stablu i ukloni sve propozicije kojima
-    */
-        ArrayList new_active_tree = new ArrayList<>();
-        ArrayList<String> leaves = getLeaves();
-        Integer max_depth=0;
-        
-        for (String leaf : leaves) {
-            Integer temp_depth=getNodeDepth(leaf);
-            if (max_depth<temp_depth)
-                max_depth=temp_depth;
-        }
-
-        for (Proposition proposition : this.active_tree) {
-            String concept_two = proposition.getConcept_two();
-            if ((!leaves.contains(concept_two)) || (getNodeDepth(concept_two)<max_depth)) {
-                new_active_tree.add(proposition);
-            }
-            else {
-                this.model.removeElement(this.model.findElement(concept_two));
-            }
-        }
-        
-        this.active_tree=new_active_tree;
-    }
-
-        public int getNodeDepth(String node) {
+    public int getNodeDepth(String node) {
 
         int depth=0;
         ArrayList<String> active_nodes=new ArrayList<>();

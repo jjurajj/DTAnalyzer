@@ -2,6 +2,7 @@
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml"
       xmlns:f="http://java.sun.com/jsf/core"
+      xmlns:ui="http://xmlns.jcp.org/jsf/facelets"
       xmlns:h="http://xmlns.jcp.org/jsf/html">
     <h:head>
         <title>Facelet Title</title>
@@ -9,17 +10,18 @@
     <h:body>
         <f:view>
             <br />
-            <h:outputText value="Ovo je početna stranica DTAnalyzer aplikacije. Ideja aplikacije je:"/><br />
+            <h:outputText value="Ovo je početna stranica DTAnalyzer aplikacije. Svrha ove aplikacije je:"/><br />
             <f:verbatim>
                 <ul>
                     <li>pružiti ispitaniku povratnu informaciju o njegovom znanju i pogreškama koje radi</li>
-                    <li>u postupku donošenja zaključaka na temelju dostupnih informacija (npr. tehnička ili druga dijagnostika)</li>
+                    <li>u postupku donošenja zaključaka na temelju dostupnih informacija (npr. tehnička, medicinska ili druga dijagnostika)</li>
                     <li>i to na temelju stabla odluke koje definira ispitanik,</li>
                     <li>a koje se provjerava pomoću baze predefiniranih primjera (caseova).</li>
                 </ul>
             </f:verbatim>
+            
+            <ui:remove>
             Za demonstraciju rada aplikacije možete:
-            <f:verbatim>
                 <ol>
                     <li>preuzeti <a href="http://diana.zesoi.fer.hr/~jpetrovic/case_repository/carWontStart_template.cxl">ovaj predložak </a>,</li>
                     <li>učitati predložak u <a href="https://cmapcloud.ihmc.us/">Online</a> ili <a href="http://cmap.ihmc.us/cmaptools/cmaptools-download/">Desktop</a> Cmap tools alatu,</li>
@@ -27,7 +29,8 @@
                     <li>izvesti stablo u .cxl (ili .txt) formatu,</li>
                     <li>uploadati u formu u nastavku za analizu.</li>
                 </ol>
-            </f:verbatim>
+            </ui:remove>
+            Aplikacija podržava CXL format zapisa stabla.<br /><br />
             <h:form id="form" enctype="multipart/form-data">
                 <h:inputFile id="file" value="#{Uploader.file}" validator="#{Uploader.validateFile}" />
                 

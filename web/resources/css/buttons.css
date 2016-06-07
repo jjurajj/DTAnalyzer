@@ -1,0 +1,10 @@
+
+.ui-icon-contract {
+    background-image: url("#{resource['images/arrow_l_16.png']}") !important;
+    background-position: left; 
+}
+
+.ui-icon-expand {
+    background-image: url("#{resource['images/arrow_r_16.png']}") !important;
+    background-position: right !important;
+}

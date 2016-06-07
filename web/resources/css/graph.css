@@ -1,0 +1,55 @@
+.ui-diagram-element {   
+    //width:10em; 
+    height:24px;
+    line-height:24px;
+    padding-right:5px;
+    padding-left:5px;
+    text-align: center;
+    box-shadow: 0 5px 10px rgba(0, 0, 0, 0.8);
+    border-radius: 6px;
+    border: 1px solid transparent;
+    background-color: #1ECAD6;
+    color: #ffffff;
+    word-break: break-all;
+    line-break: strict;
+    }
+
+.ui-diagram-start {   
+    //width:10em; 
+    height:28px;     
+    line-height:28px;
+    text-align: center;
+    padding-right:5px;
+    padding-left:5px;
+    box-shadow: 0 5px 10px rgba(0, 0, 0, 0.8);
+    border-radius: 6px;
+    border: 1px solid transparent;
+    background-color: #74E64E;
+    color: #ffffff;
+    word-break: break-all;
+    line-break: strict;
+    }
+
+.ui-diagram-end {   
+    //width:10em; 
+    height:28px;     
+    line-height:28px;
+    text-align: center;
+    padding-right:5px;
+    padding-left:5px;
+    box-shadow: 0 5px 10px rgba(0, 0, 0, 0.8);
+    border-radius: 6px;
+    border: 1px solid transparent;
+    background-color: #FA775A;
+    color: #ffffff;
+    word-break: break-all;
+    line-break: strict;
+    }
+
+.flow-label {
+    font-size: 16px;
+    font-weight: bold;
+    color: #816A51;
+    word-break: break-all;
+    line-break: strict;
+}

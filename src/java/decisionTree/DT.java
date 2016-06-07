@@ -227,6 +227,7 @@ public class DT implements Serializable {
             return reachable_diagnoses;
         }
     }
+
     public CaseEvaluation runCase (Case current_case) {
         // vracam niz propozicija i za svaku popis ostavljenih dobrih dijagnoza, dobro i krivo iskljucenih
         // pretpostavka: CB ima samo caseove koji se odnose na dijagnoze iz stabla
@@ -239,9 +240,9 @@ public class DT implements Serializable {
        String next_concept = this.start_node;
        
        // key mi je za odredivanje iduceg cvora stabla (par trenutni cvor i vrijednost tog parametra u caseu)
-       PropositionKey key; 
-       key = new PropositionKey(next_concept, current_case.parametersMap.get(getNodeNameFromID(next_concept)));
-
+       PropositionKey key;
+       key = getCaseIndependentPropositionKey(next_concept, current_case.parametersMap.get(getNodeNameFromID(next_concept)));
+       
        // Prodemo po stablu dok ima sljedeceg koncepta u stablu i dok case ima parametar (kljuc) za njega
        String end_concept=next_concept;
        while ((next_concept != null) && (key.concept != null)) {
@@ -254,7 +255,7 @@ public class DT implements Serializable {
            end_concept=next_concept;
            // Odredi iduci koncept
            case_eval.end_node = getNodeNameFromID(next_concept);                                                      // Do kud je case dosao
-           key = new PropositionKey(next_concept, current_case.parametersMap.get(getNodeNameFromID(next_concept)));   // Za taj cvor ispitaj vrijednost caseu
+           key = getCaseIndependentPropositionKey(next_concept, current_case.parametersMap.get(getNodeNameFromID(next_concept)));   // Za taj cvor ispitaj vrijednost caseu
            next_concept = this.propositionsMap.get(key);                                                    // Provjeri postoji li za to u stablu iduci cvor
             
            // Za taj koncept dohvati moguce dijagnoze na temelju stabla
@@ -289,6 +290,19 @@ public class DT implements Serializable {
     }
     ////////////////////////////////////////////////////////////////////////////
     
+    // Trazim po kljucevima od propositionsMap od stabla kljuc koji slici na kljuc zadan caseom
+    private PropositionKey getCaseIndependentPropositionKey(String concept, String value) {
+
+        PropositionKey real_key = new PropositionKey(concept, value);
+        if ((concept == null) || (value == null) || (this.propositionsMap.containsKey(real_key))) return real_key;
+        else {
+            for (PropositionKey key : this.propositionsMap.keySet())
+                if (key.concept.equals(concept))
+                    if (key.value.toLowerCase().trim().equals(value.toLowerCase().trim()))
+                        value=key.value;
+            return new PropositionKey(concept, value);
+        }
+    }
     
     ////////////////////////////////////////////////////////////////////////////
     // Funkcije za razvijanje i skracianje active tree reprezentacije stabla

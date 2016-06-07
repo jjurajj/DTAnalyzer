@@ -152,8 +152,22 @@ public class Case implements Serializable {
             
             // Odredi iduci koncept
             eval.end_node = next_concept;                                               // Odi u iduci cvor stabla
+            
             key = new PropositionKey(next_concept, parametersMap.get(next_concept));    // Za taj cvor ispitaj vrijednost caseu
             next_concept = tree.propositionsMap.get(key);                               // Provjeri postoji li za to u stablu iduci cvor
+            
+            // Ako nema idućeg, provjeri da nije razlika u labeli u valikim i malim slovima
+            if (((next_concept == null)) && (key.concept != null)) {
+                
+                PropositionKey key_lowercase = new PropositionKey(next_concept, parametersMap.get(next_concept).toLowerCase());
+                PropositionKey key_uppercase = new PropositionKey(next_concept, parametersMap.get(next_concept).toUpperCase());
+                PropositionKey key_regularcase = new PropositionKey(next_concept, parametersMap.get(next_concept).substring(0,1).toUpperCase()+parametersMap.get(next_concept).substring(1).toLowerCase());
+                
+                if (tree.propositionsMap.containsKey(key_lowercase)) next_concept = tree.propositionsMap.get(key_lowercase);
+                else if (tree.propositionsMap.containsKey(key_uppercase)) next_concept = tree.propositionsMap.get(key_uppercase);
+                else if (tree.propositionsMap.containsKey(key_regularcase)) next_concept = tree.propositionsMap.get(key_regularcase);
+                
+            }
             
             // Za taj koncept odredi moguce dijagnoze
             ArrayList<String> possible_diagnoses = tree.getReachableDiagnoses(next_concept);
