@@ -5,12 +5,17 @@
       xmlns:ui="http://xmlns.jcp.org/jsf/facelets"
       xmlns:h="http://xmlns.jcp.org/jsf/html">
     <h:head>
-        <title>Facelet Title</title>
+        <title>DTAnalyzer index</title>
+        <h:outputScript library="js" name="set_screen_size.js" />
+        <h:outputScript library="js" name="jquery-1.12.4.min.js" />
     </h:head>
     <h:body>
         <f:view>
-            <br />
-            <h:outputText value="Ovo je početna stranica DTAnalyzer aplikacije. Svrha ove aplikacije je:"/><br />
+            <f:metadata>
+                <f:event type="preRenderView" listener="#{StartValidator.check(WindowSize,Uploader.isValidated())}" />
+            </f:metadata>
+            
+            <br /><h:outputText value="Ovo je početna stranica DTAnalyzer aplikacije. Svrha ove aplikacije je:"/><br />
             <f:verbatim>
                 <ul>
                     <li>pružiti ispitaniku povratnu informaciju o njegovom znanju i pogreškama koje radi</li>
@@ -31,30 +36,13 @@
                 </ol>
             </ui:remove>
             Aplikacija podržava CXL format zapisa stabla.<br /><br />
-            <h:form id="form" enctype="multipart/form-data">
+            
+            <h:form id="size_form" enctype="multipart/form-data">
                 <h:inputFile id="file" value="#{Uploader.file}" validator="#{Uploader.validateFile}" />
+                <h:inputHidden id="height" value="#{WindowSize.height}" />
+                <h:inputHidden id="width" value="#{WindowSize.width}" />
                 
-                
-                <h:commandButton value="Upload">
-                    <!-- tu bi trebalo instancirat DT.parseFileDT(Uploader.fileContent)  -->
-                    
-                </h:commandButton>
-                
-<!--                
-                <h:commandButton value="Car won't start" action="analysis?faces-redirect=true">
-<f:ajax onevent="Uploader.upload" />
-Onclick will be executed first. <h:commandButton value="Upload file" onclick="Uploader.upload()" />
-It is used to call a javascript function.
-Actionlistener is used when you want to have
-some ajax call to a method that method should
-have no return type, the method either take
-ActionEvent as argument or no argument needed;
-it can also be used for non ajax call but the
-page will be refreshed. Action is used to navigate
-to a different page; the method should have
-string return type.                
--->
-
+                <h:commandButton value="Upload" onclick="set_screen_size('size_form');" type="submit" />
             </h:form>
         </f:view>
     </h:body>

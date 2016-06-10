@@ -10,7 +10,6 @@ import javax.faces.application.FacesMessage;
 import javax.faces.bean.ManagedBean;
 import javax.faces.bean.SessionScoped;
 import javax.faces.component.UIComponent;
-import javax.faces.context.ExternalContext;
 import javax.faces.context.FacesContext;
 import javax.faces.validator.ValidatorException;
 import javax.servlet.http.Part;
@@ -25,6 +24,7 @@ import javax.servlet.http.Part;
 public class Uploader implements Serializable {
   public Part file;
   public String fileContent;
+  public boolean validated = false;
 
     // Ovo najprije validira fajl (velicinu, txt, jel prazan) i ako je OK onda ga aplouda i parsa u stablo
   public void validateFile(FacesContext ctx, UIComponent comp, Object value) throws IOException {
@@ -36,16 +36,16 @@ public class Uploader implements Serializable {
     } else if (!msgs.isEmpty()) {
         throw new ValidatorException(msgs);
     } else {                                   // Ako je validacija prosla OK
-        try {
-            readFile();
-            
+        //try {
+        readFile();
+        this.validated=true;    
             // Redirectanje. Prije se to radilo ovak: <h:commandButton value="Upload" action="analysis?faces-redirect=true">
-            ExternalContext ec = FacesContext.getCurrentInstance().getExternalContext();
-            ec.redirect(ec.getRequestContextPath() + "/faces/analysis.xhtml");
-    
-        } catch (IOException e1) {
-            msgs.add(new FacesMessage("Error reading file stream."));
-        }
+            //ExternalContext ec = FacesContext.getCurrentInstance().getExternalContext();
+            //ec.redirect(ec.getRequestContextPath() + "/analysis.xhtml");
+        
+        //} catch (IOException e1) {
+        //    msgs.add(new FacesMessage("Error reading file stream."));
+        //}
  
     }
     
@@ -60,6 +60,16 @@ public class Uploader implements Serializable {
     }
     
   }
+
+    public boolean isValidated() {
+        return validated;
+    }
+
+    public void setValidated(boolean validated) {
+        this.validated = validated;
+    }
+  
+  
   
   public Part getFile() {
     return file;

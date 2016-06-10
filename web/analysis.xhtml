@@ -10,34 +10,42 @@ and open the template in the editor.
       xmlns:h="http://xmlns.jcp.org/jsf/html"
       xmlns:ui="http://xmlns.jcp.org/jsf/facelets"
       xmlns:p="http://primefaces.org/ui"
+      xmlns:a="http://xmlns.jcp.org/jsf/passthrough"
       >
-
+    <f:metadata>
+        <f:event type="preRenderView" listener="#{DT.initialize(Uploader.fileContent)}" />
+        <f:event type="preRenderView" listener="#{CaseBase.initialize('http://diana.zesoi.fer.hr/~jpetrovic/case_repository/lan/')}" />
+        <f:event type="preRenderView" listener="#{CaseBase.evaluateBase(DT)}" />
+        <f:event type="preRenderView" listener="#{PerDiagnosisDetails.setInfo('N/A')}" />
+        <f:event type="preRenderView" listener="#{TreeDrawer.initialize(DT,WindowSize.getHeight(),WindowSize.getWidth())}" /> 
+        <f:event type="preRenderView" listener="#{StaticTree.initialize(DT,WindowSize.getHeight(),WindowSize.getWidth())}" />
+        <f:event type="preRenderView" listener="#{Uploader.setValidated(false)}" />
+    </f:metadata>
     <h:head>
         <title>DT analysis</title>
         <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-        <h:outputStylesheet library="css" name="table-style.css"  />
-        <h:outputStylesheet library="css" name="buttons.css"  />
+        <h:outputStylesheet library="css" name="table-style.css" />
+        <h:outputStylesheet library="css" name="buttons.css" />
         <h:outputStylesheet library="css" name="graph.css"  />
         <h:outputScript library="js" name="toggle_details.js" />
-        <h:outputScript library="js" name="dt.js" />
-        <h:outputScript library="js" name="contextmenu.js" />
+        <h:outputScript library="js" name="set_screen_size.js" />
+        <h:outputScript library="js" name="jquery-1.12.4.min.js" />
     </h:head>
-    <h:body id="body_id">
+    <h:body id="body_id" a:onresize="set_screen_size('size_form');document.getElementById('size_form').submit();">
+
     <f:view id="view_id">
         <!-- Ne moze se instancirati vise objekata iste klase, eventualno napravit apstraktnu klasu i u njoj vise -->
-        <h:form id="initializer">
-            #{CaseBase.initialize('http://diana.zesoi.fer.hr/~jpetrovic/case_repository/lan/')}
-            #{DT.initializeDT(Uploader.fileContent)}
-            #{CaseBase.evaluateBase(DT)}
-            #{ActiveDT.activeDT(DT.getStartNodeID())}
-            #{PerDiagnosisDetails.setInfo('N/A')}
-            #{treeDrawer.init(DT)}
-        </h:form>
-            
-        <p:tabView id="tab_view">
 
-            <p:tab title="(1) Uploaded decision tree" id="DT_tab">
+        <h:form id="size_form">
+            <h:inputHidden id="height" value="#{WindowSize.height}" />
+            <h:inputHidden id="width" value="#{WindowSize.width}" />
+        </h:form>
+       
+        <p:tabView id="tab_view" dynamic="true" cache="false">
+
+            <p:tab title="(1) Tree info and warnings" id="DT_tab">
                 
+                <ui:remove>
                 <f:verbatim><br /><b>Start node</b>:</f:verbatim>
                 <ul><li>#{DT.getStartNodeName()}</li></ul>
                 <f:verbatim><b>Parsed propositions</b>:<br /><br /></f:verbatim>
@@ -47,7 +55,7 @@ and open the template in the editor.
                         <f:facet name="header">Concept</f:facet>
                         #{DT.getNodeNameFromID(item.concept_one)}
                     </h:column>
-                    <h:column >
+                    <h:column>
                         <f:facet name="header">Value</f:facet>
                         #{item.link}
                     </h:column>
@@ -63,6 +71,46 @@ and open the template in the editor.
                     <li>#{DT.getNodeNameFromID(item)}</li>
                 </ui:repeat>
                 </ul>
+                </ui:remove>
+                
+                <ui:fragment rendered="#{DT.getOrphanConcepts().size()+DT.getUnrecognizedConcepts(CaseBase.getCases()).size()+DT.getUnrecognizedDiagnoses(CaseBase.getCases()).size()>0}">
+                    <f:verbatim><br /><b>Warnings: </b></f:verbatim>
+                </ui:fragment>
+                
+                <ui:fragment rendered="#{DT.getOrphanConcepts().size()>0}">
+                    <f:verbatim><br />Unconnected concepts:</f:verbatim>
+                    <ui:repeat value="#{DT.getOrphanConcepts()}" var="item">
+                        <b>#{DT.getNodeNameFromID(item)}</b>
+                        <ui:fragment rendered="#{DT.getOrphanConcepts().get(DT.getOrphanConcepts().size()-1) != item }">, </ui:fragment>
+                    </ui:repeat>
+                    <h:graphicImage value="/images/arrow_r.png" width="16" height="16" style="border-spacing: 20px;padding-left: 10px"/>
+                    These concepts will be ignored!
+                </ui:fragment>
+
+                <ui:fragment rendered="#{DT.getUnrecognizedConcepts(CaseBase.getCases()).size()>0}">
+                    <f:verbatim><br />Concepts NOT found in the case base:</f:verbatim>
+                    <ui:repeat value="#{DT.getUnrecognizedConcepts(CaseBase.getCases())}" var="item">
+                        <b>#{DT.getNodeNameFromID(item)}</b>
+                        <ui:fragment rendered="#{DT.getUnrecognizedConcepts(CaseBase.getCases()).get(DT.getUnrecognizedConcepts(CaseBase.getCases()).size()-1) != item }">, </ui:fragment>
+                    </ui:repeat>
+                    <h:graphicImage value="/images/arrow_r.png" width="16" height="16" style="border-spacing: 20px;padding-left: 10px"/>
+                    Misspelled names?
+                </ui:fragment>
+                
+                <ui:fragment rendered="#{DT.getUnrecognizedDiagnoses(CaseBase.getCases()).size()>0}">
+                    <f:verbatim><br />Diagnoses NOT found in the case base:</f:verbatim>
+                    <ui:repeat value="#{DT.getUnrecognizedDiagnoses(CaseBase.getCases())}" var="item">
+                        <b>#{DT.getNodeNameFromID(item)}</b>
+                        <ui:fragment rendered="#{DT.getUnrecognizedDiagnoses(CaseBase.getCases()).get(DT.getUnrecognizedDiagnoses(CaseBase.getCases()).size()-1) != item }">, </ui:fragment>
+                    </ui:repeat>
+                    <h:graphicImage value="/images/arrow_r.png" width="16" height="16" style="border-spacing: 20px;padding-left: 10px"/>
+                    Misspelled names?
+                </ui:fragment>
+                <br /><br />
+                
+                <f:verbatim><b>Uploaded decision tree: </b></f:verbatim>
+                <p:diagram id="staticTree" value="#{StaticTree.getModel()}" style="height:600px;width:100%" styleClass="ui-widget-content" />
+
                 
             </p:tab>
             
@@ -376,13 +424,14 @@ and open the template in the editor.
             <p:tab title="(4) Decision analysis" id="graph_tab" >
                 
                 <h:form>
-                    <p:commandButton actionListener="#{treeDrawer.init(DT)}" update=":tab_view:activeTree" value="Reset" />
-                    <p:commandButton actionListener="#{treeDrawer.pruneLeaves()}" update=":tab_view:activeTree" value="Contract" icon="ui-icon-contract" />
-                    <p:commandButton actionListener="#{treeDrawer.expandLeaves()}" update=":tab_view:activeTree" value="Expand" icon="ui-icon-expand" />
-                    <p:commandButton actionListener="#{treeDrawer.buildFullTree()}" update=":tab_view:activeTree" value="Full tree" />
+                    
+                    <p:commandButton actionListener="#{TreeDrawer.pruneLeaves()}" update=":tab_view:activeTree" value="Contract" icon="ui-icon-contract" />
+                    <p:commandButton actionListener="#{TreeDrawer.expandLeaves()}" update=":tab_view:activeTree" value="Expand" icon="ui-icon-expand" />
+                    <p:commandButton actionListener="#{TreeDrawer.buildFullTree()}" update=":tab_view:activeTree" value="Full tree" />
+                
                 </h:form>
             
-                <p:diagram id="activeTree" value="#{treeDrawer.getModel()}" style="height:600px;width:100%" styleClass="ui-widget-content" />
+                <p:diagram id="activeTree" value="#{TreeDrawer.getModel()}" style="height:600px;width:100%" styleClass="ui-widget-content" />
                 
             </p:tab>
             

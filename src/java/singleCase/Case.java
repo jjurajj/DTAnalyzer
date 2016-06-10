@@ -36,17 +36,7 @@ public class Case implements Serializable {
     public HashMap<String,String> parametersMap = new HashMap<>();  // HMap parametara <ime vrijednost> za parametre casea
     public CaseEvaluation evaluation = new CaseEvaluation();
     
-    ////////////////////////////////////////////////////////////////////////////
-    // Prazni konstruktor
-    public Case() {
-    
-        //this = Case("http://diana.zesoi.fer.hr/~jpetrovic/case_repository/car_starting/case_1/case.txt");
-        //Case("http://diana.zesoi.fer.hr/~jpetrovic/case_repository/car_starting/case_1/case.txt");
-    }
-    ////////////////////////////////////////////////////////////////////////////
-    
-    ////////////////////////////////////////////////////////////////////////////
-    // Inicijalizacija na temelju defaultnog linka ili zadanog
+    public Case() {}
     public void initialize() {}
     public void initializeCase(String url) throws IOException {
 
@@ -118,10 +108,7 @@ public class Case implements Serializable {
         }
 
     }
-    ////////////////////////////////////////////////////////////////////////////
-    
-    ////////////////////////////////////////////////////////////////////////////
-    // Pomoćne metode. Tag parser. Tragi vrijednost taga u datoteci (Stringu)
+
     private ArrayList<String> parseTag(String text, String tag) {
         String temp_text = text;
         String start_tag = "<" + tag + ">";
@@ -206,9 +193,6 @@ public class Case implements Serializable {
         }
         return true;
     }
-
-////////////////////////////////////////////////////////////////////////////
-    
     public ArrayList<Parametar> getRequestedParameters(Proposition last_proposition) {
     // Zadajem input poslijednju propoziciju do koje sam stigao rjesavajuci case po zadanom stablu
     // Kao output vracam sve parametre koje sam prikupio po putu do te propozicije
@@ -226,7 +210,6 @@ public class Case implements Serializable {
         return return_parameters_list;
     }
     
-    ////////////////////////////////////////////////////////////////////////////
     // Getteri i setteri
     public void setURL(String url) { this.url = url; }
     public void setIntroduction(String introduction) { this.introduction = introduction; }
