@@ -28,6 +28,7 @@ public class CaseBase {
     
     public ArrayList<String> url = new ArrayList<>();
     public ArrayList<Case> cases = new ArrayList<>();
+    public ArrayList<Case> excluded_cases = new ArrayList<>();
     
     public void initialize() throws IOException {
         this.url.add("http://diana.zesoi.fer.hr/~jpetrovic/case_repository/car_starting/");
@@ -63,8 +64,25 @@ public class CaseBase {
         } catch (IOException e) {};
         return lista_caseova;
     }
+    
+    public void purgeBase(DT tree) {
+        ArrayList<Case> purged_case_list = new ArrayList<>();
+        ArrayList<Case> excluded_cases = new ArrayList<>();
+        for (Case temp_case : cases) {
+            String diagnosis = temp_case.getDiagnoses().get(0).getName();
+            for (String diagnosis_ID : tree.getDiagnoses())
+                if (tree.getNodeNameFromID(diagnosis_ID).equals(diagnosis))
+                    purged_case_list.add(temp_case);
+                else
+                    excluded_cases.add(temp_case);
+        }
+        this.cases=purged_case_list;
+        this.excluded_cases=excluded_cases;
+    }
+    
     public void evaluateBase (DT tree) {
     
+        purgeBase(tree); // Ovo izbacuje iz liste sve caseove koji imaju dijagnoze koje nisu pokrivene stablom
             for (int i=0; i<this.cases.size(); i++) {
                 this.cases.get(i).evaluation = tree.runCase(this.cases.get(i));
             }
@@ -107,11 +125,31 @@ public class CaseBase {
                 cases_with_parameters_and_parameters.add(temp_case);
         return cases_with_parameters_and_parameters;
     }
+
+    public ArrayList<Case> getExcluded_cases() {
+        return excluded_cases;
+    }
+
+    public void setExcluded_cases(ArrayList<Case> excluded_cases) {
+        this.excluded_cases = excluded_cases;
+    }
     
+    
+    public ArrayList<String> getCaseIDs() {
+        ArrayList<String> list = new ArrayList<>();
+        for (Case temp_case : this.getCases())
+            list.add(temp_case.getID());
+        return list;
+    }
     public Case getCase(int i) {return this.cases.get(i);}
     public ArrayList<Case> getCases() {return this.cases;}
     public ArrayList<String> getURL() {return this.url;}
     public void setCases(ArrayList<Case> cases) {this.cases = cases;}
     public void setUrl(ArrayList<String> url) {this.url = url;}
-
+    public Case getCaseByID(String id) {
+        for (Case temp_case : this.getCases())
+            if (temp_case.getID().equals(id))
+                return temp_case;
+        return null;
+    }
 }

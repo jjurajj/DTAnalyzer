@@ -37,12 +37,23 @@
             </ui:remove>
             Aplikacija podržava CXL format zapisa stabla.<br /><br />
             
+
             <h:form id="size_form" enctype="multipart/form-data">
-                <h:inputFile id="file" value="#{Uploader.file}" validator="#{Uploader.validateFile}" />
+            Baza za vrednovanje:
+                <h:selectOneMenu value="#{BaseSelector.link}">
+                   <f:selectItem itemValue="http://diana.zesoi.fer.hr/~jpetrovic/case_repository/lan/" itemLabel="LAN Misconfiguration Diagnosis (v2)" />
+                   <f:selectItem itemValue="http://diana.zesoi.fer.hr/~jpetrovic/case_repository/lan_pon/" itemLabel="LAN Misconfiguration Diagnosis (v1)" />
+                   <f:selectItem itemValue="http://diana.zesoi.fer.hr/~jpetrovic/case_repository/car_starting/" itemLabel="Car Starting Problem" />
+                </h:selectOneMenu>
+            
+            <br />
+
+                <h:inputFile id="file" value="#{Uploader.file}" validator="#{Uploader.validateFile}"  />
                 <h:inputHidden id="height" value="#{WindowSize.height}" />
                 <h:inputHidden id="width" value="#{WindowSize.width}" />
                 
-                <h:commandButton value="Upload" onclick="set_screen_size('size_form');" type="submit" />
+                <h:commandButton value="     Prenesi i pokreni    " onclick="set_screen_size('size_form');" type="submit" />
+                
             </h:form>
         </f:view>
     </h:body>

@@ -1,55 +1,134 @@
 .ui-diagram-element {   
     //width:10em; 
-    height:24px;
+    max-width: 300px;
+    height:56px;
     line-height:24px;
     padding-right:5px;
     padding-left:5px;
     text-align: center;
     box-shadow: 0 5px 10px rgba(0, 0, 0, 0.8);
     border-radius: 6px;
-    border: 1px solid transparent;
+    border: 5px solid transparent;
     background-color: #1ECAD6;
     color: #ffffff;
-    word-break: break-all;
+    word-break: normal;
     line-break: strict;
+    display: flex;
+    align-items: center;
     }
 
-.ui-diagram-start {   
+.ui-diagram-element-selected {   
     //width:10em; 
-    height:28px;     
+    max-width: 300px;
+    height:56px;
+    line-height:24px;
+    padding-right:5px;
+    padding-left:5px;
+    text-align: center;
+    box-shadow: 0 5px 10px rgba(0, 0, 0, 0.8);
+    border-radius: 6px;
+    border: 5px solid transparent;
+    background-color: #1ECAD6;
+    color: #ffffff;
+    word-break: normal;
+    line-break: strict;
+    display: flex;
+    align-items: center;
+    border-color: red;
+    }
+    
+.ui-diagram-start {   
+    //width:10em;
+    max-width: 600px;
+    height:56px;     
     line-height:28px;
     text-align: center;
     padding-right:5px;
     padding-left:5px;
     box-shadow: 0 5px 10px rgba(0, 0, 0, 0.8);
     border-radius: 6px;
-    border: 1px solid transparent;
+    border: 5px solid transparent;
     background-color: #74E64E;
     color: #ffffff;
-    word-break: break-all;
+    word-break: normal;
     line-break: strict;
+    display: flex;
+    align-items: center;
     }
 
-.ui-diagram-end {   
-    //width:10em; 
-    height:28px;     
+.ui-diagram-start-selected {   
+    //width:10em;
+    max-width: 600px;
+    height:56px;     
     line-height:28px;
     text-align: center;
     padding-right:5px;
     padding-left:5px;
     box-shadow: 0 5px 10px rgba(0, 0, 0, 0.8);
     border-radius: 6px;
-    border: 1px solid transparent;
-    background-color: #FA775A;
+    border: 5px solid transparent;
+    background-color: #74E64E;
     color: #ffffff;
-    word-break: break-all;
+    word-break: normal;
     line-break: strict;
+    display: flex;
+    align-items: center;
+    border-color: red;
+    }
+    
+.ui-diagram-end {   
+    //width:10em; 
+    max-width: 300px;
+    height:56px;     
+    line-height:28px;
+    text-align: center;
+    padding-right:5px;
+    padding-left:5px;
+    box-shadow: 0 5px 10px rgba(0, 0, 0, 0.8);
+    border-radius: 6px;
+    border: 5px solid transparent;
+    background-color: #F5A53D;
+    color: #ffffff;
+    word-break: normal;
+    line-break: strict;
+    display: flex;
+    align-items: center;
     }
 
+.ui-diagram-end-selected {   
+    //width:10em;
+    max-width: 300px;
+    height:56px;     
+    line-height:28px;
+    text-align: center;
+    padding-right:5px;
+    padding-left:5px;
+    box-shadow: 0 5px 10px rgba(0, 0, 0, 0.8);
+    border-radius: 6px;
+    border: 5px solid transparent;
+    background-color: #F5A53D;
+    color: #ffffff;
+    word-break: normal;
+    line-break: strict;
+    border-color: red;
+    }
+
+   
 .flow-label {
     font-size: 16px;
     font-weight: bold;
-    color: #816A51;
-    word-break: break-all;
+    color: black;
+    word-break: normal;
+    line-break: strict;
+}
+
+   
+.flow-label-selected {
+    font-size: 16px;
+    font-weight: bold;
+    //text-decoration: red underline;
+    border-bottom: 5px solid red;
+    color: black;
+    word-break: normal;
     line-break: strict;
 }

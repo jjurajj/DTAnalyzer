@@ -229,6 +229,7 @@ public class Case implements Serializable {
     }
 
     public String getID() { return id; }
+    public Case getMe() { return this; }
     public CaseEvaluation getEvaluation() { return evaluation; }
     public String getURL() { return url; }
     public String getIntroduction() { return introduction; }

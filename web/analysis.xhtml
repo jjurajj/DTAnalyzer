@@ -14,12 +14,13 @@ and open the template in the editor.
       >
     <f:metadata>
         <f:event type="preRenderView" listener="#{DT.initialize(Uploader.fileContent)}" />
-        <f:event type="preRenderView" listener="#{CaseBase.initialize('http://diana.zesoi.fer.hr/~jpetrovic/case_repository/lan/')}" />
+        <f:event type="preRenderView" listener="#{CaseBase.initialize(BaseSelector.getLink())}" />
         <f:event type="preRenderView" listener="#{CaseBase.evaluateBase(DT)}" />
         <f:event type="preRenderView" listener="#{PerDiagnosisDetails.setInfo('N/A')}" />
         <f:event type="preRenderView" listener="#{TreeDrawer.initialize(DT,WindowSize.getHeight(),WindowSize.getWidth())}" /> 
         <f:event type="preRenderView" listener="#{StaticTree.initialize(DT,WindowSize.getHeight(),WindowSize.getWidth())}" />
         <f:event type="preRenderView" listener="#{Uploader.setValidated(false)}" />
+        <f:event type="preRenderView" listener="#{RunCaseSelector.init()}" />
     </f:metadata>
     <h:head>
         <title>DT analysis</title>
@@ -28,10 +29,12 @@ and open the template in the editor.
         <h:outputStylesheet library="css" name="buttons.css" />
         <h:outputStylesheet library="css" name="graph.css"  />
         <h:outputScript library="js" name="toggle_details.js" />
+        <h:outputScript library="js" name="parsing.js" />
         <h:outputScript library="js" name="set_screen_size.js" />
         <h:outputScript library="js" name="jquery-1.12.4.min.js" />
+        
     </h:head>
-    <h:body id="body_id" a:onresize="set_screen_size('size_form');document.getElementById('size_form').submit();">
+    <h:body id="body_id" a:onresize="set_screen_size('size_form');document.getElementById('size_form').submit();" onload="parseNodeBreaklines();">
 
     <f:view id="view_id">
         <!-- Ne moze se instancirati vise objekata iste klase, eventualno napravit apstraktnu klasu i u njoj vise -->
@@ -43,9 +46,9 @@ and open the template in the editor.
        
         <p:tabView id="tab_view" dynamic="true" cache="false">
 
+            <ui:remove>
             <p:tab title="(1) Tree info and warnings" id="DT_tab">
                 
-                <ui:remove>
                 <f:verbatim><br /><b>Start node</b>:</f:verbatim>
                 <ul><li>#{DT.getStartNodeName()}</li></ul>
                 <f:verbatim><b>Parsed propositions</b>:<br /><br /></f:verbatim>
@@ -71,7 +74,6 @@ and open the template in the editor.
                     <li>#{DT.getNodeNameFromID(item)}</li>
                 </ui:repeat>
                 </ul>
-                </ui:remove>
                 
                 <ui:fragment rendered="#{DT.getOrphanConcepts().size()+DT.getUnrecognizedConcepts(CaseBase.getCases()).size()+DT.getUnrecognizedDiagnoses(CaseBase.getCases()).size()>0}">
                     <f:verbatim><br /><b>Warnings: </b></f:verbatim>
@@ -83,7 +85,7 @@ and open the template in the editor.
                         <b>#{DT.getNodeNameFromID(item)}</b>
                         <ui:fragment rendered="#{DT.getOrphanConcepts().get(DT.getOrphanConcepts().size()-1) != item }">, </ui:fragment>
                     </ui:repeat>
-                    <h:graphicImage value="/images/arrow_r.png" width="16" height="16" style="border-spacing: 20px;padding-left: 10px"/>
+                    <h:graphicImage value="/resources/images/arrow_r.png" width="16" height="16" style="border-spacing: 20px;padding-left: 10px"/>
                     These concepts will be ignored!
                 </ui:fragment>
 
@@ -93,7 +95,7 @@ and open the template in the editor.
                         <b>#{DT.getNodeNameFromID(item)}</b>
                         <ui:fragment rendered="#{DT.getUnrecognizedConcepts(CaseBase.getCases()).get(DT.getUnrecognizedConcepts(CaseBase.getCases()).size()-1) != item }">, </ui:fragment>
                     </ui:repeat>
-                    <h:graphicImage value="/images/arrow_r.png" width="16" height="16" style="border-spacing: 20px;padding-left: 10px"/>
+                    <h:graphicImage value="/resources/images/arrow_r.png" width="16" height="16" style="border-spacing: 20px;padding-left: 10px"/>
                     Misspelled names?
                 </ui:fragment>
                 
@@ -103,7 +105,7 @@ and open the template in the editor.
                         <b>#{DT.getNodeNameFromID(item)}</b>
                         <ui:fragment rendered="#{DT.getUnrecognizedDiagnoses(CaseBase.getCases()).get(DT.getUnrecognizedDiagnoses(CaseBase.getCases()).size()-1) != item }">, </ui:fragment>
                     </ui:repeat>
-                    <h:graphicImage value="/images/arrow_r.png" width="16" height="16" style="border-spacing: 20px;padding-left: 10px"/>
+                    <h:graphicImage value="/resources/images/arrow_r.png" width="16" height="16" style="border-spacing: 20px;padding-left: 10px"/>
                     Misspelled names?
                 </ui:fragment>
                 <br /><br />
@@ -111,6 +113,64 @@ and open the template in the editor.
                 <f:verbatim><b>Uploaded decision tree: </b></f:verbatim>
                 <p:diagram id="staticTree" value="#{StaticTree.getModel()}" style="height:600px;width:100%" styleClass="ui-widget-content" />
 
+                
+            </p:tab>
+            </ui:remove>
+            
+            <p:tab title="(1) Tree analysis" id="graph_tab" >
+                
+                <p:commandButton value="Warning:" style="border-width: 0px; background-color: white; width: 150px; pointer-events:none;" rendered="#{DT.getOrphanConcepts().size()+DT.getUnrecognizedConcepts(CaseBase.getCases()).size()+DT.getUnrecognizedDiagnoses(CaseBase.getCases()).size()>0}"/>
+                <ui:fragment rendered="#{DT.getOrphanConcepts().size()+DT.getUnrecognizedConcepts(CaseBase.getCases()).size()+DT.getUnrecognizedDiagnoses(CaseBase.getCases()).size()>0}">
+                    <f:verbatim>Unconnected concepts:</f:verbatim>
+                    <ui:repeat value="#{DT.getOrphanConcepts()}" var="item">
+                        <b>#{DT.getNodeNameFromID(item)}</b>
+                        <ui:fragment rendered="#{DT.getOrphanConcepts().get(DT.getOrphanConcepts().size()-1) != item }">, </ui:fragment>
+                    </ui:repeat>
+                    <h:graphicImage value="/resources/images/arrow_r.png" width="16" height="16" style="border-spacing: 20px;padding-left: 10px"/>
+                    These concepts will be ignored!
+                </ui:fragment>
+
+                <p:commandButton value="Warning:" style="border-width: 0px; background-color: white; width: 150px; pointer-events:none;" rendered="#{DT.getUnrecognizedConcepts(CaseBase.getCases()).size()>0}"/>
+                <ui:fragment rendered="#{DT.getUnrecognizedConcepts(CaseBase.getCases()).size()>0}">
+                    <f:verbatim>Concepts NOT found in the case base:</f:verbatim>
+                    <ui:repeat value="#{DT.getUnrecognizedConcepts(CaseBase.getCases())}" var="item">
+                        <b>#{DT.getNodeNameFromID(item)}</b>
+                        <ui:fragment rendered="#{DT.getUnrecognizedConcepts(CaseBase.getCases()).get(DT.getUnrecognizedConcepts(CaseBase.getCases()).size()-1) != item }">, </ui:fragment>
+                    </ui:repeat>
+                    <h:graphicImage value="/resources/images/arrow_r.png" width="16" height="16" style="border-spacing: 20px;padding-left: 10px"/>
+                    Misspelled names?
+                </ui:fragment>
+
+                <p:commandButton value="Warning:" style="border-width: 0px; background-color: white; width: 150px; pointer-events:none;" rendered="#{DT.getUnrecognizedDiagnoses(CaseBase.getCases()).size()>0}"/>
+                <ui:fragment rendered="#{DT.getUnrecognizedDiagnoses(CaseBase.getCases()).size()>0}">
+                    <f:verbatim>Diagnoses NOT found in the case base:</f:verbatim>
+                    <ui:repeat value="#{DT.getUnrecognizedDiagnoses(CaseBase.getCases())}" var="item">
+                        <b>#{DT.getNodeNameFromID(item)}</b>
+                        <ui:fragment rendered="#{DT.getUnrecognizedDiagnoses(CaseBase.getCases()).get(DT.getUnrecognizedDiagnoses(CaseBase.getCases()).size()-1) != item }">, </ui:fragment>
+                    </ui:repeat>
+                    <h:graphicImage value="/resources/images/arrow_r.png" width="16" height="16" style="border-spacing: 20px;padding-left: 10px"/>
+                    Misspelled names?
+                </ui:fragment>
+                <br /><br />
+                
+                <h:form>
+                    <p:commandButton value="Tree display: " style="border-width: 0px; background-color: white; width: 150px; pointer-events:none;" />
+                    <p:commandButton actionListener="#{TreeDrawer.pruneLeaves()}" update=":tab_view:activeTree" value="Contract" icon="ui-icon-contract" />
+                    <p:commandButton actionListener="#{TreeDrawer.expandLeaves()}" update=":tab_view:activeTree" value="Expand" icon="ui-icon-expand" />
+                    <p:commandButton actionListener="#{TreeDrawer.buildFullTree()}" update=":tab_view:activeTree" value="Full tree" />
+                    <p:commandButton actionListener="#{TreeDrawer.resetTree()}" update=":tab_view:activeTree" value="Reset tree" />
+                    <br />
+                    <p:commandButton value="Run a case:" style="border-width: 0px; background-color: white; width: 150px; pointer-events:none;" />
+                    <p:commandButton actionListener="#{TreeDrawer.pruneLeaves()}" update=":tab_view:activeTree" value="Contract" icon="ui-icon-contract" />
+                    <p:commandButton actionListener="#{TreeDrawer.expandLeaves()}" update=":tab_view:activeTree" value="Expand" icon="ui-icon-expand" />
+                    <p:commandButton actionListener="#{TreeDrawer.runCase(CaseBase.getCaseByID(RunCaseSelector.caseID))}" update=":tab_view:activeTree" value="Full case" />
+                    <h:selectOneMenu value="#{RunCaseSelector.caseID}">
+                        <f:selectItems value="#{CaseBase.cases}" var="case" itemValue="#{case.getID()}" itemLabel="Case #{case.getID()}: #{case.getCorrectDiagnosis().getName()}"/>
+                    </h:selectOneMenu>
+                    
+                </h:form>
+            
+                <p:diagram escape="false" id="activeTree" value="#{TreeDrawer.getModel()}" style="height:600px;width:100%" styleClass="ui-widget-content" />
                 
             </p:tab>
             
@@ -134,8 +194,8 @@ and open the template in the editor.
                     </h:column>                        
                     <h:column>
                         <f:facet name="header">Correct</f:facet>
-                        <h:graphicImage value="/images/tick.png" width="16" height="16" rendered="#{case.getEvaluation().isDiagnosed() and case.getEvaluation().isCorrect()}"/>
-                        <h:graphicImage value="/images/cross.png" width="16" height="16" rendered="#{!case.getEvaluation().isDiagnosed() or !case.getEvaluation().isCorrect()}"/>
+                        <h:graphicImage value="/resources/images/tick.png" width="16" height="16" rendered="#{case.getEvaluation().isDiagnosed() and case.getEvaluation().isCorrect()}"/>
+                        <h:graphicImage value="/resources/images/cross.png" width="16" height="16" rendered="#{!case.getEvaluation().isDiagnosed() or !case.getEvaluation().isCorrect()}"/>
                     </h:column>
                     <h:column>
                         <f:facet name="header">Correct solution</f:facet>
@@ -157,8 +217,8 @@ and open the template in the editor.
                             <ui:fragment rendered="#{!case.getEvaluation().isCorrect()}"><span style="color:red;">#{case.getEvaluation().getEndNode()} </span></ui:fragment>
                             
                             <ui:remove>
-                            <h:graphicImage value="/images/tick.png" width="16" height="16" rendered="#{case.getEvaluation().isCorrect()}" />
-                            <h:graphicImage value="/images/cross.png" width="16" height="16" rendered="#{!case.getEvaluation().isCorrect()}" />
+                            <h:graphicImage value="/resources/images/tick.png" width="16" height="16" rendered="#{case.getEvaluation().isCorrect()}" />
+                            <h:graphicImage value="/resources/images/cross.png" width="16" height="16" rendered="#{!case.getEvaluation().isCorrect()}" />
                             </ui:remove>
                             
                             <h:outputText rendered="#{!case.getEvaluation().isDiagnosed()}" value=" (Undiagnosed - " />
@@ -176,7 +236,7 @@ and open the template in the editor.
 
                                         <!--Output propozicije-->
                                         <h:panelGroup rendered="#{case.getEvaluation().isDiagnosed() and !DT.getNodeNameFromID(path_proposition.concept_one).equals(case.getEvaluation().getEndNode()) or !case.getEvaluation().isDiagnosed()}">
-                                            <h:graphicImage value="/images/arrow_r.png" width="16" height="16" style="border-spacing: 20px"/>
+                                            <h:graphicImage value="/resources/images/arrow_r.png" width="16" height="16" style="border-spacing: 20px"/>
                                             <h:outputText value="  #{DT.getNodeNameFromID(path_proposition.concept_one)} - #{path_proposition.link} " />
                                         </h:panelGroup>
 
@@ -275,27 +335,27 @@ and open the template in the editor.
                     <h:column >
                         <!-- Na temelju ovog sad treba apdejtat neku komponentu s arguemntima item.name i TP (to definira listu caseova)-->
                         <!--http://stackoverflow.com/questions/8634156/how-to-find-out-client-id-of-component-for-ajax-update-render-cannot-find-compo-->
-                        <f:facet name="header">TP (<h:graphicImage value="/images/tick.png" width="16" height="16" />)</f:facet>
+                        <f:facet name="header">TP (<h:graphicImage value="/resources/images/tick.png" width="16" height="16" />)</f:facet>
                         <h:form><p:commandLink rendered="#{item.getTP().size()>0}" value="#{item.getTP().size()}" actionListener="#{PerDiagnosisDetails.setAll(item.getTP(),'TP')}" update=":tab_view:casesPerDiagnosis"/></h:form>
                         <h:outputText rendered="#{item.getTP().size()==0}" value="0" />
                     </h:column>
                     <h:column>
-                        <f:facet name="header">TN (<h:graphicImage value="/images/tick.png" width="16" height="16" />)</f:facet>
+                        <f:facet name="header">TN (<h:graphicImage value="/resources/images/tick.png" width="16" height="16" />)</f:facet>
                         <h:form><p:commandLink rendered="#{item.getTN().size()>0}" value="#{item.getTN().size()}" actionListener="#{PerDiagnosisDetails.setAll(item.getTN(),'TN')}" update=":tab_view:casesPerDiagnosis"/></h:form>
                         <h:outputText rendered="#{item.getTN().size()==0}" value="0" />
                     </h:column>
                     <h:column>
-                        <f:facet name="header">FP (<h:graphicImage value="/images/cross.png" width="16" height="16" />)</f:facet>
+                        <f:facet name="header">FP (<h:graphicImage value="/resources/images/cross.png" width="16" height="16" />)</f:facet>
                         <h:form><p:commandLink rendered="#{item.getFP().size()>0}" value="#{item.getFP().size()}" actionListener="#{PerDiagnosisDetails.setAll(item.getFP(),'FP')}" update=":tab_view:casesPerDiagnosis"/></h:form>
                         <h:outputText rendered="#{item.getFP().size()==0}" value="0" />
                     </h:column>
                     <h:column >
-                        <f:facet name="header">FN (<h:graphicImage value="/images/cross.png" width="16" height="16" />)</f:facet>
+                        <f:facet name="header">FN (<h:graphicImage value="/resources/images/cross.png" width="16" height="16" />)</f:facet>
                         <h:form><p:commandLink rendered="#{item.getFN().size()>0}" value="#{item.getFN().size()}" actionListener="#{PerDiagnosisDetails.setAll(item.getFN(),'FN')}" update=":tab_view:casesPerDiagnosis"/></h:form>
                         <h:outputText rendered="#{item.getFN().size()==0}" value="0" />
                     </h:column>
                     <h:column >
-                        <f:facet name="header">Undiagnosed (<h:graphicImage value="/images/cross.png" width="16" height="16" />)</f:facet>
+                        <f:facet name="header">Undiagnosed (<h:graphicImage value="/resources/images/cross.png" width="16" height="16" />)</f:facet>
                         <h:form><p:commandLink rendered="#{item.getUndiagnosed().size()>0}" value="#{item.getUndiagnosed().size()}" actionListener="#{PerDiagnosisDetails.setAll(item.getUndiagnosed(),'undiagnosed')}" update=":tab_view:casesPerDiagnosis"/></h:form>
                         <h:outputText rendered="#{item.getUndiagnosed().size()==0}" value="0" />
                     </h:column>
@@ -305,20 +365,20 @@ and open the template in the editor.
                 <p:panel id="casesPerDiagnosis" visible="true" closable="true" collapsed="false" toggleable="true" style="border: 0px">
 
                     <h:outputText rendered="#{PerDiagnosisDetails.getInfo().equals('FP')}" value="False positives " style="font-weight:bold"/>
-                    <h:graphicImage rendered="#{PerDiagnosisDetails.getInfo().equals('FP')}" value="/images/cross.png" width="16" height="16"/>
+                    <h:graphicImage rendered="#{PerDiagnosisDetails.getInfo().equals('FP')}" value="/resources/images/cross.png" width="16" height="16"/>
                     
                     <h:outputText rendered="#{PerDiagnosisDetails.getInfo().equals('TP')}" value="True positives " style="font-weight:bold"/>
-                    <h:graphicImage rendered="#{PerDiagnosisDetails.getInfo().equals('TP')}" value="/images/tick.png" width="16" height="16"/>
+                    <h:graphicImage rendered="#{PerDiagnosisDetails.getInfo().equals('TP')}" value="/resources/images/tick.png" width="16" height="16"/>
                     
                     <h:outputText rendered="#{PerDiagnosisDetails.getInfo().equals('FN')}" value="False negatives " style="font-weight:bold"/>
-                    <h:graphicImage rendered="#{PerDiagnosisDetails.getInfo().equals('FN')}" value="/images/cross.png" width="16" height="16"/>
+                    <h:graphicImage rendered="#{PerDiagnosisDetails.getInfo().equals('FN')}" value="/resources/images/cross.png" width="16" height="16"/>
                     
                     <h:outputText rendered="#{PerDiagnosisDetails.getInfo().equals('TN')}" value="True negatives " style="font-weight:bold"/>
-                    <h:graphicImage rendered="#{PerDiagnosisDetails.getInfo().equals('TN')}" value="/images/tick.png" width="16" height="16"/>
+                    <h:graphicImage rendered="#{PerDiagnosisDetails.getInfo().equals('TN')}" value="/resources/images/tick.png" width="16" height="16"/>
                     
                     <h:outputText rendered="#{PerDiagnosisDetails.getInfo().equals('ATC')}" value="Available test cases " style="font-weight:bold"/>
                     <h:outputText rendered="#{PerDiagnosisDetails.getInfo().equals('UN')}" value="Undiagnosed " style="font-weight:bold"/>
-                    <h:graphicImage rendered="#{PerDiagnosisDetails.getInfo().equals('UN')}" value="/images/cross.png" width="16" height="16"/>
+                    <h:graphicImage rendered="#{PerDiagnosisDetails.getInfo().equals('UN')}" value="/resources/images/cross.png" width="16" height="16"/>
                     <h:outputText rendered="#{!PerDiagnosisDetails.getInfo().equals('N/A')}" value=" for target diagnosis " />
                     <h:outputText rendered="#{!PerDiagnosisDetails.getInfo().equals('N/A')}" value="#{PerDiagnosisDetails.getDisplayCases().get(0).getCorrectDiagnosis().getName()}" style="font-weight:bold"/>
                     <h:outputText rendered="#{PerDiagnosisDetails.getInfo().equals('N/A')}" value=" Click on a link to display details" style="font-style:italic"/>.
@@ -332,8 +392,8 @@ and open the template in the editor.
                             <ui:fragment rendered="#{!case.getEvaluation().isCorrect()}"><span style="color:red;">#{case.getEvaluation().getEndNode()} </span></ui:fragment>
                             
                             <ui:remove>
-                                <h:graphicImage value="/images/tick.png" width="16" height="16" rendered="#{case.getEvaluation().isCorrect()}" />
-                                <h:graphicImage value="/images/cross.png" width="16" height="16" rendered="#{!case.getEvaluation().isCorrect()}" />
+                                <h:graphicImage value="/resources/images/tick.png" width="16" height="16" rendered="#{case.getEvaluation().isCorrect()}" />
+                                <h:graphicImage value="/resources/images/cross.png" width="16" height="16" rendered="#{!case.getEvaluation().isCorrect()}" />
                             </ui:remove>
                                 
                             <h:outputText rendered="#{!case.getEvaluation().isDiagnosed()}" value=" (Undiagnosed - " />
@@ -351,7 +411,7 @@ and open the template in the editor.
 
                                         <!--Output propozicije-->
                                         <h:panelGroup rendered="#{case.getEvaluation().isDiagnosed() and !DT.getNodeNameFromID(path_proposition.concept_one).equals(case.getEvaluation().getEndNode()) or !case.getEvaluation().isDiagnosed()}">
-                                            <h:graphicImage value="/images/arrow_r.png" width="16" height="16" style="border-spacing: 20px"/>
+                                            <h:graphicImage value="/resources/images/arrow_r.png" width="16" height="16" style="border-spacing: 20px"/>
                                             <h:outputText value="  #{DT.getNodeNameFromID(path_proposition.concept_one)} - #{path_proposition.link} " />
                                         </h:panelGroup>
 
@@ -419,23 +479,7 @@ and open the template in the editor.
                 </p:panel>
                 
             </p:tab>
-            
                 
-            <p:tab title="(4) Decision analysis" id="graph_tab" >
-                
-                <h:form>
-                    
-                    <p:commandButton actionListener="#{TreeDrawer.pruneLeaves()}" update=":tab_view:activeTree" value="Contract" icon="ui-icon-contract" />
-                    <p:commandButton actionListener="#{TreeDrawer.expandLeaves()}" update=":tab_view:activeTree" value="Expand" icon="ui-icon-expand" />
-                    <p:commandButton actionListener="#{TreeDrawer.buildFullTree()}" update=":tab_view:activeTree" value="Full tree" />
-                
-                </h:form>
-            
-                <p:diagram id="activeTree" value="#{TreeDrawer.getModel()}" style="height:600px;width:100%" styleClass="ui-widget-content" />
-                
-            </p:tab>
-            
-            
         </p:tabView>
         
     </f:view>
