@@ -1,3 +1,84 @@
+
+            <ui:remove>
+            <p:tab title="(1) Tree info and warnings" id="DT_tab">
+                
+                <f:verbatim><br /><b>Start node</b>:</f:verbatim>
+                <ul><li>#{DT.getStartNodeName()}</li></ul>
+                <f:verbatim><b>Parsed propositions</b>:<br /><br /></f:verbatim>
+                
+                <h:dataTable value="#{DT.propositions}" var="item">
+                    <h:column>
+                        <f:facet name="header">Concept</f:facet>
+                        #{DT.getNodeNameFromID(item.concept_one)}
+                    </h:column>
+                    <h:column>
+                        <f:facet name="header">Value</f:facet>
+                        #{item.link}
+                    </h:column>
+                    <h:column >
+                        <f:facet name="header">Next concept</f:facet>
+                        #{DT.getNodeNameFromID(item.concept_two)}
+                    </h:column>
+                </h:dataTable>
+                
+                <f:verbatim><br /><b>Identified possible diagnoses:</b></f:verbatim>
+                <ul>
+                <ui:repeat value="#{DT.diagnoses}" var="item"> <!--http://stackoverflow.com/questions/20468236/using-foreach-loop-in-jsf-->
+                    <li>#{DT.getNodeNameFromID(item)}</li>
+                </ui:repeat>
+                </ul>
+                
+                <ui:fragment rendered="#{DT.getOrphanConcepts().size()+DT.getUnrecognizedConcepts(CaseBase.getCases()).size()+DT.getUnrecognizedDiagnoses(CaseBase.getCases()).size()>0}">
+                    <f:verbatim><br /><b>Warnings: </b></f:verbatim>
+                </ui:fragment>
+                
+                <ui:fragment rendered="#{DT.getOrphanConcepts().size()>0}">
+                    <f:verbatim><br />Unconnected concepts:</f:verbatim>
+                    <ui:repeat value="#{DT.getOrphanConcepts()}" var="item">
+                        <b>#{DT.getNodeNameFromID(item)}</b>
+                        <ui:fragment rendered="#{DT.getOrphanConcepts().get(DT.getOrphanConcepts().size()-1) != item }">, </ui:fragment>
+                    </ui:repeat>
+                    <h:graphicImage value="/resources/images/arrow_r.png" width="16" height="16" style="border-spacing: 20px;padding-left: 10px"/>
+                    These concepts will be ignored!
+                </ui:fragment>
+
+                <ui:fragment rendered="#{DT.getUnrecognizedConcepts(CaseBase.getCases()).size()>0}">
+                    <f:verbatim><br />Concepts NOT found in the case base:</f:verbatim>
+                    <ui:repeat value="#{DT.getUnrecognizedConcepts(CaseBase.getCases())}" var="item">
+                        <b>#{DT.getNodeNameFromID(item)}</b>
+                        <ui:fragment rendered="#{DT.getUnrecognizedConcepts(CaseBase.getCases()).get(DT.getUnrecognizedConcepts(CaseBase.getCases()).size()-1) != item }">, </ui:fragment>
+                    </ui:repeat>
+                    <h:graphicImage value="/resources/images/arrow_r.png" width="16" height="16" style="border-spacing: 20px;padding-left: 10px"/>
+                    Misspelled names?
+                </ui:fragment>
+                
+                <ui:fragment rendered="#{DT.getUnrecognizedDiagnoses(CaseBase.getCases()).size()>0}">
+                    <f:verbatim><br />Diagnoses NOT found in the case base:</f:verbatim>
+                    <ui:repeat value="#{DT.getUnrecognizedDiagnoses(CaseBase.getCases())}" var="item">
+                        <b>#{DT.getNodeNameFromID(item)}</b>
+                        <ui:fragment rendered="#{DT.getUnrecognizedDiagnoses(CaseBase.getCases()).get(DT.getUnrecognizedDiagnoses(CaseBase.getCases()).size()-1) != item }">, </ui:fragment>
+                    </ui:repeat>
+                    <h:graphicImage value="/resources/images/arrow_r.png" width="16" height="16" style="border-spacing: 20px;padding-left: 10px"/>
+                    Misspelled names?
+                </ui:fragment>
+                <br /><br />
+                
+                <f:verbatim><b>Uploaded decision tree: </b></f:verbatim>
+                <p:diagram id="staticTree" value="#{StaticTree.getModel()}" style="height:600px;width:100%" styleClass="ui-widget-content" />
+
+                
+            </p:tab>
+            </ui:remove>
+            
+
+
+
+
+
+
+
+
+
 <p:layout id="CAA#{rbr.index}" rendered="{CaseDetails.display}">
                         <p:layoutUnit position="center">
                             <h:outputLink value="" onclick="">Case #{rbr.index}</h:outputLink>

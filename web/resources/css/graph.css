@@ -8,7 +8,7 @@
     text-align: center;
     box-shadow: 0 5px 10px rgba(0, 0, 0, 0.8);
     border-radius: 6px;
-    border: 5px solid transparent;
+    border: 7px solid transparent;
     background-color: #1ECAD6;
     color: #ffffff;
     word-break: normal;
@@ -27,7 +27,27 @@
     text-align: center;
     box-shadow: 0 5px 10px rgba(0, 0, 0, 0.8);
     border-radius: 6px;
-    border: 5px solid transparent;
+    border: 7px solid transparent;
+    background-color: #1ECAD6;
+    color: #ffffff;
+    word-break: normal;
+    line-break: strict;
+    display: flex;
+    align-items: center;
+    border-color: green;
+    }
+    
+.ui-diagram-element-selected-false {   
+    //width:10em; 
+    max-width: 300px;
+    height:56px;
+    line-height:24px;
+    padding-right:5px;
+    padding-left:5px;
+    text-align: center;
+    box-shadow: 0 5px 10px rgba(0, 0, 0, 0.8);
+    border-radius: 6px;
+    border: 7px solid transparent;
     background-color: #1ECAD6;
     color: #ffffff;
     word-break: normal;
@@ -47,7 +67,7 @@
     padding-left:5px;
     box-shadow: 0 5px 10px rgba(0, 0, 0, 0.8);
     border-radius: 6px;
-    border: 5px solid transparent;
+    border: 7px solid transparent;
     background-color: #74E64E;
     color: #ffffff;
     word-break: normal;
@@ -66,14 +86,14 @@
     padding-left:5px;
     box-shadow: 0 5px 10px rgba(0, 0, 0, 0.8);
     border-radius: 6px;
-    border: 5px solid transparent;
+    border: 7px solid transparent;
     background-color: #74E64E;
     color: #ffffff;
     word-break: normal;
     line-break: strict;
     display: flex;
     align-items: center;
-    border-color: red;
+    border-color: green;
     }
     
 .ui-diagram-end {   
@@ -86,7 +106,7 @@
     padding-left:5px;
     box-shadow: 0 5px 10px rgba(0, 0, 0, 0.8);
     border-radius: 6px;
-    border: 5px solid transparent;
+    border: 7px solid transparent;
     background-color: #F5A53D;
     color: #ffffff;
     word-break: normal;
@@ -105,7 +125,25 @@
     padding-left:5px;
     box-shadow: 0 5px 10px rgba(0, 0, 0, 0.8);
     border-radius: 6px;
-    border: 5px solid transparent;
+    border: 7px solid transparent;
+    background-color: #F5A53D;
+    color: #ffffff;
+    word-break: normal;
+    line-break: strict;
+    border-color: green;
+    }
+
+.ui-diagram-end-selected-false {   
+    //width:10em;
+    max-width: 300px;
+    height:56px;     
+    line-height:28px;
+    text-align: center;
+    padding-right:5px;
+    padding-left:5px;
+    box-shadow: 0 5px 10px rgba(0, 0, 0, 0.8);
+    border-radius: 6px;
+    border: 7px solid transparent;
     background-color: #F5A53D;
     color: #ffffff;
     word-break: normal;
@@ -127,7 +165,7 @@
     font-size: 16px;
     font-weight: bold;
     //text-decoration: red underline;
-    border-bottom: 5px solid red;
+    border-bottom: 5px solid green;
     color: black;
     word-break: normal;
     line-break: strict;
