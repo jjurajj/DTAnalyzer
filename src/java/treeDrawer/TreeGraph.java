@@ -26,7 +26,7 @@ import singleCase.Case;
 @ManagedBean(name = "TreeDrawer")
 @ViewScoped
 
-public class TreeDrawer {
+public class TreeGraph {
     
     public List<Connection> stored_connections;                                 // Since I can't edit labels manually
     public int default_height=800, default_width=1200;
