@@ -16,7 +16,24 @@
     display: flex;
     align-items: center;
     }
-
+.ui-diagram-element-lite {   
+    //width:10em; 
+    max-width: 300px;
+    height:56px;
+    line-height:24px;
+    padding-right:5px;
+    padding-left:5px;
+    text-align: center;
+    box-shadow: 0 5px 10px rgba(0, 0, 0, 0.8);
+    border-radius: 6px;
+    border: 7px solid transparent;
+    background-color: #8fe9ef;
+    color: #ffffff;
+    word-break: normal;
+    line-break: strict;
+    display: flex;
+    align-items: center;
+    }
 .ui-diagram-element-selected {   
     //width:10em; 
     max-width: 300px;
@@ -36,7 +53,6 @@
     align-items: center;
     border-color: green;
     }
-    
 .ui-diagram-element-selected-false {   
     //width:10em; 
     max-width: 300px;
@@ -75,7 +91,6 @@
     display: flex;
     align-items: center;
     }
-
 .ui-diagram-start-selected {   
     //width:10em;
     max-width: 600px;
@@ -95,7 +110,7 @@
     align-items: center;
     border-color: green;
     }
-    
+
 .ui-diagram-end {   
     //width:10em; 
     max-width: 300px;
@@ -114,7 +129,24 @@
     display: flex;
     align-items: center;
     }
-
+.ui-diagram-end-lite {   
+    //width:10em; 
+    max-width: 300px;
+    height:56px;     
+    line-height:28px;
+    text-align: center;
+    padding-right:5px;
+    padding-left:5px;
+    box-shadow: 0 5px 10px rgba(0, 0, 0, 0.8);
+    border-radius: 6px;
+    border: 7px solid transparent;
+    background-color: #fad29e;
+    color: #ffffff;
+    word-break: normal;
+    line-break: strict;
+    display: flex;
+    align-items: center;
+    }
 .ui-diagram-end-selected {   
     //width:10em;
     max-width: 300px;
@@ -132,7 +164,6 @@
     line-break: strict;
     border-color: green;
     }
-
 .ui-diagram-end-selected-false {   
     //width:10em;
     max-width: 300px;
@@ -149,6 +180,23 @@
     word-break: normal;
     line-break: strict;
     border-color: red;
+    }
+.ui-diagram-end-selected-true {   
+    //width:10em;
+    max-width: 300px;
+    height:56px;     
+    line-height:28px;
+    text-align: center;
+    padding-right:5px;
+    padding-left:5px;
+    box-shadow: 0 5px 10px rgba(0, 0, 0, 0.8);
+    border-radius: 6px;
+    border: 7px dotted transparent;
+    background-color: #F5A53D;
+    color: #ffffff;
+    word-break: normal;
+    line-break: strict;
+    border-color: green;
     }
 
    

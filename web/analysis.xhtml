@@ -44,7 +44,7 @@ and open the template in the editor.
        
         <h:form id="panels_form">
                 
-                <p:panel id="warnings" closable="true" header="Warnings" toggleable="true" rendered="">
+                <p:panel id="warnings" closable="true" header="Warnings" toggleable="true" rendered="#{(DT.getOrphanConcepts().size()+DT.getUnrecognizedConcepts(CaseBase.getCases()).size()+DT.getUnrecognizedDiagnoses(CaseBase.getCases()).size()>0) or (DT.getUnrecognizedConcepts(CaseBase.getCases()).size()>0) or (DT.getUnrecognizedDiagnoses(CaseBase.getCases()).size()>0)}">
                 <p:ajax event="toggle" update="warnings" />
                 <p:ajax event="close" update="warnings" />
                 

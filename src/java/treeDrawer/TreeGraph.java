@@ -228,6 +228,19 @@ public class TreeGraph {
                                 }       
                 }
         
+        // If the case was not correctly solved, mark the correct end
+        if (target_case.getEvaluation().isCorrect() == false)
+            for (Element node_one : this.model.getElements())
+                if (node_one.getId().equals(correct_diagnosis_ID)) {
+                    node_one.setStyleClass(node_one.getStyleClass().concat("-selected-true"));
+                    break;
+                }
+
+        for (Element node_one : this.model.getElements())
+            if (node_one.getStyleClass().contains("selected") == false)
+                node_one.setStyleClass(node_one.getStyleClass().concat("-lite"));
+
+        
         for (Connection temp_conn : remove_connections) this.model.disconnect(temp_conn);
         for (Connection temp_connection2 : add_connections) this.model.connect(temp_connection2);
             
