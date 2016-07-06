@@ -42,10 +42,97 @@ and open the template in the editor.
             <h:inputHidden id="width" value="#{WindowSize.width}" />
         </h:form>
        
-        <p:tabView id="tab_view" dynamic="true" cache="false">
-            <p:tab title="Case solving details" id="graph_tab" >
+        <h:form id="panels_form">
                 
-                <h:dataTable id="perCaseTable" style="width: 100%;" value="#{CaseBase.cases}" var="case" headerClass="order-table-header" columnClasses="order-table-centered-column,order-table-left-centered-column,order-table-centered-column,order-table-left-centered-column,order-table-centered-column">
+                <p:panel id="warnings" closable="true" header="Warnings" toggleable="true" rendered="">
+                <p:ajax event="toggle" update="warnings" />
+                <p:ajax event="close" update="warnings" />
+                
+                <ui:fragment rendered="#{DT.getOrphanConcepts().size()+DT.getUnrecognizedConcepts(CaseBase.getCases()).size()+DT.getUnrecognizedDiagnoses(CaseBase.getCases()).size()>0}">
+                    <f:verbatim>Unconnected concepts:</f:verbatim>
+                    <ui:repeat value="#{DT.getOrphanConcepts()}" var="item">
+                        '<b>#{DT.getNodeNameFromID(item)}</b>'
+                        <ui:fragment rendered="#{DT.getOrphanConcepts().get(DT.getOrphanConcepts().size()-1) != item }">, </ui:fragment>
+                    </ui:repeat>
+                    <h:graphicImage value="/resources/images/arrow_r.png" width="16" height="16" style="border-spacing: 20px;padding-left: 10px"/>
+                    These concepts will be ignored!<br />
+                </ui:fragment>
+
+                <ui:fragment rendered="#{DT.getUnrecognizedConcepts(CaseBase.getCases()).size()>0}">
+                    <f:verbatim>Concepts NOT found in the case base:</f:verbatim>
+                    <ui:repeat value="#{DT.getUnrecognizedConcepts(CaseBase.getCases())}" var="item">
+                        '<b>#{DT.getNodeNameFromID(item)}</b>'
+                        <ui:fragment rendered="#{DT.getUnrecognizedConcepts(CaseBase.getCases()).get(DT.getUnrecognizedConcepts(CaseBase.getCases()).size()-1) != item }">, </ui:fragment>
+                    </ui:repeat>
+                    <h:graphicImage value="/resources/images/arrow_r.png" width="16" height="16" style="border-spacing: 20px;padding-left: 10px"/>
+                    Misspelled names?<br />
+                </ui:fragment>
+
+                <ui:fragment rendered="#{DT.getUnrecognizedDiagnoses(CaseBase.getCases()).size()>0}">
+                    <f:verbatim>Diagnoses NOT found in the case base:</f:verbatim>
+                    <ui:repeat value="#{DT.getUnrecognizedDiagnoses(CaseBase.getCases())}" var="item">
+                        '<b>#{DT.getNodeNameFromID(item)}</b>'
+                        <ui:fragment rendered="#{DT.getUnrecognizedDiagnoses(CaseBase.getCases()).get(DT.getUnrecognizedDiagnoses(CaseBase.getCases()).size()-1) != item }">, </ui:fragment>
+                    </ui:repeat>
+                    <h:graphicImage value="/resources/images/arrow_r.png" width="16" height="16" style="border-spacing: 20px;padding-left: 10px"/>
+                    Misspelled names?<br />
+                </ui:fragment>
+                </p:panel>
+                
+                <p:panel id="overall" header="Task performance" toggleable="true">
+                <p:ajax event="toggle" update="overall" />
+                <!-- Overall idagnostics table. Click updates panels_form:perCaseTable -->
+                <h:dataTable id="diagnosis_table" style="width: 100%;height: 20%" value="#{DT.evaluateTreeDecision(CaseBase)}" var="item" headerClass="order-table-header" columnClasses="order-table-left-centered-column,order-table-centered-column,order-table-right-centered-column,order-table-right-centered-column,order-table-centered-column,order-table-centered-column,order-table-centered-column,order-table-centered-column,order-table-centered-column"> <!--http://stackoverflow.com/questions/20468236/using-foreach-loop-in-jsf-->
+                    <h:column>
+                        <f:facet name="header">Diagnosis</f:facet>
+                        <ui:fragment>#{item.getName()}</ui:fragment>
+                    </h:column>
+                    <h:column >
+                        <f:facet name="header">Test cases (<p:commandLink value="#{CaseBase.cases.size()}" actionListener="#{PerDiagnosisDetails.setAll(CaseBase.cases,'ATC')}" update=":panels_form:perCaseTable"/>)</f:facet>
+                        <p:commandLink rendered="#{item.getTotal().size()>0}" value="#{item.getTotal().size()}" actionListener="#{PerDiagnosisDetails.setAll(item.getTotal(),'ATC')}" update=":panels_form:perCaseTable"/>
+                        <h:outputText rendered="#{item.getTotal().size()==0}" value="0" />
+                    </h:column>
+                    <h:column >
+                        <f:facet name="header">Precision</f:facet>
+                        #{ item.getTP().size()+item.getFP().size()>0 ? item.getTP().size()*100/(item.getTP().size()+item.getFP().size()):"0.0"}%
+                    </h:column>
+                    <h:column >
+                        <f:facet name="header">Recall</f:facet>
+                        #{ item.getTP().size()+item.getFN().size()>0 ? item.getTP().size()*100/(item.getTP().size()+item.getFN().size()):"0.0"}%
+                    </h:column>
+                    <h:column >
+                        <!-- Na temelju ovog sad treba apdejtat neku komponentu s arguemntima item.name i TP (to definira listu caseova)-->
+                        <!--http://stackoverflow.com/questions/8634156/how-to-find-out-client-id-of-component-for-ajax-update-render-cannot-find-compo-->
+                        <f:facet name="header">TP (<h:graphicImage value="/resources/images/tick.png" width="16" height="16" />)</f:facet>
+                        <p:commandLink rendered="#{item.getTP().size()>0}" value="#{item.getTP().size()}" actionListener="#{PerDiagnosisDetails.setAll(item.getTP(),'TP')}" update=":panels_form:perCaseTable"/>
+                        <h:outputText rendered="#{item.getTP().size()==0}" value="0" />
+                    </h:column>
+                    <h:column>
+                        <f:facet name="header">TN (<h:graphicImage value="/resources/images/tick.png" width="16" height="16" />)</f:facet>
+                        <p:commandLink rendered="#{item.getTN().size()>0}" value="#{item.getTN().size()}" actionListener="#{PerDiagnosisDetails.setAll(item.getTN(),'TN')}" update=":panels_form:perCaseTable"/>
+                        <h:outputText rendered="#{item.getTN().size()==0}" value="0" />
+                    </h:column>
+                    <h:column>
+                        <f:facet name="header">FP (<h:graphicImage value="/resources/images/cross.png" width="16" height="16" />)</f:facet>
+                        <p:commandLink rendered="#{item.getFP().size()>0}" value="#{item.getFP().size()}" actionListener="#{PerDiagnosisDetails.setAll(item.getFP(),'FP')}" update=":panels_form:perCaseTable"/>
+                        <h:outputText rendered="#{item.getFP().size()==0}" value="0" />
+                    </h:column>
+                    <h:column >
+                        <f:facet name="header">FN (<h:graphicImage value="/resources/images/cross.png" width="16" height="16" />)</f:facet>
+                        <p:commandLink rendered="#{item.getFN().size()>0}" value="#{item.getFN().size()}" actionListener="#{PerDiagnosisDetails.setAll(item.getFN(),'FN')}" update=":panels_form:perCaseTable"/>
+                        <h:outputText rendered="#{item.getFN().size()==0}" value="0" />
+                    </h:column>
+                    <h:column >
+                        <f:facet name="header">Undiagnosed (<h:graphicImage value="/resources/images/cross.png" width="16" height="16" />)</f:facet>
+                        <p:commandLink rendered="#{item.getUndiagnosed().size()>0}" value="#{item.getUndiagnosed().size()}" actionListener="#{PerDiagnosisDetails.setAll(item.getUndiagnosed(),'undiagnosed')}" update=":panels_form:perCaseTable"/>
+                        <h:outputText rendered="#{item.getUndiagnosed().size()==0}" value="0" />
+                    </h:column>
+                </h:dataTable>
+                </p:panel>
+                
+                <p:panel id="cases" header="Case performance" toggleable="true">
+                <p:ajax event="toggle" update="cases" />
+                <h:dataTable id="perCaseTable" style="width: 100%;height: 20%;" value="#{PerDiagnosisDetails.getDisplayCases()}" var="case" headerClass="order-table-header" columnClasses="order-table-centered-column,order-table-left-centered-column,order-table-centered-column,order-table-left-centered-column,order-table-centered-column">
                     <h:column>
                         <f:facet name="header">Case ID</f:facet>
                         <ui:fragment>#{case.getID()}</ui:fragment>
@@ -66,325 +153,25 @@ and open the template in the editor.
                     </h:column>
                     <h:column>
                         <f:facet name="header">Actions</f:facet>
-                        <h:form><p:commandLink value="Details" actionListener="#{PerDiagnosisDetails.setSingle(case,case.getID())}" update=":tab_view:perCaseDetails" /> / <h:outputLink value="#{case.getURL()}" target="_blank">Full case</h:outputLink> / <p:commandLink value="Case path" actionListener="#{TreeDrawer.runCase(CaseBase.getCaseByID(case.getID()))}" update=":tab_view:activeTree" /> </h:form>
- 
-                    </h:column>
+                        <h:outputLink value="#{case.getURL()}" target="_blank">Full case</h:outputLink> / <p:commandLink value="Case path" actionListener="#{TreeDrawer.runCase(CaseBase.getCaseByID(case.getID()))}" update=":activeTree" />
+                     </h:column>
                 </h:dataTable>
-                
-                <p:panel id="perCaseDetails" visible="true" closable="true" collapsed="false" toggleable="true" style="border: 0px">
-                    <h:dataTable value="#{PerDiagnosisDetails.getDisplayCases()}" var="case" >
-                        <h:column>
-                            <h:outputLink value="#{case.getURL()}" target="_blank">Case #{case.getID()}</h:outputLink>
-                            <h:outputText value=" - Result: " />
-                            <ui:fragment rendered="#{case.getEvaluation().isCorrect()}"><span style="color:green;">#{case.getEvaluation().getEndNode()} </span></ui:fragment>
-                            <ui:fragment rendered="#{!case.getEvaluation().isCorrect()}"><span style="color:red;">#{case.getEvaluation().getEndNode()} </span></ui:fragment>
-                            
-                            <ui:remove>
-                            <h:graphicImage value="/resources/images/tick.png" width="16" height="16" rendered="#{case.getEvaluation().isCorrect()}" />
-                            <h:graphicImage value="/resources/images/cross.png" width="16" height="16" rendered="#{!case.getEvaluation().isCorrect()}" />
-                            </ui:remove>
-                            
-                            <h:outputText rendered="#{!case.getEvaluation().isDiagnosed()}" value=" (Undiagnosed - " />
-                            <h:outputText rendered="#{case.getEvaluation().isCorrect()}" value=" (Correct - " />
-                            <h:outputText rendered="#{case.getEvaluation().isDiagnosed() and !case.getEvaluation().isCorrect()}" value=" (Incorrect - " />
-                            <p:commandLink value="details" action="#{PerDiagnosisDetails.toggleDisplay(case)}" update="case_details" />
-                            <h:outputText value=")" />
-
-                            <p:panel id="case_details" visible="#{PerDiagnosisDetails.getDisplay(case)}" closable="true" toggleable="true">
-                            
-                                <ui:fragment><b>Case correct solution:</b> <span style="color:green;">#{case.getCorrectDiagnosis().getName()}</span><br /><br /></ui:fragment>
-                                <ui:fragment><b>Case evaluation path:</b><br /><br /></ui:fragment>
-                                <ul>
-                                <h:dataTable value="#{case.getEvaluation().getPath()}" var="path_proposition"><h:column>
-
-                                        <!--Output propozicije-->
-                                        <h:panelGroup rendered="#{case.getEvaluation().isDiagnosed() and !DT.getNodeNameFromID(path_proposition.concept_one).equals(case.getEvaluation().getEndNode()) or !case.getEvaluation().isDiagnosed()}">
-                                            <h:graphicImage value="/resources/images/arrow_r.png" width="16" height="16" style="border-spacing: 20px"/>
-                                            <h:outputText value="  #{DT.getNodeNameFromID(path_proposition.concept_one)} - #{path_proposition.link} " />
-                                        </h:panelGroup>
-
-                                        <!-- Koliko caseova s postavljenom neispravnom dijagnozom dolazi dovde?
-                                        Ovo moze biti misleading jer ne uzima u obzir druge dijagnoze koje treba discardati pa sam maknuo.
-                                        Za postavljanje dijagnoze gledati iduci tab i stabla. -->
-                                        <ui:remove>
-                                        <ui:fragment>
-                                                <ul><li>
-                                                        #{CaseBase.getCasesWithDiagnosisAndParameters(case.getEvaluation().getEndNode(),case.getRequestedParameters(DT.decodeProposition(path_proposition))).size()}/#{CaseBase.getCasesWithDiagnosis(case.getEvaluation().getEndNode()).size()}
-                                                        (#{CaseBase.getCasesWithDiagnosis(case.getCorrectDiagnosis().getName()).size()>0 ? (CaseBase.getCasesWithDiagnosisAndParameters(case.getEvaluation().getEndNode(),case.getRequestedParameters(DT.decodeProposition(path_proposition))).size()*100/CaseBase.getCasesWithDiagnosis(case.getCorrectDiagnosis().getName()).size()):"0.0"}%)
-                                                        available cases with <i>#{case.getEvaluation().getEndNode()}</i> diagnosis <br />have the same parameter values as here.
-                                                </li></ul>
-                                        </ui:fragment>
-                                        </ui:remove>
-                                        
-                                        <!--Correct diagnosis discarded-->
-                                        <ui:fragment rendered="#{!DT.checkReachability(path_proposition.concept_two,case.getCorrectDiagnosis().name) and DT.checkReachability(path_proposition.concept_one,case.getCorrectDiagnosis().name) and !case.getEvaluation().isCorrect()}">
-                                                <ul>
-                                                    <li><b>Correct diagnosis</b> (<span style="color:green;"><i>#{case.getCorrectDiagnosis().getName()}</i></span>) <b>discarded.</b></li>
-                                                    <li>#{CaseBase.getCasesWithDiagnosisAndParameters(case.getCorrectDiagnosis().getName(),case.getRequestedParameters(DT.decodeProposition(path_proposition))).size()}/#{CaseBase.getCasesWithDiagnosis(case.getCorrectDiagnosis().getName()).size()}
-                                                        (#{CaseBase.getCasesWithDiagnosis(case.getCorrectDiagnosis().getName()).size()>0 ? (CaseBase.getCasesWithDiagnosisAndParameters(case.getCorrectDiagnosis().getName(),case.getRequestedParameters(DT.decodeProposition(path_proposition))).size()*100/CaseBase.getCasesWithDiagnosis(case.getCorrectDiagnosis().getName()).size()):"0.0"}%)
-                                                        available cases with <i>#{case.getCorrectDiagnosis().getName()}</i> diagnosis <br />have the same parameter values as here.</li>
-                                                </ul>
-                                        </ui:fragment>
-
-                                        <!--Check if user's solution could be discarded here-->
-                                        <!--Dohvati sve caseove s dijagnozom koju je korisnik krivo postavio i provjeri koliko njih ima iste parametre. Tu info mozes napisati u svakom koraku-->
-                                        <ui:fragment rendered="#{!case.getEvaluation().isCorrect() and case.getEvaluation().isDiagnosed() and (DT.getNodeNameFromID(path_proposition.concept_two)==case.getEvaluation().getEndNode())}">
-                                                <ul></ul>
-                                        </ui:fragment>
-                                        
-                                        <!--Incorrect diagnosis reached-->
-                                        <ui:fragment rendered="#{!case.getEvaluation().isCorrect() and case.getEvaluation().isDiagnosed() and (DT.getNodeNameFromID(path_proposition.concept_two)==case.getEvaluation().getEndNode())}">
-                                            <ul><li><b>Incorrect diagnosis </b>(<span style="color:red;"><i>#{DT.getNodeNameFromID(path_proposition.concept_two)}</i></span>) <b>set.</b></li>
-                                                <li>#{CaseBase.getCasesWithDiagnosisAndParameters(case.getEvaluation().getEndNode(),case.getRequestedParameters(DT.decodeProposition(path_proposition))).size()}/#{CaseBase.getCasesWithDiagnosis(case.getEvaluation().getEndNode()).size()}
-                                                        (#{CaseBase.getCasesWithDiagnosis(case.getCorrectDiagnosis().getName()).size()>0 ? (CaseBase.getCasesWithDiagnosisAndParameters(case.getEvaluation().getEndNode(),case.getRequestedParameters(DT.decodeProposition(path_proposition))).size()*100/CaseBase.getCasesWithDiagnosis(case.getCorrectDiagnosis().getName()).size()):"0.0"}%)
-                                                        available cases with <span style="color:red;"><i>#{case.getEvaluation().getEndNode()}</i></span> diagnosis <br />have the same parameter values as here.</li>
-
-                                                </ul>
-                                                
-                                        </ui:fragment>
-                                        
-                                        <!--Correct diagnosis reached-->
-                                        <ui:fragment rendered="#{case.getEvaluation().isCorrect() and DT.getNodeNameFromID(path_proposition.concept_two).equals(case.getEvaluation().getEndNode())}">
-                                            <ul><li><b>Correct diagnosis </b> (<span style="color:green;"><i>#{DT.getNodeNameFromID(path_proposition.concept_two)}</i></span>)<b> reached.</b></li></ul>
-                                        </ui:fragment>
-                                        
-                                        <!--Case stuck in non-diagnosis node-->
-                                        <ui:fragment rendered="#{!case.getEvaluation().isDiagnosed() and (DT.getNodeNameFromID(path_proposition.concept_one).equals(case.getEvaluation().getEndNode()))}">
-                                            <ul><li><b>No next node - case stuck in a non-diagnosis node!</b></li></ul>
-                                        </ui:fragment>
-                                        
-                                </h:column></h:dataTable>
-                                </ul>
-                                
-                            </p:panel>
-                        </h:column>
-                    </h:dataTable>
                 </p:panel>
                 
-                <h:form>
+            </h:form>
+            
+            <br />
+            <h:form>
                     <ui:remove><p:commandButton value="Tree display: " style="border-width: 0px; background-color: white; width: 150px; pointer-events:none;" /></ui:remove>
-                    <p:commandButton actionListener="#{TreeDrawer.pruneLeaves()}" update=":tab_view:activeTree" value="Contract" icon="ui-icon-contract" />
-                    <p:commandButton actionListener="#{TreeDrawer.expandLeaves()}" update=":tab_view:activeTree" value="Expand" icon="ui-icon-expand" />
-                    <p:commandButton actionListener="#{TreeDrawer.buildFullTree()}" update=":tab_view:activeTree" value="Full tree" />
-                    <p:commandButton actionListener="#{TreeDrawer.resetTree()}" update=":tab_view:activeTree" value="Reset tree" />
-                </h:form>
+                    <p:commandButton actionListener="#{TreeDrawer.pruneLeaves()}" update="activeTree" value="Contract" icon="ui-icon-contract" />
+                    <p:commandButton actionListener="#{TreeDrawer.expandLeaves()}" update="activeTree" value="Expand" icon="ui-icon-expand" />
+                    <p:commandButton actionListener="#{TreeDrawer.buildFullTree()}" update="activeTree" value="Full tree" />
+                    <p:commandButton actionListener="#{TreeDrawer.resetTree()}" update="activeTree" value="Reset tree" />
+            </h:form>
             
-                <p:diagram escape="false" id="activeTree" value="#{TreeDrawer.getModel()}" style="height:600px;width:100%" styleClass="ui-widget-content" />
+            <p:diagram id="activeTree" value="#{TreeDrawer.getModel()}" style="height:600px;width:100%" styleClass="ui-widget-content" />
                 
-            </p:tab>
             
-            <p:tab title="Overall performance" id="per_diagnosis_tab" >
-                
-                <!-- Popis baza s caseovima -->
-                <f:verbatim><br />Evaluation <b>per final diagnosis</b> (case bases used: </f:verbatim>
-                <ui:repeat value="#{CaseBase.getURL()}" var="item" varStatus="rbr"><h:outputLink value="#{item}">B#{rbr.index}</h:outputLink></ui:repeat>):<br /><br />
-                
-                <!-- Razrada po dijagnozama. Sve su ovo liste caseova, a ja im zasad samo gledam count. Kad kliknem na count onda dobijem  -->
-                <h:dataTable id="diagnosis_table" value="#{DT.evaluateTreeDecision(CaseBase)}" var="item" headerClass="order-table-header" columnClasses="order-table-left-centered-column,order-table-centered-column,order-table-right-centered-column,order-table-right-centered-column,order-table-centered-column,order-table-centered-column,order-table-centered-column,order-table-centered-column,order-table-centered-column"> <!--http://stackoverflow.com/questions/20468236/using-foreach-loop-in-jsf-->
-                    <h:column>
-                        <f:facet name="header">Diagnosis</f:facet>
-                        <ui:fragment>#{item.getName()}</ui:fragment>
-                    </h:column>
-                    <h:column >
-                        <f:facet name="header">Test cases</f:facet>
-                        <h:form><p:commandLink rendered="#{item.getTotal().size()>0}" value="#{item.getTotal().size()}" actionListener="#{PerDiagnosisDetails.setAll(item.getTotal(),'ATC')}" update=":tab_view:casesPerDiagnosis"/></h:form>
-                        <h:outputText rendered="#{item.getTotal().size()==0}" value="0" />
-                    </h:column>
-                    <h:column >
-                        <f:facet name="header">Precision</f:facet>
-                        #{ item.getTP().size()+item.getFP().size()>0 ? item.getTP().size()*100/(item.getTP().size()+item.getFP().size()):"0.0"}%
-                    </h:column>
-                    <h:column >
-                        <f:facet name="header">Recall</f:facet>
-                        #{ item.getTP().size()+item.getFN().size()>0 ? item.getTP().size()*100/(item.getTP().size()+item.getFN().size()):"0.0"}%
-                    </h:column>
-                    <h:column >
-                        <!-- Na temelju ovog sad treba apdejtat neku komponentu s arguemntima item.name i TP (to definira listu caseova)-->
-                        <!--http://stackoverflow.com/questions/8634156/how-to-find-out-client-id-of-component-for-ajax-update-render-cannot-find-compo-->
-                        <f:facet name="header">TP (<h:graphicImage value="/resources/images/tick.png" width="16" height="16" />)</f:facet>
-                        <h:form><p:commandLink rendered="#{item.getTP().size()>0}" value="#{item.getTP().size()}" actionListener="#{PerDiagnosisDetails.setAll(item.getTP(),'TP')}" update=":tab_view:casesPerDiagnosis"/></h:form>
-                        <h:outputText rendered="#{item.getTP().size()==0}" value="0" />
-                    </h:column>
-                    <h:column>
-                        <f:facet name="header">TN (<h:graphicImage value="/resources/images/tick.png" width="16" height="16" />)</f:facet>
-                        <h:form><p:commandLink rendered="#{item.getTN().size()>0}" value="#{item.getTN().size()}" actionListener="#{PerDiagnosisDetails.setAll(item.getTN(),'TN')}" update=":tab_view:casesPerDiagnosis"/></h:form>
-                        <h:outputText rendered="#{item.getTN().size()==0}" value="0" />
-                    </h:column>
-                    <h:column>
-                        <f:facet name="header">FP (<h:graphicImage value="/resources/images/cross.png" width="16" height="16" />)</f:facet>
-                        <h:form><p:commandLink rendered="#{item.getFP().size()>0}" value="#{item.getFP().size()}" actionListener="#{PerDiagnosisDetails.setAll(item.getFP(),'FP')}" update=":tab_view:casesPerDiagnosis"/></h:form>
-                        <h:outputText rendered="#{item.getFP().size()==0}" value="0" />
-                    </h:column>
-                    <h:column >
-                        <f:facet name="header">FN (<h:graphicImage value="/resources/images/cross.png" width="16" height="16" />)</f:facet>
-                        <h:form><p:commandLink rendered="#{item.getFN().size()>0}" value="#{item.getFN().size()}" actionListener="#{PerDiagnosisDetails.setAll(item.getFN(),'FN')}" update=":tab_view:casesPerDiagnosis"/></h:form>
-                        <h:outputText rendered="#{item.getFN().size()==0}" value="0" />
-                    </h:column>
-                    <h:column >
-                        <f:facet name="header">Undiagnosed (<h:graphicImage value="/resources/images/cross.png" width="16" height="16" />)</f:facet>
-                        <h:form><p:commandLink rendered="#{item.getUndiagnosed().size()>0}" value="#{item.getUndiagnosed().size()}" actionListener="#{PerDiagnosisDetails.setAll(item.getUndiagnosed(),'undiagnosed')}" update=":tab_view:casesPerDiagnosis"/></h:form>
-                        <h:outputText rendered="#{item.getUndiagnosed().size()==0}" value="0" />
-                    </h:column>
-                </h:dataTable>
-                
-                <f:verbatim><br /><br /></f:verbatim>
-                <p:panel id="casesPerDiagnosis" visible="true" closable="true" collapsed="false" toggleable="true" style="border: 0px">
-
-                    <h:outputText rendered="#{PerDiagnosisDetails.getInfo().equals('FP')}" value="False positives " style="font-weight:bold"/>
-                    <h:graphicImage rendered="#{PerDiagnosisDetails.getInfo().equals('FP')}" value="/resources/images/cross.png" width="16" height="16"/>
-                    
-                    <h:outputText rendered="#{PerDiagnosisDetails.getInfo().equals('TP')}" value="True positives " style="font-weight:bold"/>
-                    <h:graphicImage rendered="#{PerDiagnosisDetails.getInfo().equals('TP')}" value="/resources/images/tick.png" width="16" height="16"/>
-                    
-                    <h:outputText rendered="#{PerDiagnosisDetails.getInfo().equals('FN')}" value="False negatives " style="font-weight:bold"/>
-                    <h:graphicImage rendered="#{PerDiagnosisDetails.getInfo().equals('FN')}" value="/resources/images/cross.png" width="16" height="16"/>
-                    
-                    <h:outputText rendered="#{PerDiagnosisDetails.getInfo().equals('TN')}" value="True negatives " style="font-weight:bold"/>
-                    <h:graphicImage rendered="#{PerDiagnosisDetails.getInfo().equals('TN')}" value="/resources/images/tick.png" width="16" height="16"/>
-                    
-                    <h:outputText rendered="#{PerDiagnosisDetails.getInfo().equals('ATC')}" value="Available test cases " style="font-weight:bold"/>
-                    <h:outputText rendered="#{PerDiagnosisDetails.getInfo().equals('UN')}" value="Undiagnosed " style="font-weight:bold"/>
-                    <h:graphicImage rendered="#{PerDiagnosisDetails.getInfo().equals('UN')}" value="/resources/images/cross.png" width="16" height="16"/>
-                    <h:outputText rendered="#{!PerDiagnosisDetails.getInfo().equals('N/A')}" value=" for target diagnosis " />
-                    <h:outputText rendered="#{!PerDiagnosisDetails.getInfo().equals('N/A')}" value="#{PerDiagnosisDetails.getDisplayCases().get(0).getCorrectDiagnosis().getName()}" style="font-weight:bold"/>
-                    <h:outputText rendered="#{PerDiagnosisDetails.getInfo().equals('N/A')}" value=" Click on a link to display details" style="font-style:italic"/>.
-                    
-                    <ul>
-                    <h:dataTable value="#{PerDiagnosisDetails.getDisplayCases()}" var="case">
-                        <h:column>
-                            <h:outputLink value="#{case.getURL()}" target="_blank">Case #{case.getID()}</h:outputLink>
-                            <h:outputText value=" - Result: " />
-                            <ui:fragment rendered="#{case.getEvaluation().isCorrect()}"><span style="color:green;">#{case.getEvaluation().getEndNode()} </span></ui:fragment>
-                            <ui:fragment rendered="#{!case.getEvaluation().isCorrect()}"><span style="color:red;">#{case.getEvaluation().getEndNode()} </span></ui:fragment>
-                            
-                            <ui:remove>
-                                <h:graphicImage value="/resources/images/tick.png" width="16" height="16" rendered="#{case.getEvaluation().isCorrect()}" />
-                                <h:graphicImage value="/resources/images/cross.png" width="16" height="16" rendered="#{!case.getEvaluation().isCorrect()}" />
-                            </ui:remove>
-                                
-                            <h:outputText rendered="#{!case.getEvaluation().isDiagnosed()}" value=" (Undiagnosed - " />
-                            <h:outputText rendered="#{case.getEvaluation().isCorrect()}" value=" (Correct - " />
-                            <h:outputText rendered="#{case.getEvaluation().isDiagnosed() and !case.getEvaluation().isCorrect()}" value=" (Incorrect - " />
-                            <p:commandLink value="details" action="#{PerDiagnosisDetails.toggleDisplay(case)}" update="case_details" />
-                            <h:outputText value=")" />
-
-                            <p:panel id="case_details" visible="#{PerDiagnosisDetails.getDisplay(case)}" closable="true" toggleable="true">
-                            
-                                <ui:fragment><b>Case correct solution:</b> #{case.getCorrectDiagnosis().getName()}<br /><br /></ui:fragment>
-                                <ui:fragment><b>Case evaluation path:</b><br /><br /></ui:fragment>
-                                <ul>
-                                <h:dataTable value="#{case.getEvaluation().getPath()}" var="path_proposition"><h:column>
-
-                                        <!--Output propozicije-->
-                                        <h:panelGroup rendered="#{case.getEvaluation().isDiagnosed() and !DT.getNodeNameFromID(path_proposition.concept_one).equals(case.getEvaluation().getEndNode()) or !case.getEvaluation().isDiagnosed()}">
-                                            <h:graphicImage value="/resources/images/arrow_r.png" width="16" height="16" style="border-spacing: 20px"/>
-                                            <h:outputText value="  #{DT.getNodeNameFromID(path_proposition.concept_one)} - #{path_proposition.link} " />
-                                        </h:panelGroup>
-
-                                        <!-- Koliko caseova s postavljenom neispravnom dijagnozom dolazi dovde?
-                                        Ovo moze biti misleading jer ne uzima u obzir druge dijagnoze koje treba discardati pa sam maknuo.
-                                        Za postavljanje dijagnoze gledati iduci tab i stabla. -->
-                                        <ui:remove>
-                                        <ui:fragment>
-                                                <ul><li>
-                                                        #{CaseBase.getCasesWithDiagnosisAndParameters(case.getEvaluation().getEndNode(),case.getRequestedParameters(DT.decodeProposition(path_proposition))).size()}/#{CaseBase.getCasesWithDiagnosis(case.getEvaluation().getEndNode()).size()}
-                                                        (#{CaseBase.getCasesWithDiagnosis(case.getCorrectDiagnosis().getName()).size()>0 ? (CaseBase.getCasesWithDiagnosisAndParameters(case.getEvaluation().getEndNode(),case.getRequestedParameters(DT.decodeProposition(path_proposition))).size()*100/CaseBase.getCasesWithDiagnosis(case.getCorrectDiagnosis().getName()).size()):"0.0"}%)
-                                                        available cases with <i>#{case.getEvaluation().getEndNode()}</i> diagnosis <br />have the same parameter values as here.
-                                                </li></ul>
-                                        </ui:fragment>
-                                        </ui:remove>
-                                        
-                                        <!--Correct diagnosis discarded-->
-                                        <ui:fragment rendered="#{!DT.checkReachability(path_proposition.concept_two,case.getCorrectDiagnosis().name) and DT.checkReachability(path_proposition.concept_one,case.getCorrectDiagnosis().name) and !case.getEvaluation().isCorrect()}">
-                                                <ul>
-                                                    <li><b>Correct diagnosis</b> (<span style="color:green;"><i>#{case.getCorrectDiagnosis().getName()}</i></span>) <b>discarded.</b></li>
-                                                    <li>#{CaseBase.getCasesWithDiagnosisAndParameters(case.getCorrectDiagnosis().getName(),case.getRequestedParameters(DT.decodeProposition(path_proposition))).size()}/#{CaseBase.getCasesWithDiagnosis(case.getCorrectDiagnosis().getName()).size()}
-                                                        (#{CaseBase.getCasesWithDiagnosis(case.getCorrectDiagnosis().getName()).size()>0 ? (CaseBase.getCasesWithDiagnosisAndParameters(case.getCorrectDiagnosis().getName(),case.getRequestedParameters(DT.decodeProposition(path_proposition))).size()*100/CaseBase.getCasesWithDiagnosis(case.getCorrectDiagnosis().getName()).size()):"0.0"}%)
-                                                        available cases with <i>#{case.getCorrectDiagnosis().getName()}</i> diagnosis <br />have the same parameter values as here.</li>
-                                                </ul>
-                                        </ui:fragment>
-
-                                        <!--Check if user's solution could be discarded here-->
-                                        <!--Dohvati sve caseove s dijagnozom koju je korisnik krivo postavio i provjeri koliko njih ima iste parametre. Tu info mozes napisati u svakom koraku-->
-                                        <ui:fragment rendered="#{!case.getEvaluation().isCorrect() and case.getEvaluation().isDiagnosed() and (DT.getNodeNameFromID(path_proposition.concept_two)==case.getEvaluation().getEndNode())}">
-                                                <ul></ul>
-                                        </ui:fragment>
-                                        
-                                        <!--Incorrect diagnosis reached-->
-                                        <ui:fragment rendered="#{!case.getEvaluation().isCorrect() and case.getEvaluation().isDiagnosed() and (DT.getNodeNameFromID(path_proposition.concept_two)==case.getEvaluation().getEndNode())}">
-                                            <ul><li><b>Incorrect diagnosis </b>(<span style="color:red;"><i>#{DT.getNodeNameFromID(path_proposition.concept_two)}</i></span>) <b>set.</b></li>
-                                                <li>#{CaseBase.getCasesWithDiagnosisAndParameters(case.getEvaluation().getEndNode(),case.getRequestedParameters(DT.decodeProposition(path_proposition))).size()}/#{CaseBase.getCasesWithDiagnosis(case.getEvaluation().getEndNode()).size()}
-                                                        (#{CaseBase.getCasesWithDiagnosis(case.getCorrectDiagnosis().getName()).size()>0 ? (CaseBase.getCasesWithDiagnosisAndParameters(case.getEvaluation().getEndNode(),case.getRequestedParameters(DT.decodeProposition(path_proposition))).size()*100/CaseBase.getCasesWithDiagnosis(case.getCorrectDiagnosis().getName()).size()):"0.0"}%)
-                                                        available cases with <span style="color:red;"><i>#{case.getEvaluation().getEndNode()}</i></span> diagnosis <br />have the same parameter values as here.</li>
-
-                                                </ul>
-                                                
-                                        </ui:fragment>
-                                        
-                                        <!--Correct diagnosis reached-->
-                                        <ui:fragment rendered="#{case.getEvaluation().isCorrect() and DT.getNodeNameFromID(path_proposition.concept_two).equals(case.getEvaluation().getEndNode())}">
-                                            <ul><li><b>Correct diagnosis </b> (<span style="color:green;"><i>#{DT.getNodeNameFromID(path_proposition.concept_two)}</i></span>)<b> reached.</b></li></ul>
-                                        </ui:fragment>
-                                        
-                                        <!--Case stuck in non-diagnosis node-->
-                                        <ui:fragment rendered="#{!case.getEvaluation().isDiagnosed() and (DT.getNodeNameFromID(path_proposition.concept_one).equals(case.getEvaluation().getEndNode()))}">
-                                            <ul><li><b>No next node - case stuck in a non-diagnosis node!</b></li></ul>
-                                        </ui:fragment>
-                                        
-                                </h:column></h:dataTable>
-                                </ul>
-                                
-                                
-                            
-                            </p:panel>
-                        </h:column>
-                    </h:dataTable>
-                    
-                               
-                    </ul>
-                </p:panel>
-                
-            </p:tab>
-                
-            <p:tab title="Warnings" id="warnings"  rendered="#{(DT.getOrphanConcepts().size()+DT.getUnrecognizedConcepts(CaseBase.getCases()).size()+DT.getUnrecognizedDiagnoses(CaseBase.getCases()).size()>0) or (DT.getUnrecognizedConcepts(CaseBase.getCases()).size()>0) or (DT.getUnrecognizedDiagnoses(CaseBase.getCases()).size()>0)}">
-                
-                <p:commandButton value="Warning:" style="border-width: 0px; background-color: white; width: 150px; pointer-events:none;" rendered="#{DT.getOrphanConcepts().size()+DT.getUnrecognizedConcepts(CaseBase.getCases()).size()+DT.getUnrecognizedDiagnoses(CaseBase.getCases()).size()>0}"/>
-                <ui:fragment rendered="#{DT.getOrphanConcepts().size()+DT.getUnrecognizedConcepts(CaseBase.getCases()).size()+DT.getUnrecognizedDiagnoses(CaseBase.getCases()).size()>0}">
-                    <f:verbatim>Unconnected concepts:</f:verbatim>
-                    <ui:repeat value="#{DT.getOrphanConcepts()}" var="item">
-                        <b>#{DT.getNodeNameFromID(item)}</b>
-                        <ui:fragment rendered="#{DT.getOrphanConcepts().get(DT.getOrphanConcepts().size()-1) != item }">, </ui:fragment>
-                    </ui:repeat>
-                    <h:graphicImage value="/resources/images/arrow_r.png" width="16" height="16" style="border-spacing: 20px;padding-left: 10px"/>
-                    These concepts will be ignored!
-                </ui:fragment>
-
-                <p:commandButton value="Warning:" style="border-width: 0px; background-color: white; width: 150px; pointer-events:none;" rendered="#{DT.getUnrecognizedConcepts(CaseBase.getCases()).size()>0}"/>
-                <ui:fragment rendered="#{DT.getUnrecognizedConcepts(CaseBase.getCases()).size()>0}">
-                    <f:verbatim>Concepts NOT found in the case base:</f:verbatim>
-                    <ui:repeat value="#{DT.getUnrecognizedConcepts(CaseBase.getCases())}" var="item">
-                        <b>#{DT.getNodeNameFromID(item)}</b>
-                        <ui:fragment rendered="#{DT.getUnrecognizedConcepts(CaseBase.getCases()).get(DT.getUnrecognizedConcepts(CaseBase.getCases()).size()-1) != item }">, </ui:fragment>
-                    </ui:repeat>
-                    <h:graphicImage value="/resources/images/arrow_r.png" width="16" height="16" style="border-spacing: 20px;padding-left: 10px"/>
-                    Misspelled names?
-                </ui:fragment>
-
-                <p:commandButton value="Warning:" style="border-width: 0px; background-color: white; width: 150px; pointer-events:none;" rendered="#{DT.getUnrecognizedDiagnoses(CaseBase.getCases()).size()>0}"/>
-                <ui:fragment rendered="#{DT.getUnrecognizedDiagnoses(CaseBase.getCases()).size()>0}">
-                    <f:verbatim>Diagnoses NOT found in the case base:</f:verbatim>
-                    <ui:repeat value="#{DT.getUnrecognizedDiagnoses(CaseBase.getCases())}" var="item">
-                        <b>#{DT.getNodeNameFromID(item)}</b>
-                        <ui:fragment rendered="#{DT.getUnrecognizedDiagnoses(CaseBase.getCases()).get(DT.getUnrecognizedDiagnoses(CaseBase.getCases()).size()-1) != item }">, </ui:fragment>
-                    </ui:repeat>
-                    <h:graphicImage value="/resources/images/arrow_r.png" width="16" height="16" style="border-spacing: 20px;padding-left: 10px"/>
-                    Misspelled names?
-                </ui:fragment>
-                <br /><br />
-
-            </p:tab>
-        </p:tabView>
-        
     </f:view>
     </h:body>
 </html>
