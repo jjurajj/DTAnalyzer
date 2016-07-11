@@ -48,7 +48,7 @@ and open the template in the editor.
                 <p:ajax event="toggle" update="warnings" />
                 <p:ajax event="close" update="warnings" />
                 
-                <ui:fragment rendered="#{DT.getOrphanConcepts().size()+DT.getUnrecognizedConcepts(CaseBase.getCases()).size()+DT.getUnrecognizedDiagnoses(CaseBase.getCases()).size()>0}">
+                <ui:fragment rendered="#{DT.getOrphanConcepts().size()>0}">
                     <f:verbatim>Unconnected concepts:</f:verbatim>
                     <ui:repeat value="#{DT.getOrphanConcepts()}" var="item">
                         '<b>#{DT.getNodeNameFromID(item)}</b>'
@@ -75,7 +75,7 @@ and open the template in the editor.
                         <ui:fragment rendered="#{DT.getUnrecognizedDiagnoses(CaseBase.getCases()).get(DT.getUnrecognizedDiagnoses(CaseBase.getCases()).size()-1) != item }">, </ui:fragment>
                     </ui:repeat>
                     <h:graphicImage value="/resources/images/arrow_r.png" width="16" height="16" style="border-spacing: 20px;padding-left: 10px"/>
-                    Misspelled names?<br />
+                    Misspelled names or decision nodes used as terminal nodes?<br />
                 </ui:fragment>
                 </p:panel>
                 

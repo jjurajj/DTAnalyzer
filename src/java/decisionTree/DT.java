@@ -92,6 +92,9 @@ public class DT implements Serializable {
           String tmp_connection_lines = connection_list.substring(connection_list.indexOf("<connection id="),connection_list.lastIndexOf("/>")+2);
           String[] connection_lines=tmp_connection_lines.split("/>");
           
+          // Purge connections for loops
+          
+          
           for (String line : concept_lines) {
               if (line.contains("id=")) {
                   String id=(String) line.subSequence(line.indexOf("id=\"")+4, line.indexOf("\" "));
@@ -111,12 +114,22 @@ public class DT implements Serializable {
           
           ArrayList<String> left_con = new ArrayList<>();
           ArrayList<String> right_con = new ArrayList<>();
+          String[] tmp_connections = connection_lines;
           for (String line : connection_lines) {
               if (line.contains("id=")) {
                   String from=(String) line.subSequence(line.indexOf("from-id=\"")+9, line.indexOf("\" to-id"));
                   String to=(String) line.subSequence(line.indexOf("to-id=\"")+7, line.lastIndexOf("\""));
-                  left_con.add(from);
-                  right_con.add(to);
+                  // Check for loops (errors most likely)
+                  boolean loop = false;
+                  for (String tmp_line : tmp_connections)
+                      if ((tmp_line.indexOf("to-id=\"".concat(from))>0) && (tmp_line.indexOf("from-id=\"".concat(to))>0))
+                          loop=true;
+                  if (loop) {
+                      //links_map.remove(from);
+                  } else {
+                      left_con.add(from);
+                      right_con.add(to);
+                  }
               }
           }
           
@@ -134,6 +147,9 @@ public class DT implements Serializable {
                   this.propositionsMap.put(key, right);      // propozicije stavi i u hashmapu
               }
           }
+          
+          
+          
       }
       
       for (String concept : left_concepts )                     // Odredimo korijen stabla

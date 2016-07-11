@@ -30,11 +30,13 @@ public class TreeGraph {
     
     public List<Connection> stored_connections;                                 // Since I can't edit labels manually
     public int default_height=800, default_width=1200;
+    public int concept_height=90, concept_width=320, offset_height=10, offset_width=20;
     public DefaultDiagramModel model;
     public DT tree;
     public ArrayList<Proposition> active_tree = new ArrayList<>();             // Reprezentacija stabla za aktivni prikaz
     public ArrayList<Integer> nodes_per_level = new ArrayList<>();
     public Integer screen_x, screen_y, step_y=90, x_offset=10;
+    public ArrayList<String> centered_nodes = new ArrayList<>();
     
     public void resetTree(){
         while (this.active_tree.size()>1)
@@ -61,7 +63,7 @@ public class TreeGraph {
             this.model.setMaxConnections(-1);
          
             FlowChartConnector connector = new FlowChartConnector();
-            connector.setPaintStyle("{strokeStyle:'#9C9FA1',lineWidth:2}");
+            connector.setPaintStyle("{strokeStyle:'#C7C7C7',lineWidth:2}");
             model.setDefaultConnector(connector);
         
             Element start = new Element(tree.getStartNodeName(), Integer.toString((screen_x)/2).concat("px"), "10px");
@@ -78,6 +80,8 @@ public class TreeGraph {
             // Za sve cvorove skaliraj x koordinatu
         }
         
+        visualArrange();
+        
     }
     
     private ArrayList<String> getLeaves() {
@@ -93,16 +97,51 @@ public class TreeGraph {
         return this.model;
     }
     public void visualArrange() {
-        // Centriraj korijen
-        // Dohvati sve cvorove i-te razine
-        // Za svakog provjeri koliko ima konačno listova i postavi mu x koordinatu u tom omjeru
-        // na kraju provedi algoritam za pretraživanje u dubinu i sortiranje na temelju toga.
+        // rasporedi listove jednoliko cpo x-osi
+        // Onda zovi rekurziju:
+        // idi od korijena;
+        // ako cvor nema djece, vrati se
+        // ako su sva djeca cvora centrirana, onda centriraj taj cvor iznad njegove djece i vrati se
+        // ako djeca cvora nisu centrirana, zovi rekurziju da centrira svaki svaki cvor i potom centriraj sebe
         
+        this.centered_nodes.clear();
+        int leaves_number = this.getTree().getDiagnoses().size();
+        int x = default_width/2 - (leaves_number/2)*concept_width - (leaves_number-1)*x_offset/2;
         
+        ArrayList<Integer> leaves_indexes = new ArrayList<>();
+        for (Element node : this.model.getElements())
+            if (this.tree.getDiagnoses().contains(node.getId())) {
+                node.setX(Integer.toString(x).concat("px"));
+                centered_nodes.add(node.getId());
+                x=x+concept_width+x_offset;
+            }
         
-    
+        adjustWithLeaves(this.tree.getStartNodeID());
     }
- 
+
+    public void adjustWithLeaves(String node_ID) {
+        // Dohvati svu djecu ovog cvora
+        ArrayList<String> children = new ArrayList<>();
+        for (Proposition prop : this.tree.getPropositions())
+            if (prop.getConcept_one().equals(node_ID)) {
+                children.add(prop.getConcept_two());
+                if (this.centered_nodes.contains(prop.getConcept_two()) == false)
+                    adjustWithLeaves(prop.getConcept_two());
+                this.centered_nodes.add(prop.getConcept_two());
+            }
+        int sum_x=0;
+        for (Element node : this.model.getElements())
+            if (children.contains(node.getId()))
+                sum_x=sum_x+Integer.parseInt(node.getX().substring(0,node.getX().length()-2));
+        sum_x=sum_x/children.size();
+        for (Element node : this.model.getElements())
+            if (node.getId().equals(node_ID)) {
+                node.setX(Integer.toString(sum_x).concat("px"));
+                this.centered_nodes.add(node.getId());
+            }
+        
+    }
+    
     public void addNode(String name) {
         Element tmp_element = new Element(name, "5em", "1em");
         tmp_element.addEndPoint(new BlankEndPoint(EndPointAnchor.TOP));
@@ -157,7 +196,7 @@ public class TreeGraph {
                 for (Element node : model.getElements())            // Onda nadi taj cvor u grafu
                     if (node.getId().equals(proposition.getConcept_two())) {
                         node.setX(Integer.toString(x_scale++*screen_x/(leaves.size()+1)).concat("px"));                                // Po x osi
-                        node.setY(Integer.toString((tree.getNodeDepth(node.getId()))*step_y).concat("px")); // Po y osi
+                        node.setY(Integer.toString((tree.getNodeDepth(node.getId()))*(concept_height+offset_height)).concat("px")); // Po y osi
                     }
         
     } 
@@ -195,8 +234,7 @@ public class TreeGraph {
     
     public void markCasePath(Case target_case) {
         
-        // Store connections
-        this.stored_connections=this.model.getConnections();
+        this.stored_connections=this.model.getConnections();                    // Store connections
         
         ArrayList<Connection> remove_connections = new ArrayList<>();
         ArrayList<Connection> add_connections = new ArrayList<>();
@@ -204,14 +242,13 @@ public class TreeGraph {
         String correct_diagnosis_ID = this.tree.getNodeIDFromName(target_case.getCorrectDiagnosis().getName());
         String style_label = "-selected";
         
-        // Change Element styles
         for (Proposition prop : target_case.getEvaluation().getPath())
             for (Element node_one : this.model.getElements())
-                if (prop.getConcept_one().equals(node_one.getId())) {
+                if (prop.getConcept_one().equals(node_one.getId())) {           // If the node_one is on the classify path:
                     
                     // If its on the wrong path or if its and incorrect dignosis change style label (for ever)
                     if ((this.tree.getDiagnoses().contains(prop.getConcept_one()) == true) && (prop.getConcept_one().equals(correct_diagnosis_ID) == false) || (this.tree.getReachableDiagnoses(prop.getConcept_one()).contains(correct_diagnosis_ID) == false) && (this.tree.getDiagnoses().contains(prop.getConcept_one()) == false))
-                            style_label = style_label.concat("-false");
+                            style_label = "-selected-false";
                     node_one.setStyleClass(node_one.getStyleClass().concat(style_label));
                     
                     for (Element node_two : this.model.getElements())
@@ -221,7 +258,7 @@ public class TreeGraph {
                                     
                                     Connection new_conn = new Connection(conn.getSource(), conn.getTarget());
                                     new_conn.getOverlays().add(new ArrowOverlay(20, 20, 1, 1));
-                                    new_conn.getOverlays().add(new LabelOverlay(prop.getLink(), "flow-label".concat(style_label), 0.5));
+                                    new_conn.getOverlays().add(new LabelOverlay(prop.getLink(), "flow-label-selected", 0.5));
                                     remove_connections.add(conn);
                                     add_connections.add(new_conn);
                                     
@@ -243,7 +280,8 @@ public class TreeGraph {
         
         for (Connection temp_conn : remove_connections) this.model.disconnect(temp_conn);
         for (Connection temp_connection2 : add_connections) this.model.connect(temp_connection2);
-            
+        
+        visualArrange();
     }
     
     public void buildFullTree() {
