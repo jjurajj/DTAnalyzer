@@ -167,6 +167,7 @@ and open the template in the editor.
                     <p:commandButton actionListener="#{TreeDrawer.expandLeaves()}" update="activeTree" value="Expand" icon="ui-icon-expand" />
                     <p:commandButton actionListener="#{TreeDrawer.buildFullTree()}" update="activeTree" value="Full tree" />
                     <p:commandButton actionListener="#{TreeDrawer.resetTree()}" update="activeTree" value="Reset tree" />
+                    <p:commandButton actionListener="#{TreeDrawer.toggleLegend()}" update="activeTree" value="Legend" />
             </h:form>
             
             <p:diagram id="activeTree" value="#{TreeDrawer.getModel()}" style="height:600px;width:100%" styleClass="ui-widget-content" />
