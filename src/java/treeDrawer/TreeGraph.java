@@ -30,22 +30,18 @@ import singleCase.Case;
 public class TreeGraph {
     
     public List<Connection> stored_connections;                                 // Since I can't edit labels manually
+    public boolean legend=false;
     public int default_height=800, default_width=1200;
     public int concept_height=90, concept_width=320;
     public int offset_height=10, offset_width=10;
     public int canvas_width, canvas_height;
     public DefaultDiagramModel model = new DefaultDiagramModel();               // Treee to be represented
-    public ArrayList<NodeInfo> arranged_elements = new ArrayList<>();
     public HashMap<String, NodeInfo> node_info_map= new HashMap<>();   
     public DT tree;
     public ArrayList<Proposition> active_tree = new ArrayList<>();              // Reprezentacija stabla za aktivni prikaz
     public ArrayList<Integer> nodes_per_level = new ArrayList<>();
     public ArrayList<String> centered_nodes = new ArrayList<>();
-    
-    public void resetTree(){
-        while (this.active_tree.size()>0)
-            pruneLeaves();
-    }
+    public ArrayList<String> ordered_leaves = new ArrayList<>();
     
     public void initialize(DT decision_tree) {this.initialize(decision_tree,default_width,default_height);}
     public void initialize(DT decision_tree, int height, int width) {
@@ -86,64 +82,13 @@ public class TreeGraph {
         }
     }
     
-    private ArrayList<String> getLeaves() {
-        ArrayList<String> leaves = new ArrayList<>();
-        if (this.active_tree.size()==0) return leaves;
-        for (Proposition proposition : this.active_tree) {
-            leaves.add(proposition.getConcept_two());
-            leaves.remove(proposition.getConcept_one());
-        }
-        return leaves;
-    }
-    public void adjustWithLeaves(String node_ID) {
-        // Dohvati svu djecu ovog cvora
-        ArrayList<String> children = new ArrayList<>();
-        for (Proposition prop : this.tree.getPropositions())
-            if (prop.getConcept_one().equals(node_ID)) {
-                children.add(prop.getConcept_two());
-                if (this.centered_nodes.contains(prop.getConcept_two()) == false)
-                    adjustWithLeaves(prop.getConcept_two());
-                this.centered_nodes.add(prop.getConcept_two());
-            }
-        int sum_x=0;
-        for (Element node : this.model.getElements())
-            if (children.contains(node.getId()))
-                sum_x=sum_x+Integer.parseInt(node.getX().substring(0,node.getX().length()-2));
-        if (children.size()>0) sum_x=sum_x/children.size();
-        for (Element node : this.model.getElements())
-            if (node.getId().equals(node_ID)) {
-                node.setX(Integer.toString(sum_x).concat("px"));
-                this.centered_nodes.add(node.getId());
-            }
-        
-    }
-    
-    public void addNode(String name, String x, String y, String style, String id) {
-        Element tmp_element = new Element(name, x, y);
-        tmp_element.setStyleClass(style);
-        tmp_element.setId(id);
-        tmp_element.addEndPoint(new BlankEndPoint(EndPointAnchor.TOP));
-        this.model.addElement(tmp_element);
-    }
-    public void addPropositionToGraph(Proposition proposition) {
-        // Definicija novog koncepta koji se dodaje u graf
-        Element new_child = new Element(tree.getNodeNameFromID(proposition.getConcept_two()));
-        new_child.setId(proposition.getConcept_two());
-        new_child.addEndPoint(new BlankEndPoint(EndPointAnchor.TOP));
-        new_child.addEndPoint(new BlankEndPoint(EndPointAnchor.BOTTOM));
-        if (tree.diagnoses.contains(proposition.getConcept_two()))
-            new_child.setStyleClass("ui-diagram-end");
-        else
-            new_child.setStyleClass("ui-diagram-element");
-        // Nađi roditelja po IDju i poveži ga s čvorom
-        for (Element node : model.getElements())
-            if (node.getId().equals(proposition.getConcept_one())) 
-                model.connect(createConnection(node.getEndPoints().get(1), new_child.getEndPoints().get(0), proposition.getLink()));
-        model.addElement(new_child);
-        
-    }
-    
+    /** Adds next level of propositions (nodes and links) to the active tree and graph */
     public void expandLeaves() {
+        boolean reset_legend=false;                                             // Turn legend off while expanding
+        if (this.legend) {
+            reset_legend=true;
+            toggleLegend();
+        }
         ArrayList<Proposition> new_propositions = getNextPropositions();
         if (new_propositions.size()>0) {
             active_tree.addAll(new_propositions);
@@ -152,7 +97,11 @@ public class TreeGraph {
                 addPropositionToGraph(proposition);            
         }
         loadNodeLocations();
+        if (this.node_info_map.get(this.tree.getStartNodeID()).getCurrent_style() != null)
+            loadNodeStyles("current");
+        if (reset_legend) toggleLegend();                                    // Turn legend back on after expansion
     }
+    /** Removes the last level of elements (nodes) from the graph. The connections remain but undisplayed. */
     public void pruneLeaves() {
         ArrayList<Proposition> new_active_tree = new ArrayList<>();
         for (int i=0; i<active_tree.size(); i++ )
@@ -162,51 +111,69 @@ public class TreeGraph {
                 this.model.removeElement(this.model.findElement(active_tree.get(i).getConcept_two()));
         active_tree=new_active_tree;
         nodes_per_level.remove(nodes_per_level.size()-1);
+        toggleLegend();
+        toggleLegend();
         
     }
     
+    /** Saves node locations to node_info_map hashmap. */ 
     private void saveNodeLocations() {
         for (Element node : this.model.getElements()) {
             node_info_map.put(node.getId(), new NodeInfo(node.getX(), node.getY(), node.getStyleClass()));
         }
     }
+    /** Loads all node loactions from node_info_map hashmap.*/
     private void loadNodeLocations() {
-        for (Element node : this.model.getElements()) {
-            NodeInfo info = this.node_info_map.get(node.getId());
-            node.setX(info.getX());
-            node.setY(info.getY());
-        }
+        for (Element node : this.model.getElements())
+            if (this.node_info_map.containsKey(node.getId())){
+                NodeInfo info = this.node_info_map.get(node.getId());
+                node.setX(info.getX());
+                node.setY(info.getY());
+            }
     }
+    /** Loads the set node style: 'current' (otherwise 'default'). */
     private void loadNodeStyles(String style) {
         for (Element node : this.model.getElements())
-            if (style.equals("current"))
-                node.setStyleClass(this.node_info_map.get(node.getId()).getCurrent_style());
-            else if (style.equals("defualt"))
-                node.setStyleClass(this.node_info_map.get(node.getId()).getDefault_style());
+            if (this.node_info_map.containsKey(node.getId()))
+                if (style.equals("current"))
+                    node.setStyleClass(this.node_info_map.get(node.getId()).getCurrent_style());
+                else if (style.equals("defualt"))
+                    node.setStyleClass(this.node_info_map.get(node.getId()).getDefault_style());
     }
+    /** Stores the current node style to node_info_map hashmap. */
     private void saveNodeStyles() {
-        for (Element node : this.model.getElements()) {
-            NodeInfo info = this.node_info_map.get(node.getId());
-            this.node_info_map.remove(node.getId());
-            this.node_info_map.put(node.getId(), new NodeInfo(node.getX(), node.getY(), info.getDefault_style(), node.getStyleClass()));
-        }
+        for (Element node : this.model.getElements())
+            if (this.node_info_map.containsKey(node.getId())){
+                NodeInfo info = this.node_info_map.get(node.getId());
+                this.node_info_map.remove(node.getId());
+                this.node_info_map.put(node.getId(), new NodeInfo(node.getX(), node.getY(), info.getDefault_style(), node.getStyleClass()));
+            }
     }
+    /** Removes all node style labels after "-selected" or "-lite" */
     public void resetNodeStyles() {
         for (Element temp_element : this.model.getElements()) {
             String style = temp_element.getStyleClass();
-            int end = style.indexOf("-selected");
-            if (end>0) temp_element.setStyleClass(style.substring(0, end));
+            int end1 = style.indexOf("-selected");
+            int end2 = style.indexOf("-lite");
+            if (end1>0) temp_element.setStyleClass(style.substring(0, end1));
+            else if (end2>0) temp_element.setStyleClass(style.substring(0, end2));
         }
     }
     
+    /** Builds full tree, arranges elements and marks case path */
     public void runCase(Case target_case) {
         buildFullTree();
         markCasePath(target_case);
     }
-    // Edits element styles on the case path
+    /** Edits element styles on the case path */
     public void markCasePath(Case target_case) {
-        
-        resetNodeStyles();
+        boolean reset_legend=false;
+        if (this.legend) {
+            reset_legend=true;
+            toggleLegend();
+        }
+        //resetNodeStyles();
+        loadNodeStyles("default");
         this.stored_connections=this.model.getConnections();                    // Store connections
         
         ArrayList<Connection> remove_connections = new ArrayList<>();
@@ -253,46 +220,18 @@ public class TreeGraph {
         
         for (Connection temp_conn : remove_connections) this.model.disconnect(temp_conn);
         for (Connection temp_connection2 : add_connections) this.model.connect(temp_connection2);
-        toggleLegend();
-        toggleLegend();
-        
+        saveNodeLocations();
+        saveNodeStyles();
+        if (reset_legend) toggleLegend();
     }
-    
-    public void toggleLegend() {
 
-        ArrayList<String> legend = new ArrayList<String>(Arrays.asList("csr", "icsp", "isr", "ucs", "start", "end", "decision", "cse"));
-        boolean add_legend = true;
-        ArrayList<String> nodes_to_remove = new ArrayList<>();
-        for (Element node : this.model.getElements()) if (legend.contains(node.getId())) nodes_to_remove.add(node.getId());
-        for (String node_ID : nodes_to_remove)
-            this.model.removeElement(this.model.findElement(node_ID));
-        
-        if (nodes_to_remove.isEmpty()) {
-            boolean correct_path=false, unreached_correct=false, incorrect_path=false, correct_end=false, incorrect_solution=false, start_node=false, decision_node=false, end_node=false;
-            for (Element node : this.model.getElements())
-                if (node.getStyleClass().equals("ui-diagram-end-selected-true")) unreached_correct=true;
-                else if (node.getStyleClass().equals("ui-diagram-element-selected")) correct_path=true;
-                else if (node.getStyleClass().equals("ui-diagram-end-selected")) correct_end=true;
-                else if (node.getStyleClass().equals("ui-diagram-end-selected-false")) incorrect_solution=true;
-                else if (node.getStyleClass().equals("ui-diagram-element-selected-false")) incorrect_path=true;
-                else if (node.getStyleClass().equals("ui-diagram-start")) start_node=true;
-                else if (node.getStyleClass().equals("ui-diagram-element")) decision_node=true;
-                else if (node.getStyleClass().equals("ui-diagram-end")) end_node=true;
-            
-            int i=0;
-            if (start_node) addNode("Start node", Integer.toString(canvas_width-300).concat("px"), Integer.toString(i++*65).concat("px"), "ui-diagram-start", "start");
-            if (decision_node) addNode("Decision node", Integer.toString(canvas_width-300).concat("px"), Integer.toString(i++*65).concat("px"), "ui-diagram-element", "decision");
-            if (end_node) addNode("End node", Integer.toString(canvas_width-300).concat("px"), Integer.toString(i++*65).concat("px"), "ui-diagram-end", "end");
-            if (correct_path) addNode("Correct case-solving path (correct solution reachable)", Integer.toString(canvas_width-300).concat("px"), Integer.toString(i++*65).concat("px"), "ui-diagram-element-selected", "csr");
-            if (correct_end) addNode("Correct end node", Integer.toString(canvas_width-300).concat("px"), Integer.toString(i++*65).concat("px"), "ui-diagram-end-selected", "cse");
-            if (incorrect_path) addNode("Incorrect case-solving path (correct solution unreachable)", Integer.toString(canvas_width-300).concat("px"), Integer.toString(i++*65).concat("px"), "ui-diagram-element-selected-false", "icsp");
-            if (incorrect_solution) addNode("Incorrect solution reached", Integer.toString(canvas_width-300).concat("px"), Integer.toString(i++*65).concat("px"), "ui-diagram-end-selected-false", "isr");
-            if (unreached_correct) addNode("Unreached correct solution", Integer.toString(canvas_width-300).concat("px"), Integer.toString(i++*65).concat("px"), "ui-diagram-end-selected-true", "ucs");
-        }
-    }
-    
-    // Builds complete tree with default styles and arranges elements visually
+    /** Builds complete tree with default styles and arranges elements visually */
     public void buildFullTree() {
+        boolean reset_legend=false;
+        if (this.legend) {
+            reset_legend=true;
+            toggleLegend();
+        }
         while (active_tree.size()>0) { pruneLeaves(); }                         // First reduce tree maximally to remove styles
         do  {
             ArrayList<Proposition> new_propositions = getNextPropositions();    // Get all next level propositions
@@ -304,9 +243,12 @@ public class TreeGraph {
             }
         } while (active_tree.size() != tree.propositions.size());
         arrangeNodesOnScreen();
+        saveNodeLocations();
+        saveNodeStyles();
+        if (reset_legend) toggleLegend();
     }
+    /** Get all next propositions from current active tree */
     private ArrayList<Proposition> getNextPropositions() {
-    
         ArrayList<Proposition> new_propositions = new ArrayList<>(); 
         if (this.active_tree.size()==0) {
             new_propositions=this.tree.getChildrenPropositions(this.tree.getStartNodeID());
@@ -316,30 +258,78 @@ public class TreeGraph {
         }
         return new_propositions;
     }
+    /** Add next concept from a proposition to graph and connect it */
+    public void addPropositionToGraph(Proposition proposition) {
+        // Definicija novog koncepta koji se dodaje u graf
+        Element new_child = new Element(tree.getNodeNameFromID(proposition.getConcept_two()));
+        new_child.setId(proposition.getConcept_two());
+        // Koje je to po redu dijete?
+        new_child.addEndPoint(new BlankEndPoint(EndPointAnchor.TOP));
+        new_child.addEndPoint(new BlankEndPoint(EndPointAnchor.BOTTOM));
+        if (tree.diagnoses.contains(proposition.getConcept_two()))
+            new_child.setStyleClass("ui-diagram-end");
+        else
+            new_child.setStyleClass("ui-diagram-element");
+        // Nađi roditelja po IDju i poveži ga s čvorom
+        for (Element node : model.getElements())
+            if (node.getId().equals(proposition.getConcept_one())) 
+                model.connect(createConnection(node.getEndPoints().get(1), new_child.getEndPoints().get(0), proposition.getLink()));
+        model.addElement(new_child);
+        
+    }
+    /** Arrange nodes on screen function. Uses the adjustWithLeaves and orderLeaves recursions */
     private void arrangeNodesOnScreen() {
-        
-        for (Element node : model.getElements())            // Onda nadi taj cvor u grafu
+        // Setting the y value based on node depth
+        for (Element node : model.getElements())
             node.setY(Integer.toString((tree.getNodeDepth(node.getId()))*(concept_height+offset_height)).concat("px"));
-        this.centered_nodes.clear();                                            // Clear centered nodes list
-        int leaves_number = this.getTree().getDiagnoses().size();               // Count leaves
-        int x = default_width/2 - (leaves_number/2)*concept_width - (leaves_number-1)*offset_width/2;
-        
-        ArrayList<Integer> leaves_indexes = new ArrayList<>();
-        for (Element node : this.model.getElements())                           // Distribute leaves evenly
-            if (this.tree.getDiagnoses().contains(node.getId())) {
-                node.setX(Integer.toString(x).concat("px"));
+        // Setting the x value (distributing leaves first)
+        centered_nodes.clear();                                            // Clear centered nodes list
+        ordered_leaves.clear();
+        orderLeaves(tree.getStartNodeID());                                     // Read active tree in depth and order leaves accordingly
+        int left_x = canvas_width/2-(ordered_leaves.size()*concept_width)/2-(ordered_leaves.size()-1)*offset_width/2;
+        for (Element node : this.model.getElements())
+            if (ordered_leaves.contains(node.getId())) {
+                node.setX(Integer.toString(left_x+(concept_width+offset_width)*ordered_leaves.indexOf(node.getId())).concat("px"));
                 centered_nodes.add(node.getId());
-                x=x+concept_width+offset_width;
             }
-        
         adjustWithLeaves(this.tree.getStartNodeID());                           // Center all other nodes according to veaves
     }
+    /** Arrange leaves in order in which they should appear on screen */
+    public void orderLeaves(String node_ID) {
+        if (this.tree.getDiagnoses().contains(node_ID)) ordered_leaves.add(node_ID);
+        else for (Proposition prop : this.active_tree)
+            if (prop.getConcept_one().equals(node_ID)) orderLeaves(prop.getConcept_two());
+    }
+    /** Recursion to arrange nodes based on arranged leaves */
+    public void adjustWithLeaves(String node_ID) {
+        // Dohvati svu djecu ovog cvora
+        ArrayList<String> children = new ArrayList<>();
+        for (Proposition prop : this.tree.getPropositions())
+            if (prop.getConcept_one().equals(node_ID)) {
+                children.add(prop.getConcept_two());
+                if (this.centered_nodes.contains(prop.getConcept_two()) == false)
+                    adjustWithLeaves(prop.getConcept_two());
+                this.centered_nodes.add(prop.getConcept_two());
+            }
+        int sum_x=0;
+        for (Element node : this.model.getElements())
+            if (children.contains(node.getId()))
+                sum_x=sum_x+Integer.parseInt(node.getX().substring(0,node.getX().length()-2));
+        if (children.size()>0) sum_x=sum_x/children.size();
+        for (Element node : this.model.getElements())
+            if (node.getId().equals(node_ID)) {
+                node.setX(Integer.toString(sum_x).concat("px"));
+                this.centered_nodes.add(node.getId());
+            }
+        
+    }
+
+    /** Returns (maximal) node depth */
     public int getNodeDepth(String node) {
         int depth=0;
         ArrayList<String> active_nodes=new ArrayList<>();
         active_nodes.add(tree.getStartNodeName());
         ArrayList<Integer> all_depths=new ArrayList<Integer>();
-        
         while (active_nodes.size()>0) {
             ArrayList<String> temp_active_nodes=new ArrayList<>();
             depth++;
@@ -360,14 +350,70 @@ public class TreeGraph {
         
         return final_depth;
     }
+    
+    /** Toggle legend */
+    public void toggleLegend() {
+        if (this.legend) {
+            ArrayList<String> legend = new ArrayList<String>(Arrays.asList("csr", "icsp", "isr", "ucs", "start", "end", "decision", "cse"));
+            ArrayList<String> nodes_to_remove = new ArrayList<>();
+            for (Element node : this.model.getElements()) if (legend.contains(node.getId())) nodes_to_remove.add(node.getId());
+            for (String node_ID : nodes_to_remove)
+                this.model.removeElement(this.model.findElement(node_ID));
+        } else {
+            boolean correct_path=false, unreached_correct=false, incorrect_path=false, correct_end=false, incorrect_solution=false, start_node=false, decision_node=false, end_node=false;
+            for (Element node : this.model.getElements())
+                if (node.getStyleClass().equals("ui-diagram-end-selected-true")) unreached_correct=true;
+                else if (node.getStyleClass().equals("ui-diagram-element-selected")) correct_path=true;
+                else if (node.getStyleClass().equals("ui-diagram-end-selected")) correct_end=true;
+                else if (node.getStyleClass().equals("ui-diagram-end-selected-false")) incorrect_solution=true;
+                else if (node.getStyleClass().equals("ui-diagram-element-selected-false")) incorrect_path=true;
+                else if (node.getStyleClass().equals("ui-diagram-start")) start_node=true;
+                else if (node.getStyleClass().equals("ui-diagram-element")) decision_node=true;
+                else if (node.getStyleClass().equals("ui-diagram-end")) end_node=true;
+            int i=0;
+            if (start_node) addNode("Start node", Integer.toString(canvas_width-300).concat("px"), Integer.toString(i++*65).concat("px"), "ui-diagram-start", "start");
+            if (decision_node) addNode("Decision node", Integer.toString(canvas_width-300).concat("px"), Integer.toString(i++*65).concat("px"), "ui-diagram-element", "decision");
+            if (end_node) addNode("End node", Integer.toString(canvas_width-300).concat("px"), Integer.toString(i++*65).concat("px"), "ui-diagram-end", "end");
+            if (correct_path) addNode("Correct case-solving path (correct solution reachable)", Integer.toString(canvas_width-300).concat("px"), Integer.toString(i++*65).concat("px"), "ui-diagram-element-selected", "csr");
+            if (correct_end) addNode("Correct end node", Integer.toString(canvas_width-300).concat("px"), Integer.toString(i++*65).concat("px"), "ui-diagram-end-selected", "cse");
+            if (incorrect_path) addNode("Incorrect case-solving path (correct solution unreachable)", Integer.toString(canvas_width-300).concat("px"), Integer.toString(i++*65).concat("px"), "ui-diagram-element-selected-false", "icsp");
+            if (incorrect_solution) addNode("Incorrect solution reached", Integer.toString(canvas_width-300).concat("px"), Integer.toString(i++*65).concat("px"), "ui-diagram-end-selected-false", "isr");
+            if (unreached_correct) addNode("Unreached correct solution", Integer.toString(canvas_width-300).concat("px"), Integer.toString(i++*65).concat("px"), "ui-diagram-end-selected-true", "ucs");
+        }
+        this.legend=!this.legend;
+    }
+    /** Reset tree to root node */
+    public void resetTree(){
+            resetNodeStyles();
+            this.legend=true;
+            toggleLegend();
+            while (this.active_tree.size()>0) pruneLeaves();
+    }
+    /** Get all childless node IDs from active tree */
+    private ArrayList<String> getLeaves() {
+        ArrayList<String> leaves = new ArrayList<>();
+        if (this.active_tree.size()==0) return leaves;
+        for (Proposition proposition : this.active_tree) {
+            leaves.add(proposition.getConcept_two());
+            leaves.remove(proposition.getConcept_one());
+        }
+        return leaves;
+    }
+    
+    /** Add a node to the graph */
+    public void addNode(String name, String x, String y, String style, String id) {
+        Element tmp_element = new Element(name, x, y);
+        tmp_element.setStyleClass(style);
+        tmp_element.setId(id);
+        tmp_element.addEndPoint(new BlankEndPoint(EndPointAnchor.TOP));
+        this.model.addElement(tmp_element);
+    }
+    
+    /** Default primefaces function to create connections */
     public Connection createConnection(EndPoint from, EndPoint to, String label) {
         Connection conn = new Connection(from, to);
         conn.getOverlays().add(new ArrowOverlay(20, 20, 1, 1));
-         
-        if(label != null) {
-            conn.getOverlays().add(new LabelOverlay(label, "flow-label", 0.5));
-        }
-         
+        if(label != null) conn.getOverlays().add(new LabelOverlay(label, "flow-label", 0.5));
         return conn;
     }
 
@@ -382,105 +428,27 @@ public class TreeGraph {
     public void setScreen_x(Integer canvas_width) {this.canvas_width = canvas_width;}
     public Integer getScreen_y() {return canvas_height;}
     public void setScreen_y(Integer canvas_height) {this.canvas_height = canvas_height;}
-
-    public DefaultDiagramModel getModel() {
-        return model;
-    }
-
-    public HashMap<String, NodeInfo> getNode_info_map() {
-        return node_info_map;
-    }
-
-    public void setNode_info_map(HashMap<String, NodeInfo> node_info_map) {
-        this.node_info_map = node_info_map;
-    }
-
-    public List<Connection> getStored_connections() {
-        return stored_connections;
-    }
-
-    public void setStored_connections(List<Connection> stored_connections) {
-        this.stored_connections = stored_connections;
-    }
-
-    public int getDefault_height() {
-        return default_height;
-    }
-
-    public void setDefault_height(int default_height) {
-        this.default_height = default_height;
-    }
-
-    public int getDefault_width() {
-        return default_width;
-    }
-
-    public void setDefault_width(int default_width) {
-        this.default_width = default_width;
-    }
-
-    public int getConcept_height() {
-        return concept_height;
-    }
-
-    public void setConcept_height(int concept_height) {
-        this.concept_height = concept_height;
-    }
-
-    public int getConcept_width() {
-        return concept_width;
-    }
-
-    public void setConcept_width(int concept_width) {
-        this.concept_width = concept_width;
-    }
-
-    public int getOffset_height() {
-        return offset_height;
-    }
-
-    public void setOffset_height(int offset_height) {
-        this.offset_height = offset_height;
-    }
-
-    public int getOffset_width() {
-        return offset_width;
-    }
-
-    public void setOffset_width(int offset_width) {
-        this.offset_width = offset_width;
-    }
-
-    public int getCanvas_width() {
-        return canvas_width;
-    }
-
-    public void setCanvas_width(int canvas_width) {
-        this.canvas_width = canvas_width;
-    }
-
-    public int getCanvas_height() {
-        return canvas_height;
-    }
-
-    public void setCanvas_height(int canvas_height) {
-        this.canvas_height = canvas_height;
-    }
-
-    public ArrayList<NodeInfo> getArranged_elements() {
-        return arranged_elements;
-    }
-
-    public void setArranged_elements(ArrayList<NodeInfo> arranged_elements) {
-        this.arranged_elements = arranged_elements;
-    }
-
-    public ArrayList<String> getCentered_nodes() {
-        return centered_nodes;
-    }
-
-    public void setCentered_nodes(ArrayList<String> centered_nodes) {
-        this.centered_nodes = centered_nodes;
-    }
-
+    public DefaultDiagramModel getModel() { return model; }
+    public HashMap<String, NodeInfo> getNode_info_map() { return node_info_map; }
+    public void setNode_info_map(HashMap<String, NodeInfo> node_info_map) { this.node_info_map = node_info_map; }
+    public List<Connection> getStored_connections() { return stored_connections; }
+    public void setStored_connections(List<Connection> stored_connections) { this.stored_connections = stored_connections; }
+    public int getDefault_height() { return default_height; }
+    public void setDefault_height(int default_height) { this.default_height = default_height; }
+    public int getDefault_width() { return default_width; }
+    public void setDefault_width(int default_width) { this.default_width = default_width; }
+    public int getConcept_height() { return concept_height; }
+    public void setConcept_height(int concept_height) { this.concept_height = concept_height; }
+    public int getConcept_width() { return concept_width; }
+    public void setConcept_width(int concept_width) { this.concept_width = concept_width; }
+    public int getOffset_height() { return offset_height; }
+    public void setOffset_height(int offset_height) { this.offset_height = offset_height; }
+    public int getOffset_width() { return offset_width; }
+    public void setOffset_width(int offset_width) { this.offset_width = offset_width; }
+    public int getCanvas_width() { return canvas_width; }
+    public void setCanvas_width(int canvas_width) { this.canvas_width = canvas_width; }
+    public int getCanvas_height() { return canvas_height; }
+    public void setCanvas_height(int canvas_height) { this.canvas_height = canvas_height; }
+    public ArrayList<String> getCentered_nodes() { return centered_nodes; }
+    public void setCentered_nodes(ArrayList<String> centered_nodes) { this.centered_nodes = centered_nodes; }
 }
