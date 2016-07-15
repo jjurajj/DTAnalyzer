@@ -82,27 +82,34 @@ public class TreeGraph {
         }
     }
     
+    /** Expand leaves wrapper function. Removes legend, expands leaves, reloads node locations, and returns legend if it was on. */
+    public void expandOneLevel() {
+        boolean legend_state=this.legend;
+        if (legend_state) setLegend(false);
+        expandLeaves();
+        loadNodeLocations();
+        loadNodeStyles("current");
+        setLegend(legend_state);                                                // Set legend state back
+    }
     /** Adds next level of propositions (nodes and links) to the active tree and graph */
-    public void expandLeaves() {
-        boolean reset_legend=false;                                             // Turn legend off while expanding
-        if (this.legend) {
-            reset_legend=true;
-            toggleLegend();
-        }
+    private void expandLeaves() {
         ArrayList<Proposition> new_propositions = getNextPropositions();
+        for (Proposition proposition : new_propositions)
+           addPropositionToGraph(proposition);            
         if (new_propositions.size()>0) {
             active_tree.addAll(new_propositions);
             nodes_per_level.add(new_propositions.size());
-            for (Proposition proposition : new_propositions)
-                addPropositionToGraph(proposition);            
         }
-        loadNodeLocations();
-        if (this.node_info_map.get(this.tree.getStartNodeID()).getCurrent_style() != null)
-            loadNodeStyles("current");
-        if (reset_legend) toggleLegend();                                    // Turn legend back on after expansion
     }
-    /** Removes the last level of elements (nodes) from the graph. The connections remain but undisplayed. */
-    public void pruneLeaves() {
+    /** Prune leaves wrapper. Removes legend, contracts one level of the tree, and turns legend to its original state. */
+    public void pruneOneLevel() {
+        boolean legend_state=this.legend;
+        if (legend_state) setLegend(false);
+        pruneLeaves();
+        setLegend(legend_state);
+    }
+    /** Removes the last level of elements (nodes) from the graph. The connections remain but don't display. */
+    private void pruneLeaves() {
         ArrayList<Proposition> new_active_tree = new ArrayList<>();
         for (int i=0; i<active_tree.size(); i++ )
             if (i<active_tree.size() - nodes_per_level.get(nodes_per_level.size()-1))
@@ -111,9 +118,6 @@ public class TreeGraph {
                 this.model.removeElement(this.model.findElement(active_tree.get(i).getConcept_two()));
         active_tree=new_active_tree;
         nodes_per_level.remove(nodes_per_level.size()-1);
-        toggleLegend();
-        toggleLegend();
-        
     }
     
     /** Saves node locations to node_info_map hashmap. */ 
@@ -135,9 +139,9 @@ public class TreeGraph {
     private void loadNodeStyles(String style) {
         for (Element node : this.model.getElements())
             if (this.node_info_map.containsKey(node.getId()))
-                if (style.equals("current"))
+                if (style.equals("current") && (this.node_info_map.get(node.getId()).getCurrent_style() != null))
                     node.setStyleClass(this.node_info_map.get(node.getId()).getCurrent_style());
-                else if (style.equals("defualt"))
+                else if (style.equals("defualt") && (this.node_info_map.get(node.getId()).getDefault_style() != null))
                     node.setStyleClass(this.node_info_map.get(node.getId()).getDefault_style());
     }
     /** Stores the current node style to node_info_map hashmap. */
@@ -150,7 +154,7 @@ public class TreeGraph {
             }
     }
     /** Removes all node style labels after "-selected" or "-lite" */
-    public void resetNodeStyles() {
+    private void resetNodeStyles() {
         for (Element temp_element : this.model.getElements()) {
             String style = temp_element.getStyleClass();
             int end1 = style.indexOf("-selected");
@@ -162,23 +166,16 @@ public class TreeGraph {
     
     /** Builds full tree, arranges elements and marks case path */
     public void runCase(Case target_case) {
+        boolean legend_state=this.legend;
+        if (legend_state) setLegend(false);
         buildFullTree();
         markCasePath(target_case);
+        setLegend(legend_state);
     }
     /** Edits element styles on the case path */
-    public void markCasePath(Case target_case) {
-        boolean reset_legend=false;
-        if (this.legend) {
-            reset_legend=true;
-            toggleLegend();
-        }
-        //resetNodeStyles();
-        loadNodeStyles("default");
-        this.stored_connections=this.model.getConnections();                    // Store connections
+    private void markCasePath(Case target_case) {
         
-        ArrayList<Connection> remove_connections = new ArrayList<>();
-        ArrayList<Connection> add_connections = new ArrayList<>();
-        
+        ArrayList<Connection> remove_connections = new ArrayList<>(), add_connections = new ArrayList<>();
         String correct_diagnosis_ID = this.tree.getNodeIDFromName(target_case.getCorrectDiagnosis().getName());
         String style_label = "-selected";
         
@@ -191,6 +188,7 @@ public class TreeGraph {
                             style_label = "-selected-false";
                     node_one.setStyleClass(node_one.getStyleClass().concat(style_label));
                     
+                    // Now find the second proposition concept, to adit their connection label
                     for (Element node_two : this.model.getElements())
                         if ((prop.getConcept_two() != null) && (prop.getConcept_two().equals(node_two.getId())))
                             for (Connection conn : this.model.getConnections())
@@ -205,47 +203,28 @@ public class TreeGraph {
                                 }       
                 }
         
-        // If the case was not correctly solved, mark the correct end
-        if (target_case.getEvaluation().isCorrect() == false)
-            for (Element node_one : this.model.getElements())
-                if (node_one.getId().equals(correct_diagnosis_ID)) {
-                    node_one.setStyleClass(node_one.getStyleClass().concat("-selected-true"));
-                    break;
-                }
+        // If the case was not correctly solved, mark the correct end, otherwise set style to lite
+        for (Element node_one : this.model.getElements())                       
+            if ((node_one.getId().equals(correct_diagnosis_ID)) && (target_case.getEvaluation().isCorrect() == false)) node_one.setStyleClass(node_one.getStyleClass().concat("-selected-true"));
+            else if (node_one.getStyleClass().contains("selected") == false) node_one.setStyleClass(node_one.getStyleClass().concat("-lite"));
 
-        for (Element node_one : this.model.getElements())
-            if (node_one.getStyleClass().contains("selected") == false)
-                node_one.setStyleClass(node_one.getStyleClass().concat("-lite"));
-
-        
+        // Add/remove connections
         for (Connection temp_conn : remove_connections) this.model.disconnect(temp_conn);
-        for (Connection temp_connection2 : add_connections) this.model.connect(temp_connection2);
-        saveNodeLocations();
+        for (Connection temp_conn : add_connections) this.model.connect(temp_conn);
+        
         saveNodeStyles();
-        if (reset_legend) toggleLegend();
     }
 
     /** Builds complete tree with default styles and arranges elements visually */
     public void buildFullTree() {
-        boolean reset_legend=false;
-        if (this.legend) {
-            reset_legend=true;
-            toggleLegend();
-        }
+        boolean legend_state=this.legend;
+        if (legend_state) setLegend(false);
         while (active_tree.size()>0) { pruneLeaves(); }                         // First reduce tree maximally to remove styles
-        do  {
-            ArrayList<Proposition> new_propositions = getNextPropositions();    // Get all next level propositions
-            if (new_propositions.size()>0) {                                    
-                active_tree.addAll(new_propositions);                           // Add them to active tree
-                nodes_per_level.add(new_propositions.size());                   // Add them to nodes per level
-                for (Proposition proposition : new_propositions)                // Add new propositions (create nodes and links)
-                    addPropositionToGraph(proposition);
-            }
-        } while (active_tree.size() != tree.propositions.size());
+        do  { expandLeaves(); } while (active_tree.size() != tree.propositions.size());
         arrangeNodesOnScreen();
         saveNodeLocations();
         saveNodeStyles();
-        if (reset_legend) toggleLegend();
+        setLegend(legend_state);
     }
     /** Get all next propositions from current active tree */
     private ArrayList<Proposition> getNextPropositions() {
@@ -417,6 +396,43 @@ public class TreeGraph {
         return conn;
     }
 
+    public boolean isLegend() {
+        return legend;
+    }
+    public void setLegend(boolean legend) {
+        this.legend = legend;
+        if (this.legend == false) {
+            ArrayList<String> legend_types = new ArrayList<String>(Arrays.asList("csr", "icsp", "isr", "ucs", "start", "end", "decision", "cse"));
+            ArrayList<String> nodes_to_remove = new ArrayList<>();
+            for (Element node : this.model.getElements()) if (legend_types.contains(node.getId())) nodes_to_remove.add(node.getId());
+            for (String node_ID : nodes_to_remove)
+                this.model.removeElement(this.model.findElement(node_ID));
+        } else {
+            boolean correct_path=false, unreached_correct=false, incorrect_path=false, correct_end=false, incorrect_solution=false, start_node=false, decision_node=false, end_node=false;
+            for (Element node : this.model.getElements())
+                if (node.getStyleClass().equals("ui-diagram-end-selected-true")) unreached_correct=true;
+                else if (node.getStyleClass().equals("ui-diagram-element-selected")) correct_path=true;
+                else if (node.getStyleClass().equals("ui-diagram-end-selected")) correct_end=true;
+                else if (node.getStyleClass().equals("ui-diagram-end-selected-false")) incorrect_solution=true;
+                else if (node.getStyleClass().equals("ui-diagram-element-selected-false")) incorrect_path=true;
+                else if (node.getStyleClass().equals("ui-diagram-start")) start_node=true;
+                else if (node.getStyleClass().equals("ui-diagram-element")) decision_node=true;
+                else if (node.getStyleClass().equals("ui-diagram-end")) end_node=true;
+            int i=0;
+            if (start_node) addNode("Start node", Integer.toString(canvas_width-300).concat("px"), Integer.toString(i++*65).concat("px"), "ui-diagram-start", "start");
+            if (decision_node) addNode("Decision node", Integer.toString(canvas_width-300).concat("px"), Integer.toString(i++*65).concat("px"), "ui-diagram-element", "decision");
+            if (end_node) addNode("End node", Integer.toString(canvas_width-300).concat("px"), Integer.toString(i++*65).concat("px"), "ui-diagram-end", "end");
+            if (correct_path) addNode("Correct case-solving path (correct solution reachable)", Integer.toString(canvas_width-300).concat("px"), Integer.toString(i++*65).concat("px"), "ui-diagram-element-selected", "csr");
+            if (correct_end) addNode("Correct end node", Integer.toString(canvas_width-300).concat("px"), Integer.toString(i++*65).concat("px"), "ui-diagram-end-selected", "cse");
+            if (incorrect_path) addNode("Incorrect case-solving path (correct solution unreachable)", Integer.toString(canvas_width-300).concat("px"), Integer.toString(i++*65).concat("px"), "ui-diagram-element-selected-false", "icsp");
+            if (incorrect_solution) addNode("Incorrect solution reached", Integer.toString(canvas_width-300).concat("px"), Integer.toString(i++*65).concat("px"), "ui-diagram-end-selected-false", "isr");
+            if (unreached_correct) addNode("Unreached correct solution", Integer.toString(canvas_width-300).concat("px"), Integer.toString(i++*65).concat("px"), "ui-diagram-end-selected-true", "ucs");
+        }
+        
+    }
+
+    
+    
     public void setModel(DefaultDiagramModel model) {this.model = model;}
     public DT getTree() {return tree;}
     public void setTree(DT tree) {this.tree = tree;}

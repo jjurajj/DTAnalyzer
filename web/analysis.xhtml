@@ -163,8 +163,8 @@ and open the template in the editor.
             <br />
             <h:form>
                     <ui:remove><p:commandButton value="Tree display: " style="border-width: 0px; background-color: white; width: 150px; pointer-events:none;" /></ui:remove>
-                    <p:commandButton actionListener="#{TreeDrawer.pruneLeaves()}" update="activeTree" value="Contract" icon="ui-icon-contract" />
-                    <p:commandButton actionListener="#{TreeDrawer.expandLeaves()}" update="activeTree" value="Expand" icon="ui-icon-expand" />
+                    <p:commandButton actionListener="#{TreeDrawer.pruneOneLevel()}" update="activeTree" value="Contract" icon="ui-icon-contract" />
+                    <p:commandButton actionListener="#{TreeDrawer.expandOneLevel()}" update="activeTree" value="Expand" icon="ui-icon-expand" />
                     <p:commandButton actionListener="#{TreeDrawer.buildFullTree()}" update="activeTree" value="Full tree" />
                     <p:commandButton actionListener="#{TreeDrawer.resetTree()}" update="activeTree" value="Reset tree" />
                     <p:commandButton actionListener="#{TreeDrawer.toggleLegend()}" update="activeTree" value="Legend" />
