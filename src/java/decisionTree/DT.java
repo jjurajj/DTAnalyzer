@@ -149,7 +149,7 @@ public class DT implements Serializable {
           }
           
           
-          
+          int k=0;
       }
       
       for (String concept : left_concepts )                     // Odredimo korijen stabla

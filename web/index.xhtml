@@ -15,15 +15,15 @@
                 <f:event type="preRenderView" listener="#{StartValidator.check(WindowSize,Uploader.isValidated())}" />
             </f:metadata>
             
-            <br /><h:outputText value="Ovo je početna stranica DTAnalyzer aplikacije. Svrha ove aplikacije je:"/><br />
-            <f:verbatim>
-                <ul>
-                    <li>pružiti ispitaniku povratnu informaciju o njegovom znanju i pogreškama koje radi</li>
-                    <li>u postupku donošenja zaključaka na temelju dostupnih informacija (npr. tehnička, medicinska ili druga dijagnostika)</li>
-                    <li>i to na temelju stabla odluke koje definira ispitanik,</li>
-                    <li>a koje se provjerava pomoću baze predefiniranih primjera (caseova).</li>
-                </ul>
-            </f:verbatim>
+            <!--http://www.tutorialspoint.com/jsf/jsf_internationalization.htm-->
+            <h:form>
+                <h:commandLink action="#{userData.changeLanguage('hr')}" ><h:graphicImage value="/resources/images/hr.png" width="32" height="22" style="float:right; border-spacing: 20px;padding-left: 10px"/></h:commandLink>
+                <h:commandLink action="#{userData.changeLanguage('en')}" ><h:graphicImage value="/resources/images/en.png" width="32" height="22" style="float:right; border-spacing: 20px;padding-left: 10px"/></h:commandLink>
+            </h:form>
+            
+            <h:outputText value="#{msg['title']}" style="margin:15px; font-size:32px; display: flex;justify-content: center;"/>
+            <p><h:outputText value="#{msg['about']}" escape="false" /></p>
+            <p><h:outputText value="#{msg['howto']}" escape="false" /></p>
             
             <ui:remove>
             Za demonstraciju rada aplikacije možete:
@@ -35,7 +35,6 @@
                     <li>uploadati u formu u nastavku za analizu.</li>
                 </ol>
             </ui:remove>
-            Aplikacija podržava CXL format zapisa stabla.<br /><br />
             
 
             <h:form id="size_form" enctype="multipart/form-data">

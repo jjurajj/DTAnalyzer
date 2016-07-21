@@ -95,7 +95,11 @@ public class TreeGraph {
     private void expandLeaves() {
         ArrayList<Proposition> new_propositions = getNextPropositions();
         for (Proposition proposition : new_propositions)
-           addPropositionToGraph(proposition);            
+            addPropositionToGraph(proposition);
+            /*if ((getNodeDepth(proposition.getConcept_two()) == nodes_per_level.size()+1))
+                addPropositionToGraph(proposition);
+            else                                                                // Tu onda ne dodajem novu propoziciju, ali ju moram provjerit kasnije
+                double_depth_links.add(proposition);*/
         if (new_propositions.size()>0) {
             active_tree.addAll(new_propositions);
             nodes_per_level.add(new_propositions.size());
@@ -239,21 +243,38 @@ public class TreeGraph {
     }
     /** Add next concept from a proposition to graph and connect it */
     public void addPropositionToGraph(Proposition proposition) {
-        // Definicija novog koncepta koji se dodaje u graf
-        Element new_child = new Element(tree.getNodeNameFromID(proposition.getConcept_two()));
-        new_child.setId(proposition.getConcept_two());
-        // Koje je to po redu dijete?
-        new_child.addEndPoint(new BlankEndPoint(EndPointAnchor.TOP));
-        new_child.addEndPoint(new BlankEndPoint(EndPointAnchor.BOTTOM));
-        if (tree.diagnoses.contains(proposition.getConcept_two()))
-            new_child.setStyleClass("ui-diagram-end");
-        else
-            new_child.setStyleClass("ui-diagram-element");
-        // Nađi roditelja po IDju i poveži ga s čvorom
+        boolean not_already_present=true;
+        Element node2 = new Element();
         for (Element node : model.getElements())
-            if (node.getId().equals(proposition.getConcept_one())) 
-                model.connect(createConnection(node.getEndPoints().get(1), new_child.getEndPoints().get(0), proposition.getLink()));
-        model.addElement(new_child);
+            if (node.getId().equals(proposition.getConcept_two())) {
+                node2=node;
+                not_already_present=false;
+                break;
+            }
+        if (not_already_present) {
+            // Definicija novog koncepta koji se dodaje u graf
+            Element new_child = new Element(tree.getNodeNameFromID(proposition.getConcept_two()));
+            new_child.setId(proposition.getConcept_two());
+            // Koje je to po redu dijete?
+            new_child.addEndPoint(new BlankEndPoint(EndPointAnchor.TOP));
+            new_child.addEndPoint(new BlankEndPoint(EndPointAnchor.BOTTOM));
+            if (tree.diagnoses.contains(proposition.getConcept_two()))
+                new_child.setStyleClass("ui-diagram-end");
+            else
+                new_child.setStyleClass("ui-diagram-element");
+            for (Element node : model.getElements())
+                if (node.getId().equals(proposition.getConcept_one())) 
+                    model.connect(createConnection(node.getEndPoints().get(1), new_child.getEndPoints().get(0), proposition.getLink()));
+            model.addElement(new_child);
+        } else {
+            // Ako je cvor prisutan, samo dodaj vezu: nadi cvor s prvim ID-jem, s drugim IDjem i povezi ih. Pazi da je to DODAtna veza.
+            for (Element node : model.getElements())
+                if (node.getId().equals(proposition.getConcept_one())) 
+                    model.connect(createConnection(node.getEndPoints().get(1), node2.getEndPoints().get(0), proposition.getLink()));
+
+        }
+        
+        
         
     }
     /** Arrange nodes on screen function. Uses the adjustWithLeaves and orderLeaves recursions */
@@ -307,7 +328,7 @@ public class TreeGraph {
     public int getNodeDepth(String node) {
         int depth=0;
         ArrayList<String> active_nodes=new ArrayList<>();
-        active_nodes.add(tree.getStartNodeName());
+        active_nodes.add(tree.getStartNodeID());
         ArrayList<Integer> all_depths=new ArrayList<Integer>();
         while (active_nodes.size()>0) {
             ArrayList<String> temp_active_nodes=new ArrayList<>();
