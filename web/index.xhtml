@@ -17,41 +17,31 @@
             
             <!--http://www.tutorialspoint.com/jsf/jsf_internationalization.htm-->
             <h:form>
-                <h:commandLink action="#{userData.changeLanguage('hr')}" ><h:graphicImage value="/resources/images/hr.png" width="32" height="22" style="float:right; border-spacing: 20px;padding-left: 10px"/></h:commandLink>
-                <h:commandLink action="#{userData.changeLanguage('en')}" ><h:graphicImage value="/resources/images/en.png" width="32" height="22" style="float:right; border-spacing: 20px;padding-left: 10px"/></h:commandLink>
+                <h:commandLink action="#{userData.changeLanguage('hr')}" ><h:graphicImage value="/resources/images/hr.png" width="20" height="14" style="float:right; border-spacing: 20px;padding-left: 10px"/></h:commandLink>
+                <h:commandLink action="#{userData.changeLanguage('en')}" ><h:graphicImage value="/resources/images/en.png" width="20" height="14" style="float:right; border-spacing: 20px;padding-left: 10px"/></h:commandLink>
             </h:form>
             
             <h:outputText value="#{msg['title']}" style="margin:15px; font-size:32px; display: flex;justify-content: center;"/>
-            <p><h:outputText value="#{msg['about']}" escape="false" /></p>
-            <p><h:outputText value="#{msg['howto']}" escape="false" /></p>
             
-            <ui:remove>
-            Za demonstraciju rada aplikacije možete:
-                <ol>
-                    <li>preuzeti <a href="http://diana.zesoi.fer.hr/~jpetrovic/case_repository/carWontStart_template.cxl">ovaj predložak </a>,</li>
-                    <li>učitati predložak u <a href="https://cmapcloud.ihmc.us/">Online</a> ili <a href="http://cmap.ihmc.us/cmaptools/cmaptools-download/">Desktop</a> Cmap tools alatu,</li>
-                    <li>od elemenata iz predloška uz dodavanje "Yes" ili "No" veza definirati vlastito stablo odluke za dijagnostiku problema pri paljenju auta,</li>
-                    <li>izvesti stablo u .cxl (ili .txt) formatu,</li>
-                    <li>uploadati u formu u nastavku za analizu.</li>
-                </ol>
-            </ui:remove>
+            <h:outputText value="#{msg['about']}" escape="false" />
+            <h:graphicImage  value="/resources/images/DTA_preview.PNG" width="40%" style="float:right; border-spacing: 20px;padding-left: 10px"/>
+            <h:outputText value="#{msg['howto']}" escape="false" />
             
-
             <h:form id="size_form" enctype="multipart/form-data">
-            Baza za vrednovanje:
+            <h:outputText value="#{msg['select_base']}" escape="false" />
                 <h:selectOneMenu value="#{BaseSelector.link}">
+                   <f:selectItem itemValue="http://diana.zesoi.fer.hr/~jpetrovic/case_repository/car_starting/" itemLabel="Car Starting Problem" />
                    <f:selectItem itemValue="http://diana.zesoi.fer.hr/~jpetrovic/case_repository/lan/" itemLabel="LAN Misconfiguration Diagnosis (v2)" />
                    <f:selectItem itemValue="http://diana.zesoi.fer.hr/~jpetrovic/case_repository/lan_pon/" itemLabel="LAN Misconfiguration Diagnosis (v1)" />
-                   <f:selectItem itemValue="http://diana.zesoi.fer.hr/~jpetrovic/case_repository/car_starting/" itemLabel="Car Starting Problem" />
                 </h:selectOneMenu>
             
             <br />
 
-                <h:inputFile id="file" value="#{Uploader.file}" validator="#{Uploader.validateFile}"  />
+                <h:inputFile label="#{msg['browse']}" title="#{msg['browse']}" id="file" value="#{Uploader.file}" validator="#{Uploader.validateFile}"  />
                 <h:inputHidden id="height" value="#{WindowSize.height}" />
                 <h:inputHidden id="width" value="#{WindowSize.width}" />
                 
-                <h:commandButton value="     Prenesi i pokreni    " onclick="set_screen_size('size_form');" type="submit" />
+                <h:commandButton value="#{msg['upload_and_run']}" onclick="set_screen_size('size_form');" type="submit" />
                 
             </h:form>
         </f:view>

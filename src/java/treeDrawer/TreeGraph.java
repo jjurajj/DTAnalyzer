@@ -271,11 +271,7 @@ public class TreeGraph {
             for (Element node : model.getElements())
                 if (node.getId().equals(proposition.getConcept_one())) 
                     model.connect(createConnection(node.getEndPoints().get(1), node2.getEndPoints().get(0), proposition.getLink()));
-
         }
-        
-        
-        
     }
     /** Arrange nodes on screen function. Uses the adjustWithLeaves and orderLeaves recursions */
     private void arrangeNodesOnScreen() {
@@ -287,9 +283,14 @@ public class TreeGraph {
         ordered_leaves.clear();
         orderLeaves(tree.getStartNodeID());                                     // Read active tree in depth and order leaves accordingly
         int left_x = canvas_width/2-(ordered_leaves.size()*concept_width)/2-(ordered_leaves.size()-1)*offset_width/2;
+        float scaling_factor=(float) 1.0;
+        if (left_x < 0) {
+            scaling_factor=(float) canvas_width / (float) ((ordered_leaves.size()*concept_width)+(ordered_leaves.size()-1)*offset_width);
+            left_x=0;
+        }
         for (Element node : this.model.getElements())
             if (ordered_leaves.contains(node.getId())) {
-                node.setX(Integer.toString(left_x+(concept_width+offset_width)*ordered_leaves.indexOf(node.getId())).concat("px"));
+                node.setX(Integer.toString(  Math.round((left_x+(concept_width+offset_width)*ordered_leaves.indexOf(node.getId()))*scaling_factor)  ).concat("px"));
                 centered_nodes.add(node.getId());
             }
         adjustWithLeaves(this.tree.getStartNodeID());                           // Center all other nodes according to veaves
@@ -321,9 +322,8 @@ public class TreeGraph {
                 node.setX(Integer.toString(sum_x).concat("px"));
                 this.centered_nodes.add(node.getId());
             }
-        
     }
-
+    
     /** Returns (maximal) node depth */
     public int getNodeDepth(String node) {
         int depth=0;
