@@ -5,6 +5,7 @@
  */
 package treeDrawer;
 
+import caseBase.CaseBase;
 import decisionTree.DT;
 import decisionTree.Proposition;
 import java.util.ArrayList;
@@ -42,12 +43,16 @@ public class TreeGraph {
     public ArrayList<Integer> nodes_per_level = new ArrayList<>();
     public ArrayList<String> centered_nodes = new ArrayList<>();
     public ArrayList<String> ordered_leaves = new ArrayList<>();
+
+    public TreeGraph() {}
     
-    public void initialize(DT decision_tree) {this.initialize(decision_tree,default_width,default_height);}
+    public void initialize(DT decision_tree) {
+        this.initialize(decision_tree,default_width,default_height);
+    }
     public void initialize(DT decision_tree, int height, int width) {
         
         // If this is the tree initialization:
-        if (this.model.getElements().isEmpty()) {
+        if ((this.model.getElements().isEmpty())) {
             
             this.active_tree.clear();
             this.nodes_per_level.clear();
@@ -59,6 +64,10 @@ public class TreeGraph {
             this.default_width=width;
             this.default_height=height;
         
+            this.node_info_map= new HashMap<>();   
+            this.centered_nodes = new ArrayList<>();
+            this.ordered_leaves = new ArrayList<>();
+            
             this.model = new DefaultDiagramModel();
             this.model.setMaxConnections(-1);
          
@@ -81,6 +90,40 @@ public class TreeGraph {
             // Za sve cvorove skaliraj x koordinatu
         }
     }
+    
+    public void buildC45Tree (CaseBase base) {
+        ArrayList<Proposition> c45 = this.tree.C45(base.cases);
+        String start_node_id = c45.get(0).getConcept_one();
+        
+        this.tree.propositions = c45;
+        this.tree.active_tree = c45;
+        this.tree.start_node = c45.get(0).getConcept_one();
+        this.active_tree = new ArrayList<>();
+        //this.tree.propositions.addAll(c45);
+        DT completely_new_tree = this.tree;
+
+        this.nodes_per_level.clear();
+        this.node_info_map= new HashMap<>();   
+        this.centered_nodes = new ArrayList<>();
+        this.ordered_leaves = new ArrayList<>();
+        this.model = new DefaultDiagramModel();
+        this.model.setMaxConnections(-1);
+         
+        FlowChartConnector connector = new FlowChartConnector();
+        connector.setPaintStyle("{strokeStyle:'#C7C7C7',lineWidth:2}");
+        model.setDefaultConnector(connector);
+        
+        Element start = new Element(tree.getStartNodeName(), Integer.toString((canvas_width)/2).concat("px"), "10px");
+        start.addEndPoint(new BlankEndPoint(EndPointAnchor.TOP));
+        start.addEndPoint(new BlankEndPoint(EndPointAnchor.BOTTOM));
+        start.setId(tree.getStartNodeID());
+        start.setStyleClass("ui-diagram-start");
+        model.addElement(start);
+        buildFullTree();
+        saveNodeLocations();
+        //this.resetTree();
+    }
+    
     
     /** Expand leaves wrapper function. Removes legend, expands leaves, reloads node locations, and returns legend if it was on. */
     public void expandOneLevel() {
@@ -288,6 +331,7 @@ public class TreeGraph {
             scaling_factor=(float) canvas_width / (float) ((ordered_leaves.size()*concept_width)+(ordered_leaves.size()-1)*offset_width);
             left_x=0;
         }
+        // Now set x values for ordered leaves (in the order of their appearance in the in-depth reading)
         for (Element node : this.model.getElements())
             if (ordered_leaves.contains(node.getId())) {
                 node.setX(Integer.toString(  Math.round((left_x+(concept_width+offset_width)*ordered_leaves.indexOf(node.getId()))*scaling_factor)  ).concat("px"));
@@ -303,7 +347,7 @@ public class TreeGraph {
     }
     /** Recursion to arrange nodes based on arranged leaves */
     public void adjustWithLeaves(String node_ID) {
-        // Dohvati svu djecu ovog cvora
+        // Dohvati svu djecu ovog cvora. Ako djeca nisu poravnata, poravnaj ih prvo.
         ArrayList<String> children = new ArrayList<>();
         for (Proposition prop : this.tree.getPropositions())
             if (prop.getConcept_one().equals(node_ID)) {

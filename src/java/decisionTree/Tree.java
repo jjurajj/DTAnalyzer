@@ -1,31 +1,26 @@
+/*
+ * To change this license header, choose License Headers in Project Properties.
+ * To change this template file, choose Tools | Templates
+ * and open the template in the editor.
+ */
 package decisionTree;
 
-/**
- * @author juraj
- * klasa koja opisuje DT koje ucita korisnik
- * Pretpostavke:
- * Stablo ima jedan početni čvor
- *  Čvorovi stabla zadani su s IDjem. zato jer se mogu ponavljati nazivi. 
-*/
-
 import c45.ParameterGainRatio;
-import singleCase.Dijagnoza;
-import singleCase.CaseEvaluation;
-import singleCase.Case;
 import caseBase.CaseBase;
-import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.HashMap;
-import javax.faces.bean.ManagedBean;
-import javax.faces.bean.ViewScoped;
+import singleCase.Case;
+import singleCase.CaseEvaluation;
+import singleCase.Dijagnoza;
 import singleCase.Parametar;
 
-@ManagedBean (name ="DT", eager = true)
-@ViewScoped
-
-public class DT implements Serializable {
+/**
+ *
+ * @author juraj
+ */
+public class Tree {
     
-    public String start_node;                                                       // ID početnog čvora
+    public String start_node;
     public ArrayList<Proposition> propositions = new ArrayList<>();                 // Lista svih propozicija (ID, vrijednost linka, ID)
     public ArrayList<Proposition> active_tree = new ArrayList<>();                  // Reprezentacija stabla za aktivni prikaz
     
@@ -34,7 +29,13 @@ public class DT implements Serializable {
     public HashMap<String, ArrayList<String>> reachable_diagnoses = new HashMap<>();// HashMap: ID koncepta -> Sve dostupne dijagnoze
     public HashMap<String, String> concepts_map= new HashMap<>();                   // HashMap: ID koncepta/dijagnoze -> Ime koncepta/dijagnoze
 
-    public DT() {}
+    public Tree() {};
+    
+    public void initializeOptimal() {
+    
+    
+    }
+    
     public void initialize(String DT_text_file) {
   
       // Inicijalizacija stabla na temelju tekstualne datoteke (propozicije ili CXL)
@@ -413,6 +414,28 @@ public class DT implements Serializable {
             return false;
     }
 
+    // C4.5 calculate info gains
+    public HashMap<String, Double> getIGforNodes (ArrayList<Case> cases_list) {
+    
+        HashMap<String, Double> info_gains = new HashMap<String, Double>();
+        if (cases_list.size() == 0)
+            return null;
+        
+        // Za svaki parametar prvog casea (jer SVAKI case mora imati SVE parametre)
+        for (Parametar current_parameter : cases_list.get(0).getParameters()) {
+            
+            
+            
+            // trenutni parametar: current_parameter.getName()
+            // Vrijednosti koje poprima: unique_parameter_values;
+        
+        
+    }
+            return null;
+    }
+    
+    
+    
     public ArrayList<Proposition> C45 (ArrayList<Case> cases_list) {
         
             ArrayList<Proposition> c45_propositions = new ArrayList<>();
@@ -442,22 +465,9 @@ public class DT implements Serializable {
                         active_case_subsets.add(new_subset);
                     } else c45_propositions.add(new Proposition(best_splitting_node.getName(), current_unique_value, new_subset.get(0).getCorrectDiagnosis().getName()));
                 }
+                
             }
-
-            // Convert names to IDs
-            ArrayList<Proposition> c45_propositions_ID = new ArrayList<>();
-            for (Proposition prop : c45_propositions) {
-                String concept_one_ID = "";
-                for (String key : this.concepts_map.keySet())
-                    if (this.concepts_map.get(key).equals(prop.concept_one))
-                            concept_one_ID = key;
-                String concept_two_ID = "";
-                for (String key : this.concepts_map.keySet())
-                    if (this.concepts_map.get(key).equals(prop.concept_two))
-                            concept_two_ID = key;
-                c45_propositions_ID.add(new Proposition( concept_one_ID, prop.link, concept_two_ID));
-            }
-            return c45_propositions_ID;
+            return c45_propositions;
     }
     
     public ParameterGainRatio getBestSplittingNode (ArrayList<Case> cases_list) {
@@ -626,5 +636,5 @@ public class DT implements Serializable {
     public void setDiagnoses(ArrayList<String> diagnoses) { this.diagnoses = diagnoses; }
     public void setPropositions(ArrayList<Proposition> propositions) { this.propositions = propositions; }
     public void setPropositionsMap (HashMap<PropositionKey, String> propositionsMap) { this.propositionsMap = propositionsMap; }
-
+    
 }

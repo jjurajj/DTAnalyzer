@@ -10,7 +10,7 @@
     border-radius: 6px;
     border: 5px solid transparent;
     background-color: #1ECAD6;
-    color: #ffffff;
+    color: #000000;
     word-break: normal;
     line-break: strict;
     display: flex;
@@ -28,7 +28,7 @@
     border-radius: 6px;
     border: 7px solid transparent;
     background-color: #8fe9ef;
-    color: #ffffff;
+    color: #000000;
     word-break: normal;
     line-break: strict;
     display: flex;
@@ -46,7 +46,7 @@
     border-radius: 6px;
     border: 7px solid transparent;
     background-color: #1ECAD6;
-    color: #ffffff;
+    color: #000000;
     word-break: normal;
     line-break: strict;
     display: flex;
@@ -65,7 +65,7 @@
     border-radius: 6px;
     border: 7px solid transparent;
     background-color: #1ECAD6;
-    color: #ffffff;
+    color: #000000;
     word-break: normal;
     line-break: strict;
     display: flex;
@@ -85,7 +85,7 @@
     border-radius: 6px;
     border: 7px solid transparent;
     background-color: #74E64E;
-    color: #ffffff;
+    color: #000000;
     word-break: normal;
     line-break: strict;
     display: flex;
@@ -103,7 +103,7 @@
     border-radius: 6px;
     border: 7px solid transparent;
     background-color: #74E64E;
-    color: #ffffff;
+    color: #000000;
     word-break: normal;
     line-break: strict;
     display: flex;
@@ -123,7 +123,7 @@
     border-radius: 6px;
     border: 7px solid transparent;
     background-color: #F5A53D;
-    color: #ffffff;
+    color: #000000;
     word-break: normal;
     line-break: strict;
     display: flex;
@@ -141,7 +141,7 @@
     border-radius: 6px;
     border: 7px solid transparent;
     background-color: #fad29e;
-    color: #ffffff;
+    color: #000000;
     word-break: normal;
     line-break: strict;
     display: flex;
@@ -159,7 +159,7 @@
     border-radius: 6px;
     border: 7px solid transparent;
     background-color: #F5A53D;
-    color: #ffffff;
+    color: #000000;
     word-break: normal;
     line-break: strict;
     border-color: green;
@@ -176,7 +176,7 @@
     border-radius: 6px;
     border: 7px solid transparent;
     background-color: #F5A53D;
-    color: #ffffff;
+    color: #000000;
     word-break: normal;
     line-break: strict;
     border-color: red;
@@ -193,7 +193,7 @@
     border-radius: 6px;
     border: 7px dotted transparent;
     background-color: #F5A53D;
-    color: #ffffff;
+    color: #000000;
     word-break: normal;
     line-break: strict;
     border-color: green;

@@ -11,8 +11,6 @@ import singleCase.Dijagnoza;
 import singleCase.Case;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import javax.faces.bean.ManagedBean;
 import javax.faces.bean.ViewScoped;
 import org.jsoup.Jsoup;

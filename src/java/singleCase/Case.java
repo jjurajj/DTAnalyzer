@@ -210,6 +210,8 @@ public class Case implements Serializable {
         return return_parameters_list;
     }
     
+    public String GetParameterAssignedValueByName(String ID) { return this.getParametarByName(ID).getAssigned_value(); }
+    
     // Getteri i setteri
     public void setURL(String url) { this.url = url; }
     public void setIntroduction(String introduction) { this.introduction = introduction; }
