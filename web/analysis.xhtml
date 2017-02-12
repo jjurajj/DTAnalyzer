@@ -13,7 +13,7 @@ and open the template in the editor.
       xmlns:a="http://xmlns.jcp.org/jsf/passthrough"
       >
     <f:metadata>
-        <f:event type="preRenderView" listener="#{DT.initialize(Uploader.fileContent)}" />
+        <f:event type="preRenderView" listener="#{DT.initializeFromFile(Uploader.fileContent)}" />
         <f:event type="preRenderView" listener="#{CaseBase.initialize(BaseSelector.getLink())}" />
         <f:event type="preRenderView" listener="#{CaseBase.evaluateBase(DT)}" />
         <f:event type="preRenderView" listener="#{PerDiagnosisDetails.setInfo('N/A')}" />
@@ -165,7 +165,7 @@ and open the template in the editor.
                     <p:commandButton value="Tree display: " style="border-width: 0px; background-color: white; width: 150px; pointer-events:none;" />
                     <p:commandButton actionListener="#{TreeDrawer.pruneOneLevel()}" update="activeTree" value="Contract" icon="ui-icon-contract" />
                     <p:commandButton actionListener="#{TreeDrawer.expandOneLevel()}" update="activeTree" value="Expand" icon="ui-icon-expand" />
-                    <p:commandButton actionListener="#{TreeDrawer.buildFullTree()}" update="activeTree" value="Full tree" />
+                    <p:commandButton actionListener="#{TreeDrawer.buildUserTree()}" update="activeTree" value="User tree" />
                     <p:commandButton actionListener="#{TreeDrawer.resetTree()}" update="activeTree" value="Reset tree" />
                     <p:commandButton actionListener="#{TreeDrawer.toggleLegend()}" update="activeTree" value="Legend" />
                     <p:commandButton actionListener="#{TreeDrawer.buildC45Tree(CaseBase)}" update="activeTree" value="Optimal tree" />

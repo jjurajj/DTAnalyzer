@@ -38,7 +38,10 @@ public class TreeGraph {
     public int canvas_width, canvas_height;
     public DefaultDiagramModel model = new DefaultDiagramModel();               // Treee to be represented
     public HashMap<String, NodeInfo> node_info_map= new HashMap<>();   
-    public DT tree;
+    public DT tree = new DT();
+    
+    public ArrayList<DT> tree_list = new ArrayList<>();
+
     public ArrayList<Proposition> active_tree = new ArrayList<>();              // Reprezentacija stabla za aktivni prikaz
     public ArrayList<Integer> nodes_per_level = new ArrayList<>();
     public ArrayList<String> centered_nodes = new ArrayList<>();
@@ -51,7 +54,9 @@ public class TreeGraph {
     }
     public void initialize(DT decision_tree, int height, int width) {
         
-        // If this is the tree initialization:
+        if (this.tree_list.size()>0) this.tree = this.tree_list.get(this.tree_list.size()-1);
+        
+// If this is the tree initialization:
         if ((this.model.getElements().isEmpty())) {
             
             this.active_tree.clear();
@@ -64,25 +69,12 @@ public class TreeGraph {
             this.default_width=width;
             this.default_height=height;
         
-            this.node_info_map= new HashMap<>();   
-            this.centered_nodes = new ArrayList<>();
-            this.ordered_leaves = new ArrayList<>();
-            
-            this.model = new DefaultDiagramModel();
-            this.model.setMaxConnections(-1);
-         
-            FlowChartConnector connector = new FlowChartConnector();
-            connector.setPaintStyle("{strokeStyle:'#C7C7C7',lineWidth:2}");
-            model.setDefaultConnector(connector);
-        
-            Element start = new Element(tree.getStartNodeName(), Integer.toString((canvas_width)/2).concat("px"), "10px");
-            start.addEndPoint(new BlankEndPoint(EndPointAnchor.TOP));
-            start.addEndPoint(new BlankEndPoint(EndPointAnchor.BOTTOM));
-            start.setId(tree.getStartNodeID());
-            start.setStyleClass("ui-diagram-start");
-            model.addElement(start);
+            clearModel();
+            initializeStartNode();
             buildFullTree();
             saveNodeLocations();
+            
+            tree_list.add(this.getTree().copyTree(tree));
             
         } else { //Otherwise just rescale tree based on the x value
             this.canvas_width=width;
@@ -91,17 +83,45 @@ public class TreeGraph {
         }
     }
     
+    private void initializeStartNode() {
+        Element start = new Element(tree.getStartNodeName(), Integer.toString((canvas_width)/2).concat("px"), "10px");
+        start.addEndPoint(new BlankEndPoint(EndPointAnchor.TOP));
+        start.addEndPoint(new BlankEndPoint(EndPointAnchor.BOTTOM));
+        start.setId(tree.getStartNodeID());
+        start.setStyleClass("ui-diagram-start");
+        model.addElement(start);
+    }
+    
+    private void clearModel() {
+        this.node_info_map= new HashMap<>();   
+        this.centered_nodes = new ArrayList<>();
+        this.ordered_leaves = new ArrayList<>();
+        this.model = new DefaultDiagramModel();
+        this.model.setMaxConnections(-1);
+        FlowChartConnector connector = new FlowChartConnector();
+        connector.setPaintStyle("{strokeStyle:'#C7C7C7',lineWidth:2}");
+        model.setDefaultConnector(connector);
+    }
+    
     public void buildC45Tree (CaseBase base) {
-        ArrayList<Proposition> c45 = this.tree.C45(base.cases);
-        String start_node_id = c45.get(0).getConcept_one();
-        
-        this.tree.propositions = c45;
-        this.tree.active_tree = c45;
-        this.tree.start_node = c45.get(0).getConcept_one();
-        this.active_tree = new ArrayList<>();
-        //this.tree.propositions.addAll(c45);
-        DT completely_new_tree = this.tree;
+        DT optimal_tree = new DT();
+        HashMap<String, String> cmap = new HashMap(this.tree.concepts_map);
+        optimal_tree.initializeOptimal(base, cmap);
+        tree_list.add(optimal_tree);
 
+        HashMap<String, String> cmap2 = new HashMap(this.tree.concepts_map);
+        this.tree.initializeOptimal(base, cmap2);
+
+        
+        //ArrayList<Proposition> c45 = this.tree.C45(base.cases);
+        //String start_node_id = c45.get(0).getConcept_one();
+        
+        //this.tree.propositions = c45;
+        //this.tree.active_tree = c45;
+        //this.tree.start_node = c45.get(0).getConcept_one();
+        this.active_tree.clear();
+        //this.tree.propositions.addAll(c45);
+        
         this.nodes_per_level.clear();
         this.node_info_map= new HashMap<>();   
         this.centered_nodes = new ArrayList<>();
@@ -121,7 +141,9 @@ public class TreeGraph {
         model.addElement(start);
         buildFullTree();
         saveNodeLocations();
+        int a=0;
         //this.resetTree();
+                    
     }
     
     
@@ -262,6 +284,15 @@ public class TreeGraph {
         saveNodeStyles();
     }
 
+    public void buildUserTree() {
+        this.tree = this.tree_list.get(0);
+        tree_list.add(this.getTree().copyTree(tree));
+        this.active_tree.clear();
+        clearModel();
+        initializeStartNode();
+        buildFullTree();
+    }
+    
     /** Builds complete tree with default styles and arranges elements visually */
     public void buildFullTree() {
         boolean legend_state=this.legend;

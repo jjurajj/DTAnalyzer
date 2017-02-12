@@ -42,11 +42,6 @@ public class KnowledgeModel {
         
         // dovoljno je za prvi case provjeriti postoje li u mapi
         
-        for (Case temp_case : this.case_base.getCases()) {
-            
-        concepts_map.
-        
-        }
         
         
         
@@ -102,13 +97,7 @@ public class KnowledgeModel {
         this.diagnoses = diagnoses;
     }
 
-    public ArrayList<String> getAttributes() {
-        return attributes;
-    }
 
-    public void setAttributes(ArrayList<String> attributes) {
-        this.attributes = attributes;
-    }
 
     public HashMap<String, String> getConcepts_map() {
         return concepts_map;
