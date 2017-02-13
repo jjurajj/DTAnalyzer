@@ -8,6 +8,7 @@ package treeDrawer;
 import caseBase.CaseBase;
 import decisionTree.DT;
 import decisionTree.Proposition;
+import decisionTree.PropositionKey;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -242,9 +243,68 @@ public class TreeGraph {
         setLegend(legend_state);
     }
     /** Edits element styles on the case path */
+    
     private void markCasePath(Case target_case) {
         
         ArrayList<Connection> remove_connections = new ArrayList<>(), add_connections = new ArrayList<>();
+        String correct_diagnosis_ID = this.tree.getNodeIDFromName(target_case.getCorrectDiagnosis().getName());
+        String style_label = "-selected";
+        
+        // Dohvati vrijednost 
+        String parameter_ID = this.tree.getStartNodeID();
+        String value = target_case.GetParameterAssignedValueByName(this.tree.getStartNodeName());
+        
+        do {
+            String next_parameter_ID = this.tree.propositionsMap.get(new PropositionKey(parameter_ID, value));
+            // When correct diagnosis becomes unreachable, change style label (permanently)
+            Boolean parameter_is_diagnosis = this.tree.diagnoses.contains(parameter_ID);
+            ArrayList<String> reachable_diagnoses = this.tree.getReachableDiagnoses(parameter_ID);
+            
+            // If the correct diagnosis is discarded or incorrect diagnosis is reached change style postfix
+            if ((!parameter_is_diagnosis) && (! reachable_diagnoses.contains(correct_diagnosis_ID)) 
+                    || ((parameter_is_diagnosis) && (! parameter_ID.equals(correct_diagnosis_ID))))
+                style_label = "-selected-false";
+            
+            // Find that node in elements of the model and append the style label
+            for (Element node_one : this.model.getElements())
+                if (parameter_ID.equals(node_one.getId())) {
+                    node_one.setStyleClass(node_one.getStyleClass().concat(style_label));
+                    // Now find the second proposition concept, to edit their connection label
+                    for (Element node_two : this.model.getElements())
+                        if ((next_parameter_ID != null) && (next_parameter_ID.equals(node_two.getId())))
+                            for (Connection conn : this.model.getConnections())
+                                if ((node_one.getEndPoints().contains(conn.getSource())) && (node_two.getEndPoints().contains(conn.getTarget()))) {
+                                    Connection new_conn = new Connection(conn.getSource(), conn.getTarget());
+                                    new_conn.getOverlays().add(new ArrowOverlay(20, 20, 1, 1));
+                                    new_conn.getOverlays().add(new LabelOverlay(value, "flow-label-selected", 0.5));
+                                    remove_connections.add(conn);
+                                    add_connections.add(new_conn);
+                                }       
+                } // Else if the current node is the unreached right solution 
+                else if ((parameter_is_diagnosis) && (! parameter_ID.equals(correct_diagnosis_ID)) && (node_one.getId().equals(correct_diagnosis_ID))) {
+                    node_one.setStyleClass(node_one.getStyleClass().concat("-selected-true"));
+                }
+            parameter_ID = next_parameter_ID;
+            value = target_case.GetParameterAssignedValueByName(this.tree.getNodeNameFromID(parameter_ID));
+        } while (parameter_ID != null);
+        
+        // Set all unselected nodes' style to lite
+        for (Element node_one : this.model.getElements())                       
+            if (node_one.getStyleClass().contains("selected") == false)
+                node_one.setStyleClass(node_one.getStyleClass().concat("-lite"));
+
+        // Add/remove connections
+        for (Connection temp_conn : remove_connections) this.model.disconnect(temp_conn);
+        for (Connection temp_conn : add_connections) this.model.connect(temp_conn);
+        
+        saveNodeStyles();
+    }
+    
+    private void markCasePath_oblolete(Case target_case) {
+        
+        ArrayList<Connection> remove_connections = new ArrayList<>(), add_connections = new ArrayList<>();
+        
+        // Promijeni format start nodea
         String correct_diagnosis_ID = this.tree.getNodeIDFromName(target_case.getCorrectDiagnosis().getName());
         String style_label = "-selected";
         
@@ -295,10 +355,23 @@ public class TreeGraph {
     
     /** Builds complete tree with default styles and arranges elements visually */
     public void buildFullTree() {
+        
+        // Store legend state
         boolean legend_state=this.legend;
         if (legend_state) setLegend(false);
+        
+        // Prune all leaves
         while (active_tree.size()>0) { pruneLeaves(); }                         // First reduce tree maximally to remove styles
+        
+        // Clear start node formatting (because it might have formatting and it is left)
+        for (Element node : this.model.getElements())                       
+            if (node.getId().equals(this.tree.getStartNodeID()))
+                node.setStyleClass("ui-diagram-start");
+        
+        // Expand all nodes untill full tree
         do  { expandLeaves(); } while (active_tree.size() != tree.propositions.size());
+        
+        // Re-apply formatting
         arrangeNodesOnScreen();
         saveNodeLocations();
         saveNodeStyles();
