@@ -49,8 +49,6 @@ public class DT implements Serializable {
         return new_tree;
     }
     
-    
-    
     public void initializeFromFile(String DT_text_file) {
   
       // Inicijalizacija stabla na temelju tekstualne datoteke (propozicije ili CXL)
@@ -169,17 +167,6 @@ public class DT implements Serializable {
           int k=0;
       }
       
-      //for (String concept : left_concepts )                     // Odredimo korijen stabla
-      //    if (right_concepts.contains(concept) == false) {this.setStartNode(concept);}
-      
-      /*ArrayList<String> leaves = new ArrayList<>();             // listovi stabla
-      for (String concept : right_concepts)                     // su cvorovi koji nikad nisu lijevi
-          if ((left_concepts.contains(concept) == false) && (leaves.contains(concept)==false)) leaves.add(concept);
-      this.setDiagnoses(leaves);
-      
-      // reachable diagnoses
-      */
-      
       this.setDiagnoses(this.determineDiagnoses(this.propositions));
       this.setStartNode(this.determineStartNode(this.propositions));
       
@@ -214,15 +201,15 @@ public class DT implements Serializable {
     }
     
     
-    public void initializeOptimal(CaseBase base, HashMap<String, String> concepts_map) {
+    public void initializeOptimal(CaseBase base, HashMap<String, String> concepts_map, String algorithm, Boolean include_weights) {
     
         setConceptsMap(concepts_map);
-        ArrayList<Proposition> c45_propositions = this.C45(base.cases);
+        ArrayList<Proposition> optimal_propositions = this.optimalTree(base.cases, algorithm, include_weights);
 
-        setPropositions(c45_propositions);
-        setStartNode(this.determineStartNode(c45_propositions));
-        setDiagnoses(this.determineDiagnoses(c45_propositions));
-        for (Proposition prop : c45_propositions) this.propositionsMap.put(new PropositionKey (prop.getConcept_one(), prop.getLink()), prop.getConcept_two());
+        setPropositions(optimal_propositions);
+        setStartNode(this.determineStartNode(optimal_propositions));
+        setDiagnoses(this.determineDiagnoses(optimal_propositions));
+        for (Proposition prop : optimal_propositions) this.propositionsMap.put(new PropositionKey (prop.getConcept_one(), prop.getLink()), prop.getConcept_two());
         setReachableDiagnoses(this.getStartNodeID());
     
     }
@@ -473,9 +460,9 @@ public class DT implements Serializable {
             return false;
     }
 
-    public ArrayList<Proposition> C45 (ArrayList<Case> cases_list) {
+    public ArrayList<Proposition> optimalTree (ArrayList<Case> cases_list, String algorithm, Boolean include_weights) {
         
-            ArrayList<Proposition> c45_propositions = new ArrayList<>();
+            ArrayList<Proposition> optimal_propositions = new ArrayList<>();
             ArrayList<ArrayList<Case>> active_case_subsets = new ArrayList<>();
             active_case_subsets.add(cases_list);
             
@@ -485,8 +472,8 @@ public class DT implements Serializable {
                 active_case_subsets.remove(0);
 
                 if (getUniqueDiagnosesOfCaseList(current_case_set).equals(1)) // Ako ima samo jedna dijagnoza
-                    return c45_propositions;
-                ParameterGainRatio best_splitting_node = getBestSplittingNode(current_case_set);
+                    return optimal_propositions;
+                ParameterGainRatio best_splitting_node = getBestSplittingNode(current_case_set, algorithm, include_weights);
                 ArrayList<String> best_splitting_node_values = getUniqueValuesOfNode(current_case_set, best_splitting_node.getName());
                 
                 // Particioniraj skup primjera u odnosu na te vrijednosti i dodaj te skupove u listu primjera a makni nulti element liste
@@ -498,15 +485,15 @@ public class DT implements Serializable {
                     
                     // Provjeri jesu li sad u new_subset primjeri iz bar dve klase
                     if (getUniqueDiagnosesOfCaseList(new_subset).size()>1) {
-                        c45_propositions.add(new Proposition(best_splitting_node.getName(), current_unique_value, getBestSplittingNode(new_subset).getName()));
+                        optimal_propositions.add(new Proposition(best_splitting_node.getName(), current_unique_value, getBestSplittingNode(new_subset, algorithm, include_weights).getName()));
                         active_case_subsets.add(new_subset);
-                    } else c45_propositions.add(new Proposition(best_splitting_node.getName(), current_unique_value, new_subset.get(0).getCorrectDiagnosis().getName()));
+                    } else optimal_propositions.add(new Proposition(best_splitting_node.getName(), current_unique_value, new_subset.get(0).getCorrectDiagnosis().getName()));
                 }
             }
 
             // Convert names to IDs
-            ArrayList<Proposition> c45_propositions_ID = new ArrayList<>();
-            for (Proposition prop : c45_propositions) {
+            ArrayList<Proposition> optimal_propositions_ID = new ArrayList<>();
+            for (Proposition prop : optimal_propositions) {
                 String concept_one_ID = "";
                 for (String key : this.concepts_map.keySet())
                     if (this.concepts_map.get(key).equals(prop.concept_one))
@@ -515,36 +502,30 @@ public class DT implements Serializable {
                 for (String key : this.concepts_map.keySet())
                     if (this.concepts_map.get(key).equals(prop.concept_two))
                             concept_two_ID = key;
-                c45_propositions_ID.add(new Proposition( concept_one_ID, prop.link, concept_two_ID));
+                optimal_propositions_ID.add(new Proposition( concept_one_ID, prop.link, concept_two_ID));
             }
-            return c45_propositions_ID;
+            return optimal_propositions_ID;
     }
     
-    public ParameterGainRatio getBestSplittingNode (ArrayList<Case> cases_list) {
+    public ParameterGainRatio getBestSplittingNode (ArrayList<Case> cases_list, String algorithm, Boolean include_weights) {
         
         ParameterGainRatio best_splitting_node = new ParameterGainRatio();
         if (cases_list.size() == 0)
             return null;
         // Svi caseovei moraju imati sve parametre definirane pa stoga prvi case ima sve
         Double max_gain_ratio = 0.0;
+        Double max_weight = Double.MAX_VALUE;
+
         for (Parametar current_parameter : cases_list.get(0).getParameters()) {
-            Double current_gain_ratio = GR(cases_list,current_parameter);
-            if (current_gain_ratio > max_gain_ratio) {
+            Double current_gain_ratio = GR(cases_list,current_parameter, algorithm);
+            Double current_weight = current_parameter.getWeight();
+            if ((current_gain_ratio > max_gain_ratio) && ((max_weight >= current_weight) && (include_weights) || (!include_weights))) {
                 max_gain_ratio = current_gain_ratio;
-                best_splitting_node.setName(current_parameter.getName());
-                best_splitting_node.setGain_ratio(current_gain_ratio);
+                max_weight = current_weight;
+                best_splitting_node = new ParameterGainRatio(current_parameter.getName(), current_gain_ratio, current_weight);
             }
         }
         return best_splitting_node;
-    }
-    
-    public HashMap<String, Double> calculateGRForCasesList (ArrayList<Case> cases_list) {
-        HashMap<String, Double> info_gains = new HashMap<String, Double>();
-        if (cases_list.size() == 0)
-            return null;
-        for (Parametar current_parameter : cases_list.get(0).getParameters())
-            info_gains.put(current_parameter.getName(), GR(cases_list,current_parameter));
-        return info_gains;
     }
     
     private Double SI(ArrayList<Case> P, Parametar a) {
@@ -590,9 +571,13 @@ public class DT implements Serializable {
         IG_value = IG_value + E(P);
         return IG_value;
     }
-    private Double GR(ArrayList<Case> P, Parametar a) {
-        //return SI(P,a)/IG(P,a);
-        return IG(P,a);
+    private Double GR(ArrayList<Case> P, Parametar a, String algorithm) {
+        if (algorithm.equals("c45"))
+            return SI(P,a)/IG(P,a);
+        else if (algorithm.equals("id3"))
+            return IG(P,a);
+        else
+            return IG(P,a);
     }
     private ArrayList<String> getUniqueDiagnosesOfCaseList(ArrayList<Case> cases_list) {
         ArrayList<String> unique_diagnosis_list = new ArrayList<>();
@@ -610,7 +595,6 @@ public class DT implements Serializable {
         }
         return all_values;
     }
-        
     
     // Ime vs. ID dekoding
     public String getStartNodeName() { return this.getConceptsMap().get(this.start_node); }

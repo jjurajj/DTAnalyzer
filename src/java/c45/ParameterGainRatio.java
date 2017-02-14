@@ -13,6 +13,7 @@ public class ParameterGainRatio {
 
     public String name;
     public Double gain_ratio;
+    public Double weight;
 
     public String getName() {
         return name;
@@ -30,7 +31,15 @@ public class ParameterGainRatio {
         this.gain_ratio = gain_ratio;
     }
 
-    public ParameterGainRatio(String name, Double gain_ratio) {
+    public Double getWeight() {
+        return weight;
+    }
+
+    public void setWeight(Double weight) {
+        this.weight = weight;
+    }
+    
+    public ParameterGainRatio(String name, Double gain_ratio, Double weight) {
         this.name = name;
         this.gain_ratio = gain_ratio;
     }

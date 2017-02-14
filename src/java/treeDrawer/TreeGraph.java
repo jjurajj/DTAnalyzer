@@ -95,6 +95,7 @@ public class TreeGraph {
     
     private void clearModel() {
         this.node_info_map= new HashMap<>();   
+        this.nodes_per_level.clear();
         this.centered_nodes = new ArrayList<>();
         this.ordered_leaves = new ArrayList<>();
         this.model = new DefaultDiagramModel();
@@ -104,47 +105,24 @@ public class TreeGraph {
         model.setDefaultConnector(connector);
     }
     
-    public void buildC45Tree (CaseBase base) {
-        DT optimal_tree = new DT();
-        HashMap<String, String> cmap = new HashMap(this.tree.concepts_map);
-        optimal_tree.initializeOptimal(base, cmap);
-        tree_list.add(optimal_tree);
-
-        HashMap<String, String> cmap2 = new HashMap(this.tree.concepts_map);
-        this.tree.initializeOptimal(base, cmap2);
-
+    public void buildOptimalTree (CaseBase base, String algorithm, Boolean include_weights) {
         
-        //ArrayList<Proposition> c45 = this.tree.C45(base.cases);
-        //String start_node_id = c45.get(0).getConcept_one();
-        
-        //this.tree.propositions = c45;
-        //this.tree.active_tree = c45;
-        //this.tree.start_node = c45.get(0).getConcept_one();
-        this.active_tree.clear();
-        //this.tree.propositions.addAll(c45);
-        
-        this.nodes_per_level.clear();
-        this.node_info_map= new HashMap<>();   
-        this.centered_nodes = new ArrayList<>();
-        this.ordered_leaves = new ArrayList<>();
-        this.model = new DefaultDiagramModel();
-        this.model.setMaxConnections(-1);
-         
-        FlowChartConnector connector = new FlowChartConnector();
-        connector.setPaintStyle("{strokeStyle:'#C7C7C7',lineWidth:2}");
-        model.setDefaultConnector(connector);
-        
-        Element start = new Element(tree.getStartNodeName(), Integer.toString((canvas_width)/2).concat("px"), "10px");
-        start.addEndPoint(new BlankEndPoint(EndPointAnchor.TOP));
-        start.addEndPoint(new BlankEndPoint(EndPointAnchor.BOTTOM));
-        start.setId(tree.getStartNodeID());
-        start.setStyleClass("ui-diagram-start");
-        model.addElement(start);
-        buildFullTree();
-        saveNodeLocations();
-        int a=0;
-        //this.resetTree();
-                    
+        if (algorithm.equals("user")) {
+            buildUserTree();
+            
+        } else {
+            DT optimal_tree = new DT();
+            HashMap<String, String> cmap = new HashMap(this.tree.concepts_map);
+            optimal_tree.initializeOptimal(base, cmap, algorithm, include_weights);
+            tree_list.add(optimal_tree);
+            HashMap<String, String> cmap2 = new HashMap(this.tree.concepts_map);
+            this.tree.initializeOptimal(base, cmap2, algorithm, include_weights);
+            this.active_tree.clear();
+            clearModel();
+            initializeStartNode();
+            buildFullTree();
+            saveNodeLocations();
+        }
     }
     
     

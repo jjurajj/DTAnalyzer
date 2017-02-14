@@ -156,31 +156,45 @@ and open the template in the editor.
                         <h:outputLink value="#{case.getURL()}" target="_blank">Full case</h:outputLink> / <p:commandLink value="Case path" actionListener="#{TreeDrawer.runCase(CaseBase.getCaseByID(case.getID()))}" update=":activeTree" />
                      </h:column>
                 </h:dataTable>
+    
                 </p:panel>
-                
-            </h:form>
             
+            </h:form>
+
             <br />
             <h:form>
 
-                    <p:commandButton value="Display: " style="border-width: 0px; background-color: white; width: 150px; pointer-events:none;" />
+                    <p:commandButton value="Display: " style="border-width: 0px; background-color: white; pointer-events:none;" />
+                    
+                    <h:selectOneMenu value="#{TreeSelector.algorithm}" style="font-size: 14pt">
+                    <f:selectItem itemValue="user" itemLabel="User tree" />
+                    <f:selectItem itemValue="id3" itemLabel="Information gain (ID3)" />
+                    <f:selectItem itemValue="c45" itemLabel="Information ratio (C4.5)" />
+                    </h:selectOneMenu>
+                    
+                    <h:selectOneMenu value="#{TreeSelector.weighted_attributes}" style="font-size: 14pt">
+                    <f:selectItem itemValue="true" itemLabel="weighted attributes" />
+                    <f:selectItem itemValue="false" itemLabel="unweighted attributes" />
+                    </h:selectOneMenu>
+                    
+                    <p:commandButton actionListener="#{TreeDrawer.buildOptimalTree(CaseBase,TreeSelector.algorithm,TreeSelector.weighted_attributes)}" update="activeTree" value="Refresh" />
+                    
+                    <ui:remove>
                     <p:commandButton actionListener="#{TreeDrawer.buildUserTree()}" update="activeTree" value="User tree" />
-                    <p:commandButton actionListener="#{TreeDrawer.buildC45Tree(CaseBase)}" update="activeTree" value="ID3 tree" />
-                    <p:commandButton actionListener="#{TreeDrawer.buildC45Tree(CaseBase)}" update="activeTree" value="C4.5 tree" />
-                    <p:commandButton actionListener="#{TreeDrawer.toggleLegend()}" update="activeTree" value="Legend" />
+                    <p:commandButton actionListener="#{TreeDrawer.buildOptimalTree(CaseBase,'id3',false)}" update="activeTree" value="ID3 tree" />
+                    <p:commandButton actionListener="#{TreeDrawer.buildOptimalTree(CaseBase,'id3',true)}" update="activeTree" value="C4.5 tree" />
+                    </ui:remove>
                     
                     <p:commandButton value="Analysis: " style="border-width: 0px; background-color: white; width: 200px; pointer-events:none;" />
                     <p:commandButton actionListener="#{TreeDrawer.pruneOneLevel()}" update="activeTree" value="Contract" icon="ui-icon-contract" />
                     <p:commandButton actionListener="#{TreeDrawer.expandOneLevel()}" update="activeTree" value="Expand" icon="ui-icon-expand" />
-            
+                    <p:commandButton actionListener="#{TreeDrawer.toggleLegend()}" update="activeTree" value="Legend" />
                     
                
                </h:form>
             <br />
-            
-            <p:diagram id="activeTree" value="#{TreeDrawer.getModel()}" style="height:1000px;width:100%" styleClass="ui-widget-content" />
                 
-            
+            <p:diagram id="activeTree" value="#{TreeDrawer.getModel()}" style="height:1000px;width:100%" styleClass="ui-widget-content" />
     </f:view>
     </h:body>
 </html>
