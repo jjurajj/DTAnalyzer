@@ -6,6 +6,7 @@
 package treeDrawer;
 
 import caseBase.CaseBase;
+import caseBase.CaseCompare;
 import decisionTree.DT;
 import decisionTree.Proposition;
 import decisionTree.PropositionKey;
@@ -50,12 +51,14 @@ public class TreeGraph {
 
     public TreeGraph() {}
     
-    public void initialize(DT decision_tree) {
-        this.initialize(decision_tree,default_width,default_height);
+    public void initialize(DT decision_tree, CaseBase base) {
+        this.initialize(decision_tree,default_width,default_height, base);
     }
-    public void initialize(DT decision_tree, int height, int width) {
+    public void initialize(DT decision_tree, int height, int width, CaseBase base) {
         
-        if (this.tree_list.size()>0) this.tree = this.tree_list.get(this.tree_list.size()-1);
+        if (this.tree_list.size()>0)
+            this.tree = this.tree.copyTree(this.tree_list.get(this.tree_list.size()-1));
+            //this.tree = this.tree_list.get(this.tree_list.size()-1);
         
 // If this is the tree initialization:
         if ((this.model.getElements().isEmpty())) {
@@ -77,6 +80,15 @@ public class TreeGraph {
             
             tree_list.add(this.getTree().copyTree(tree));
             
+            // Bez ovoga se ponekad neće inicijaliziratzi natrag korisnikovo stablo
+            // Kad se prikaže klasifiakcija bar jednog čvora u ID3
+            buildOptimalTree(base, "id3", false);
+            buildOptimalTree(base, "c45", false);
+            buildOptimalTree(base, "user", false);
+            
+            //buildUserTree();
+           
+            
         } else { //Otherwise just rescale tree based on the x value
             this.canvas_width=width;
             this.canvas_height=height;
@@ -91,6 +103,50 @@ public class TreeGraph {
         start.setId(tree.getStartNodeID());
         start.setStyleClass("ui-diagram-start");
         model.addElement(start);
+    }
+    
+    public void correctUnclassified(CaseBase base, String algorithm, Boolean include_weights) {
+        
+        ArrayList<Case> unclassified_cases = new ArrayList<>();
+        ArrayList<CaseCompare> end_nodes = new ArrayList<>();
+        //ArrayList<String> end_nodes_names = new ArrayList<>();
+        //ArrayList<String> end_nodes_values = new ArrayList<>();
+        
+        // Find all unclassified cases and their end nodes
+        for (Case temp_case : base.getCases())
+            if (! temp_case.getEvaluation().diagnosed) {
+                unclassified_cases.add(temp_case);
+                end_nodes.add(new CaseCompare(temp_case.getEvaluation().getEndNode(),temp_case.parametersMap.get(temp_case.getEvaluation().getEndNode())));
+                //end_nodes_names.add(temp_case.getEvaluation().getEndNode());
+                //end_nodes_values.add(temp_case.parametersMap.get(temp_case.getEvaluation().getEndNode()));
+            }
+        
+        ArrayList<CaseCompare> used_attributes = new ArrayList<>();
+        ArrayList<ArrayList<Case>> list_of_lists_of_cases = new ArrayList<>();
+        
+        for (int i=0; i<unclassified_cases.size(); i++) {
+            
+            Case temp_case = unclassified_cases.get(i);
+            ArrayList<Case> current_list = new ArrayList<>();
+            CaseCompare current = new CaseCompare(end_nodes.get(i).getParameter_name(),end_nodes.get(i).getParameter_value());
+        
+            if (!(used_attributes.contains(current))) {
+                for (int j=0; j<unclassified_cases.size(); j++) {
+                    CaseCompare temp_compare = new CaseCompare(end_nodes.get(j).getParameter_name(),end_nodes.get(j).getParameter_value());
+                    if (temp_compare.equals(current)) {
+                        current_list.add(temp_case);
+                    }
+                }
+                used_attributes.add(current);
+                list_of_lists_of_cases.add(current_list);
+            }
+            
+        }
+        
+        int i=0;
+        
+        
+        
     }
     
     private void clearModel() {
@@ -115,8 +171,13 @@ public class TreeGraph {
             HashMap<String, String> cmap = new HashMap(this.tree.concepts_map);
             optimal_tree.initializeOptimal(base, cmap, algorithm, include_weights);
             tree_list.add(optimal_tree);
-            HashMap<String, String> cmap2 = new HashMap(this.tree.concepts_map);
-            this.tree.initializeOptimal(base, cmap2, algorithm, include_weights);
+            
+            //HashMap<String, String> cmap2 = new HashMap(this.tree.concepts_map);
+            
+            this.tree = new DT();
+            this.tree = this.tree.copyTree(optimal_tree);
+            
+            //this.tree.initializeOptimal(base, cmap2, algorithm, include_weights);
             this.active_tree.clear();
             clearModel();
             initializeStartNode();

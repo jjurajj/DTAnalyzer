@@ -11,20 +11,19 @@ import javax.faces.bean.ViewScoped;
 @ManagedBean(name = "TreeSelector")
 @ViewScoped
 
-
-/**
- *
- * @author juraj
- */
 public class treeSelector {
     
-    public String algorithm;
+    public String algorithm="";
     public Boolean weighted_attributes;
 
     public treeSelector(String algorithm) {
         this.algorithm = algorithm;
     }
 
+    public void initialize(String initial_algorithm) {
+        if (this.algorithm.isEmpty()) this.algorithm = initial_algorithm;
+    }
+    
     public treeSelector() {
     }
 

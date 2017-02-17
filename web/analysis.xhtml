@@ -16,8 +16,9 @@ and open the template in the editor.
         <f:event type="preRenderView" listener="#{DT.initializeFromFile(Uploader.fileContent)}" />
         <f:event type="preRenderView" listener="#{CaseBase.initialize(BaseSelector.getLink())}" />
         <f:event type="preRenderView" listener="#{CaseBase.evaluateBase(DT)}" />
+        <f:event type="preRenderView" listener="#{TreeSelector.initialize('user')}" />
         <f:event type="preRenderView" listener="#{PerDiagnosisDetails.setInfo('N/A')}" />
-        <f:event type="preRenderView" listener="#{TreeDrawer.initialize(DT,WindowSize.getHeight(),WindowSize.getWidth())}" /> 
+        <f:event type="preRenderView" listener="#{TreeDrawer.initialize(DT,WindowSize.getHeight(),WindowSize.getWidth(),CaseBase)}" /> 
         <f:event type="preRenderView" listener="#{Uploader.setValidated(false)}" />
     </f:metadata>
     <h:head>
@@ -165,19 +166,20 @@ and open the template in the editor.
             <h:form>
 
                     <p:commandButton value="Display: " style="border-width: 0px; background-color: white; pointer-events:none;" />
-                    
                     <h:selectOneMenu value="#{TreeSelector.algorithm}" style="font-size: 14pt">
                     <f:selectItem itemValue="user" itemLabel="User tree" />
                     <f:selectItem itemValue="id3" itemLabel="Information gain (ID3)" />
                     <f:selectItem itemValue="c45" itemLabel="Information ratio (C4.5)" />
                     </h:selectOneMenu>
                     
-                    <h:selectOneMenu value="#{TreeSelector.weighted_attributes}" style="font-size: 14pt">
-                    <f:selectItem itemValue="true" itemLabel="weighted attributes" />
-                    <f:selectItem itemValue="false" itemLabel="unweighted attributes" />
+                    <p:commandButton value="Attributes: " style="border-width: 0px; background-color: white; pointer-events:none;" />
+                    <h:selectOneMenu id="weight_droplist" value="#{TreeSelector.weighted_attributes}" style="font-size: 14pt">
+                    <f:selectItem itemValue="false" itemLabel="unweighted" />
+                    <f:selectItem itemValue="true" itemLabel="weighted" />
                     </h:selectOneMenu>
                     
-                    <p:commandButton actionListener="#{TreeDrawer.buildOptimalTree(CaseBase,TreeSelector.algorithm,TreeSelector.weighted_attributes)}" update="activeTree" value="Refresh" />
+                    <p:commandButton actionListener="#{TreeDrawer.buildOptimalTree(CaseBase,TreeSelector.algorithm,TreeSelector.weighted_attributes)}" update="activeTree,unclassified_bottun,weight_droplist" value="Refresh" />
+                    <p:commandButton actionListener="#{TreeDrawer.toggleLegend()}" update="activeTree" value="Legend" />
                     
                     <ui:remove>
                     <p:commandButton actionListener="#{TreeDrawer.buildUserTree()}" update="activeTree" value="User tree" />
@@ -185,15 +187,21 @@ and open the template in the editor.
                     <p:commandButton actionListener="#{TreeDrawer.buildOptimalTree(CaseBase,'id3',true)}" update="activeTree" value="C4.5 tree" />
                     </ui:remove>
                     
-                    <p:commandButton value="Analysis: " style="border-width: 0px; background-color: white; width: 200px; pointer-events:none;" />
+                    <br />
+                    <br />
+                    <p:commandButton value="Decision analysis: " style="border-width: 0px; background-color: white; pointer-events:none;" />
                     <p:commandButton actionListener="#{TreeDrawer.pruneOneLevel()}" update="activeTree" value="Contract" icon="ui-icon-contract" />
                     <p:commandButton actionListener="#{TreeDrawer.expandOneLevel()}" update="activeTree" value="Expand" icon="ui-icon-expand" />
-                    <p:commandButton actionListener="#{TreeDrawer.toggleLegend()}" update="activeTree" value="Legend" />
                     
-               
+                    <br /><br />
+                    <p:commandButton value="Corrections: " style="border-width: 0px; background-color: white; pointer-events:none;" />
+                    <p:commandButton actionListener="#{TreeDrawer.correctUnclassified(CaseBase,TreeSelector.algorithm,TreeSelector.weighted_attributes)}" id="unclassified_bottun" disabled="#{!(TreeSelector.getAlgorithm().equals('user'))}" update="activeTree" value="Unclassified" />
+                    <p:commandButton actionListener="#{TreeDrawer.expandOneLevel()}" update="activeTree" value="Display gain measure" />
+                    <p:commandButton actionListener="#{TreeDrawer.toggleLegend()}" update="activeTree" value="Incremental analysis" />
+                    
                </h:form>
             <br />
-                
+            
             <p:diagram id="activeTree" value="#{TreeDrawer.getModel()}" style="height:1000px;width:100%" styleClass="ui-widget-content" />
     </f:view>
     </h:body>
