@@ -36,4 +36,9 @@ public class Language {
         FacesContext.getCurrentInstance().getViewRoot().setLocale(new Locale(language));
     }
 
+    public Language() {
+    }
+
+    public void doNothing() {
+    }
 }

@@ -15,6 +15,7 @@ import singleCase.Case;
 import caseBase.CaseBase;
 import java.io.Serializable;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import javax.faces.bean.ManagedBean;
 import javax.faces.bean.ViewScoped;
@@ -177,7 +178,7 @@ public class DT implements Serializable {
 
     // U svaki initializer treba dodat da se azuriraju IDjevi SVIH koncepata
     
-    private ArrayList<String> determineDiagnoses(ArrayList<Proposition> tree_propositions) {
+    public ArrayList<String> determineDiagnoses(ArrayList<Proposition> tree_propositions) {
         ArrayList<String> left_concepts = new ArrayList<>(), right_concepts = new ArrayList<>(), diagnoses = new ArrayList<>();
         for (Proposition prop : tree_propositions) {
             left_concepts.add(prop.getConcept_one());
@@ -201,10 +202,11 @@ public class DT implements Serializable {
     }
     
     
-    public void initializeOptimal(CaseBase base, HashMap<String, String> concepts_map, String algorithm, Boolean include_weights) {
+    public void initializeOptimal(ArrayList<Case> case_list, HashMap<String, String> concepts_map, String algorithm, Boolean include_weights) {
     
         setConceptsMap(concepts_map);
-        ArrayList<Proposition> optimal_propositions = this.optimalTree(base.cases, algorithm, include_weights);
+        
+        ArrayList<Proposition> optimal_propositions = this.optimalTree(case_list, algorithm, include_weights);
 
         setPropositions(optimal_propositions);
         setStartNode(this.determineStartNode(optimal_propositions));
@@ -265,7 +267,7 @@ public class DT implements Serializable {
 
         return diagnosis_count_al;
     }
-    private ArrayList<String> setReachableDiagnoses (String node) {
+    public ArrayList<String> setReachableDiagnoses (String node) {
         // Rekurzija koja postavi hashmap reachable_diagnoses za svu djecu zadanog cvora. Poziva se iz inicijalizatora DTa
         // Ako se radi o cvoru koji je konacna dijagnoza onda ga vrati
         if (this.diagnoses.contains(node)) {                        
@@ -474,7 +476,12 @@ public class DT implements Serializable {
                 if (getUniqueDiagnosesOfCaseList(current_case_set).equals(1)) // Ako ima samo jedna dijagnoza
                     return optimal_propositions;
                 ParameterGainRatio best_splitting_node = getBestSplittingNode(current_case_set, algorithm, include_weights);
+                //if (best_splitting_node.getWeight()==null)
+                //    return optimal_propositions;
                 ArrayList<String> best_splitting_node_values = getUniqueValuesOfNode(current_case_set, best_splitting_node.getName());
+                
+                // best_splitting_node će biti null ako svi atributi imaju info gain 0
+                // -> onda uzmi bilo koji čtu postavi 
                 
                 // Particioniraj skup primjera u odnosu na te vrijednosti i dodaj te skupove u listu primjera a makni nulti element liste
                 for (String current_unique_value : best_splitting_node_values) {
@@ -485,8 +492,30 @@ public class DT implements Serializable {
                     
                     // Provjeri jesu li sad u new_subset primjeri iz bar dve klase
                     if (getUniqueDiagnosesOfCaseList(new_subset).size()>1) {
-                        optimal_propositions.add(new Proposition(best_splitting_node.getName(), current_unique_value, getBestSplittingNode(new_subset, algorithm, include_weights).getName()));
-                        active_case_subsets.add(new_subset);
+                        
+                        // Tu treba provjeriti da nisu daljnji parametri isti a dijagnoze različite!!!
+                        ParameterGainRatio next_node_gain = getBestSplittingNode(new_subset, algorithm, include_weights);
+                        if (next_node_gain.getGain_ratio()==null) {
+                            // Ako ima više dijagnoza i nema parametara s info dobiti:
+                            // Postavi dijegnozu s najvećim brojem primjera i nemoj to više splitati
+                            int max=0;
+                            ArrayList<String> all_diagnoses = new ArrayList<>();
+                            for (Case case_from_sublist : new_subset) all_diagnoses.add(case_from_sublist.getCorrectDiagnosis().getName());
+                            String most_frequent="";
+                            for (String diagnosis : all_diagnoses)
+                                if (Collections.frequency(all_diagnoses, diagnosis)>max) {
+                                    max=Collections.frequency(all_diagnoses, diagnosis);
+                                    most_frequent=diagnosis;
+                                }
+                            
+                            optimal_propositions.add(new Proposition(best_splitting_node.getName(), current_unique_value, most_frequent));
+                            
+                        } else {
+                            // Ako ima više dijagnoza i postoji parametar s info dobiti:
+                            optimal_propositions.add(new Proposition(best_splitting_node.getName(), current_unique_value, getBestSplittingNode(new_subset, algorithm, include_weights).getName()));
+                            active_case_subsets.add(new_subset);
+                        }
+                        
                     } else optimal_propositions.add(new Proposition(best_splitting_node.getName(), current_unique_value, new_subset.get(0).getCorrectDiagnosis().getName()));
                 }
             }

@@ -143,10 +143,74 @@ public class TreeGraph {
             
         }
         
-        int i=0;
+        // Now I have a list of lists of cases and a list of attributes for each of those lists
+        // ArrayList<CaseCompare> used_attributes
+        // ArrayList<ArrayList<Case>> list_of_lists_of_cases
+
+        ArrayList<Proposition> new_propositions = new ArrayList<>();
+        HashMap<String,String> parameters_map = new HashMap<>();
+        for (int i=0; i<list_of_lists_of_cases.size(); i++) {
+            // Riješi to kao stablo odluke sa zadanim algoritmom
+            ArrayList<Case> current_list = list_of_lists_of_cases.get(i);
+            CaseCompare connecting_node = used_attributes.get(i);
+            
+            // Ako su svi čvorovi iste dijagnoze, onda samo napravi tu propoziciju
+            boolean all_same_diagnosis = true;
+            for (int j=0; j<current_list.size()-1; j++)
+                if (! current_list.get(j).getCorrectDiagnosis().getName().equals(current_list.get(j+1).getCorrectDiagnosis().getName()))
+                    all_same_diagnosis = false;
+
+            int tree_index = 0;
+            if (algorithm.equals("id3")) tree_index = 1; else tree_index=2;
+            parameters_map = new HashMap(this.tree_list.get(tree_index).getConceptsMap());
+            
+            String p0_concept_one = this.tree_list.get(tree_index).getNodeIDFromName(used_attributes.get(i).parameter_name);
+            String p0_link = used_attributes.get(i).parameter_value;
+            
+            if (all_same_diagnosis) {
+                
+                // Ako svi caseovi pripadaju istoj dijagnozi, onda samo dodaj nultu propoziciju
+                String p0_concept_two = this.tree_list.get(tree_index).getNodeIDFromName(current_list.get(0).getCorrectDiagnosis().getName());
+                new_propositions.add(new Proposition(p0_concept_one, p0_link, p0_concept_two));
+
+            } else {
+            
+                // Inace izradi stablo
+                DT new_tree = new DT();
+                new_tree.initializeOptimal(current_list, parameters_map, algorithm, include_weights);
+            
+                String p0_concept_two = parameters_map.get(new_tree.getStartNodeID());
+                new_propositions.add(new Proposition(p0_concept_one, p0_link, p0_concept_two));
+                new_propositions.addAll(new_tree.propositions);
+            }
+            
+            
+        }
         
+        // Sad treba sve te nove propozicije dodat drvu, ponovno ga izracunat i nacrtat
+        // Nove propozicije su korisnikovo stablo + stare iz originalnog stabla
         
+        // Korisnikovo stablo je na tree_list.get(0)
+        int i=1;
+        new_propositions.addAll(this.tree_list.get(0).propositions);
         
+        if (new_propositions.size()>0) {
+            
+            DT improved_tree = new DT();
+            improved_tree.setPropositions(new_propositions);
+            improved_tree.setConceptsMap(parameters_map);
+            improved_tree.setStartNode(this.tree_list.get(0).getStartNodeID());
+            improved_tree.setDiagnoses(this.tree_list.get(0).determineDiagnoses(new_propositions));
+            for (Proposition prop : new_propositions)
+                improved_tree.propositionsMap.put(new PropositionKey (prop.getConcept_one(), prop.getLink()), prop.getConcept_two());
+            improved_tree.setReachableDiagnoses( this.tree_list.get(0).getStartNodeID());
+            
+            this.tree_list.add(improved_tree);
+            
+        }
+     
+        buildTreeByIndex(this.tree_list.size()-1);
+        // makr style differences from original tree 
     }
     
     private void clearModel() {
@@ -169,7 +233,7 @@ public class TreeGraph {
         } else {
             DT optimal_tree = new DT();
             HashMap<String, String> cmap = new HashMap(this.tree.concepts_map);
-            optimal_tree.initializeOptimal(base, cmap, algorithm, include_weights);
+            optimal_tree.initializeOptimal(base.cases, cmap, algorithm, include_weights);
             tree_list.add(optimal_tree);
             
             //HashMap<String, String> cmap2 = new HashMap(this.tree.concepts_map);
@@ -177,7 +241,7 @@ public class TreeGraph {
             this.tree = new DT();
             this.tree = this.tree.copyTree(optimal_tree);
             
-            //this.tree.initializeOptimal(base, cmap2, algorithm, include_weights);
+            //this.tree.initializeOptimal(base.cases, cmap2, algorithm, include_weights);
             this.active_tree.clear();
             clearModel();
             initializeStartNode();
@@ -338,51 +402,16 @@ public class TreeGraph {
         
         saveNodeStyles();
     }
-    
-    private void markCasePath_oblolete(Case target_case) {
-        
-        ArrayList<Connection> remove_connections = new ArrayList<>(), add_connections = new ArrayList<>();
-        
-        // Promijeni format start nodea
-        String correct_diagnosis_ID = this.tree.getNodeIDFromName(target_case.getCorrectDiagnosis().getName());
-        String style_label = "-selected";
-        
-        for (Proposition prop : target_case.getEvaluation().getPath())
-            for (Element node_one : this.model.getElements())
-                if (prop.getConcept_one().equals(node_one.getId())) {           // If the node_one is on the classify path:
-                    
-                    // If its on the wrong path or if its and incorrect dignosis change style label (for ever)
-                    if ((this.tree.getDiagnoses().contains(prop.getConcept_one()) == true) && (prop.getConcept_one().equals(correct_diagnosis_ID) == false) || (this.tree.getReachableDiagnoses(prop.getConcept_one()).contains(correct_diagnosis_ID) == false) && (this.tree.getDiagnoses().contains(prop.getConcept_one()) == false))
-                            style_label = "-selected-false";
-                    node_one.setStyleClass(node_one.getStyleClass().concat(style_label));
-                    
-                    // Now find the second proposition concept, to adit their connection label
-                    for (Element node_two : this.model.getElements())
-                        if ((prop.getConcept_two() != null) && (prop.getConcept_two().equals(node_two.getId())))
-                            for (Connection conn : this.model.getConnections())
-                                if ((node_one.getEndPoints().contains(conn.getSource())) && (node_two.getEndPoints().contains(conn.getTarget()))) {
-                                    
-                                    Connection new_conn = new Connection(conn.getSource(), conn.getTarget());
-                                    new_conn.getOverlays().add(new ArrowOverlay(20, 20, 1, 1));
-                                    new_conn.getOverlays().add(new LabelOverlay(prop.getLink(), "flow-label-selected", 0.5));
-                                    remove_connections.add(conn);
-                                    add_connections.add(new_conn);
-                                    
-                                }       
-                }
-        
-        // If the case was not correctly solved, mark the correct end, otherwise set style to lite
-        for (Element node_one : this.model.getElements())                       
-            if ((node_one.getId().equals(correct_diagnosis_ID)) && (target_case.getEvaluation().isCorrect() == false)) node_one.setStyleClass(node_one.getStyleClass().concat("-selected-true"));
-            else if (node_one.getStyleClass().contains("selected") == false) node_one.setStyleClass(node_one.getStyleClass().concat("-lite"));
 
-        // Add/remove connections
-        for (Connection temp_conn : remove_connections) this.model.disconnect(temp_conn);
-        for (Connection temp_conn : add_connections) this.model.connect(temp_conn);
-        
-        saveNodeStyles();
+    public void buildTreeByIndex(int index) {
+        this.tree = this.tree_list.get(index);
+        tree_list.add(this.getTree().copyTree(tree));
+        this.active_tree.clear();
+        clearModel();
+        initializeStartNode();
+        buildFullTree();
     }
-
+    
     public void buildUserTree() {
         this.tree = this.tree_list.get(0);
         tree_list.add(this.getTree().copyTree(tree));

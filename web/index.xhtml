@@ -4,6 +4,9 @@
       xmlns:f="http://java.sun.com/jsf/core"
       xmlns:ui="http://xmlns.jcp.org/jsf/facelets"
       xmlns:h="http://xmlns.jcp.org/jsf/html">
+    <f:metadata>
+        <f:event type="preRenderView" listener="#{userData.doNothing()}" />
+    </f:metadata>
     <h:head>
         <title>DTAnalyzer index</title>
         <h:outputScript library="js" name="set_screen_size.js" />
@@ -34,7 +37,6 @@
                    <f:selectItem itemValue="http://diana.zesoi.fer.hr/~jpetrovic/case_repository/lan/" itemLabel="LAN Misconfiguration Diagnosis (v2)" />
                    <f:selectItem itemValue="http://diana.zesoi.fer.hr/~jpetrovic/case_repository/lan_pon/" itemLabel="LAN Misconfiguration Diagnosis (v1)" />
                 </h:selectOneMenu>
-            
             <br />
 
                 <h:inputFile label="#{msg['browse']}" title="#{msg['browse']}" id="file" value="#{Uploader.file}" validator="#{Uploader.validateFile}"  />
