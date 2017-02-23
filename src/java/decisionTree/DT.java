@@ -17,8 +17,10 @@ import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.UUID;
 import javax.faces.bean.ManagedBean;
 import javax.faces.bean.ViewScoped;
+import static jdk.nashorn.internal.objects.NativeMath.round;
 import singleCase.Parametar;
 
 @ManagedBean (name ="DT", eager = true)
@@ -507,8 +509,44 @@ public class DT implements Serializable {
                                     max=Collections.frequency(all_diagnoses, diagnosis);
                                     most_frequent=diagnosis;
                                 }
+
+                            String new_diagnosis_name="";
+                            ArrayList<String> undistinguishable = new ArrayList<>();
+                            ArrayList<Double> frequencies = new ArrayList<>();
+                            for (Case case_from_sublist : new_subset)
+                                if (!(undistinguishable.contains(case_from_sublist.getCorrectDiagnosis().name))) {
+                                    undistinguishable.add(case_from_sublist.getCorrectDiagnosis().getName());
+                                    String new_name = case_from_sublist.getCorrectDiagnosis().getName();
+                                    Double new_frequency = (double)(Collections.frequency(all_diagnoses, case_from_sublist.getCorrectDiagnosis().name))*100.0 / (double)(all_diagnoses.size());
+                                    new_frequency = (double) Math.round(new_frequency*100)/100;
+                                    new_diagnosis_name = new_diagnosis_name.concat(new_name);
+                                    new_diagnosis_name = new_diagnosis_name.concat(" (").concat(new_frequency.toString()).concat("%) <br>");
+                                }
                             
-                            optimal_propositions.add(new Proposition(best_splitting_node.getName(), current_unique_value, most_frequent));
+                            //String new_diagnosis_name =  most_frequent.concat(" /&lt;br&gt;/g (Most<br/>frequent)");
+                            this.diagnoses.add(new_diagnosis_name);
+                            this.concepts_map.put(UUID.randomUUID().toString(), new_diagnosis_name);
+                            
+                            optimal_propositions.add(new Proposition(best_splitting_node.getName(), current_unique_value, new_diagnosis_name));
+                            
+                            //////////////////////////////////////////
+                            // Zapravo: jebiga, dodaj sve te dijagnoze -> ne, jer onda graf postaje nepregledan
+                            //////////////////////////////////////////
+                            /*ArrayList<String> undistinguishable = new ArrayList<>();
+                            ArrayList<Double> frequencies = new ArrayList<>();
+                            for (Case case_from_sublist : new_subset)
+                                if (!(undistinguishable.contains(case_from_sublist.getCorrectDiagnosis().name))) {
+                                    undistinguishable.add(case_from_sublist.getCorrectDiagnosis().getName());
+                                    frequencies.add((double)(Collections.frequency(all_diagnoses, case_from_sublist.getCorrectDiagnosis().name)) / (double)(all_diagnoses.size()));
+                                }
+                            for (int iterator=0; iterator<undistinguishable.size(); iterator++) {
+                                optimal_propositions.add(new Proposition(best_splitting_node.getName(), frequencies.get(iterator).toString(), undistinguishable.get(iterator)));
+                            }*/
+                            
+                            
+                            
+                            
+                            
                             
                         } else {
                             // Ako ima više dijagnoza i postoji parametar s info dobiti:

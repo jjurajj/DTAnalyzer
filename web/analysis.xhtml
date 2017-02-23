@@ -29,12 +29,12 @@ and open the template in the editor.
         <h:outputStylesheet library="css" name="buttons.css" />
         <h:outputStylesheet library="css" name="graph.css"  />
         <h:outputScript library="js" name="toggle_details.js" />
-        <h:outputScript library="js" name="parsing.js" />
+        <h:outputScript library="js" name="parsing.js"  />
         <h:outputScript library="js" name="set_screen_size.js" />
         <h:outputScript library="js" name="jquery-1.12.4.min.js" />
         
     </h:head>
-    <h:body id="body_id" a:onresize="set_screen_size('size_form');document.getElementById('size_form').submit();" onload="parseNodeBreaklines();">
+    <h:body id="body_id" a:onresize="set_screen_size('size_form');document.getElementById('size_form').submit();" onload="parseNodeBreaklines();" >
 
     <f:view id="view_id">
         <!-- Ne moze se instancirati vise objekata iste klase, eventualno napravit apstraktnu klasu i u njoj vise -->
@@ -102,18 +102,22 @@ and open the template in the editor.
                         <f:facet name="header">#{msg['recall']}</f:facet>
                         #{ item.getTP().size()+item.getFN().size()>0 ? item.getTP().size()*100/(item.getTP().size()+item.getFN().size()):"0.0"}%
                     </h:column>
-                    <h:column >
+                    <h:column>
                         <!-- Na temelju ovog sad treba apdejtat neku komponentu s arguemntima item.name i TP (to definira listu caseova)-->
                         <!--http://stackoverflow.com/questions/8634156/how-to-find-out-client-id-of-component-for-ajax-update-render-cannot-find-compo-->
                         <f:facet name="header">#{msg['tp']} (<h:graphicImage value="/resources/images/tick.png" width="16" height="16" />)</f:facet>
                         <p:commandLink rendered="#{item.getTP().size()>0}" value="#{item.getTP().size()}" actionListener="#{PerDiagnosisDetails.setAll(item.getTP(),'TP')}" update=":panels_form:perCaseTable"/>
                         <h:outputText rendered="#{item.getTP().size()==0}" value="0" />
                     </h:column>
+                    
+                    <ui:remove>
                     <h:column>
                         <f:facet name="header">#{msg['tn']} (<h:graphicImage value="/resources/images/tick.png" width="16" height="16" />)</f:facet>
                         <p:commandLink rendered="#{item.getTN().size()>0}" value="#{item.getTN().size()}" actionListener="#{PerDiagnosisDetails.setAll(item.getTN(),'TN')}" update=":panels_form:perCaseTable"/>
                         <h:outputText rendered="#{item.getTN().size()==0}" value="0" />
                     </h:column>
+                    </ui:remove>    
+                        
                     <h:column>
                         <f:facet name="header">#{msg['fp']} (<h:graphicImage value="/resources/images/cross.png" width="16" height="16" />)</f:facet>
                         <p:commandLink rendered="#{item.getFP().size()>0}" value="#{item.getFP().size()}" actionListener="#{PerDiagnosisDetails.setAll(item.getFP(),'FP')}" update=":panels_form:perCaseTable"/>
@@ -182,7 +186,7 @@ and open the template in the editor.
                     
                     
                     
-                    <p:commandButton value="#{msg['refresh']}" actionListener="#{TreeDrawer.buildOptimalTree(CaseBase,TreeSelector.algorithm,TreeSelector.weighted_attributes)}" update="activeTree,unclassified_bottun,weight_droplist" />
+                    <p:commandButton oncomplete="parseNodeBreaklines()" value="#{msg['refresh']}" actionListener="#{TreeDrawer.buildOptimalTree(CaseBase,TreeSelector.algorithm,TreeSelector.weighted_attributes)}" update="activeTree,unclassified_bottun,weight_droplist"  />
                     <p:commandButton actionListener="#{TreeDrawer.toggleLegend()}" update="activeTree" value="#{msg['legend']}" />
                     
                     <ui:remove>
@@ -206,7 +210,7 @@ and open the template in the editor.
                </h:form>
             <br />
             
-            <p:diagram id="activeTree" value="#{TreeDrawer.getModel()}" style="height:1000px;width:100%" styleClass="ui-widget-content" />
+            <p:diagram  id="activeTree" value="#{TreeDrawer.getModel()}" style="height:1000px;width:100%" styleClass="ui-widget-content" />
     </f:view>
     </h:body>
 </html>
