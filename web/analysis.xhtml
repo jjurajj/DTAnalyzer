@@ -146,7 +146,7 @@ and open the template in the editor.
                     <h:column>
                         <f:facet name="header">#{msg['proposed_solution']}</f:facet>
                         <h:outputLabel value="#{case.getEvaluation().getEndNode()} " rendered="#{case.getEvaluation().isDiagnosed()}" />
-                        <h:outputLabel value="#{case.getEvaluation().getEndNode()} (undiagnosed)" rendered="#{!case.getEvaluation().isDiagnosed()}" />
+                        <h:outputLabel value="#{case.getEvaluation().getEndNode()} (#{msg['undiagnosed']})" rendered="#{!case.getEvaluation().isDiagnosed()}" />
                     </h:column>                        
                     <h:column>
                         <f:facet name="header">#{msg['correct_field_mark']}</f:facet>
@@ -159,7 +159,7 @@ and open the template in the editor.
                     </h:column>
                     <h:column>
                         <f:facet name="header">#{msg['actions']}</f:facet>
-                        <h:outputLink value="#{case.getURL()}" target="_blank">#{msg['full_case']}</h:outputLink> / <p:commandLink value="#{msg['case_path']}" actionListener="#{TreeDrawer.runCase(CaseBase.getCaseByID(case.getID()))}" update=":activeTree" />
+                        <h:outputLink value="#{case.getURL()}" target="_blank">#{msg['full_case']}</h:outputLink> / <p:commandLink oncomplete="parseNodeBreaklines();" value="#{msg['case_path']}" actionListener="#{TreeDrawer.runCase(CaseBase.getCaseByID(case.getID()))}" update=":activeTree" />
                      </h:column>
                 </h:dataTable>
     
@@ -173,6 +173,9 @@ and open the template in the editor.
                     <p:commandButton value="#{msg['display']}: " style="border-width: 0px; background-color: white; pointer-events:none;" />
                     <h:selectOneMenu value="#{TreeSelector.algorithm}" style="font-size: 14pt">
                     <f:selectItem itemValue="user" itemLabel="#{msg['user_tree']}" />
+                    <f:selectItem itemValue="user_correct" itemLabel="#{msg['user_correct']}" />
+                    <f:selectItem itemValue="only_correct" itemLabel="#{msg['only_correct']}" />
+                    <f:selectItem itemValue="corrected" itemLabel="#{msg['corrected']}" />
                     <f:selectItem itemValue="id3" itemLabel="#{msg['id3']}" />
                     <f:selectItem itemValue="c45" itemLabel="#{msg['c45']}" />
                     <p:ajax update="weight_droplist" />
@@ -203,6 +206,7 @@ and open the template in the editor.
                     
                     <br /><br />
                     <p:commandButton value="#{msg['corrections']}: " style="border-width: 0px; background-color: white; pointer-events:none;" />
+                    <p:commandButton actionListener="#{TreeDrawer.improveUserTree(CaseBase,TreeSelector.algorithm,TreeSelector.weighted_attributes)}" id="improve_user_tree" disabled="#{!(TreeSelector.getAlgorithm().equals('user'))}" update="activeTree" value="Improve user tree" />
                     <p:commandButton actionListener="#{TreeDrawer.correctUnclassified(CaseBase,TreeSelector.algorithm,TreeSelector.weighted_attributes)}" id="unclassified_bottun" disabled="#{!(TreeSelector.getAlgorithm().equals('user'))}" update="activeTree" value="Unclassified" />
                     <p:commandButton actionListener="#{TreeDrawer.expandOneLevel()}" update="activeTree" value="Display gain measure" />
                     <p:commandButton actionListener="#{TreeDrawer.toggleLegend()}" update="activeTree" value="Incremental analysis" />

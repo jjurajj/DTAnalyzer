@@ -267,6 +267,22 @@ public class Case implements Serializable {
         }
     }*/
 
+    public Case duplicateCase(Case c) {
+        
+        Case nc = new Case();
+        nc.diagnoses= new ArrayList(c.diagnoses);
+        nc.evaluation=  c.evaluation;
+        nc.explanation= new String(c.explanation);
+        nc.id= new String (c.id);
+        nc.introduction= new String (c.introduction);
+        nc.parameters= new ArrayList(c.parameters);
+        nc.parametersMap= new HashMap<String, String>(c.parametersMap);
+        nc.task=c.task;
+        nc.text=c.text;
+        nc.url=c.url;
+        return nc;
+    }
+    
     @Override
     public boolean equals(Object obj) {
         if (obj == null) {

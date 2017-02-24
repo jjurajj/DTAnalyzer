@@ -26,6 +26,7 @@ import org.primefaces.model.diagram.endpoint.EndPointAnchor;
 import org.primefaces.model.diagram.overlay.ArrowOverlay;
 import org.primefaces.model.diagram.overlay.LabelOverlay;
 import singleCase.Case;
+import singleCase.CaseEvaluation;
 
 @ManagedBean(name = "TreeDrawer")
 @ViewScoped
@@ -113,20 +114,27 @@ public class TreeGraph {
         //ArrayList<String> end_nodes_values = new ArrayList<>();
         
         // Find all unclassified cases and their end nodes
-        for (Case temp_case : base.getCases())
-            if (! temp_case.getEvaluation().diagnosed) {
+        for (Case temp_case : base.getCases()) {
+            CaseEvaluation eval = this.tree.runCase(temp_case);
+            if (! eval.isDiagnosed()) {
+                unclassified_cases.add(temp_case);
+                end_nodes.add(new CaseCompare(eval.getEndNode(),temp_case.parametersMap.get(eval.getEndNode())));
+            }
+            
+            /*if (! temp_case.getEvaluation().diagnosed) {
                 unclassified_cases.add(temp_case);
                 end_nodes.add(new CaseCompare(temp_case.getEvaluation().getEndNode(),temp_case.parametersMap.get(temp_case.getEvaluation().getEndNode())));
                 //end_nodes_names.add(temp_case.getEvaluation().getEndNode());
                 //end_nodes_values.add(temp_case.parametersMap.get(temp_case.getEvaluation().getEndNode()));
-            }
+            }*/
+        }
         
         ArrayList<CaseCompare> used_attributes = new ArrayList<>();
         ArrayList<ArrayList<Case>> list_of_lists_of_cases = new ArrayList<>();
         
         for (int i=0; i<unclassified_cases.size(); i++) {
             
-            Case temp_case = unclassified_cases.get(i);
+            Case temp_case = unclassified_cases.get(i).duplicateCase(unclassified_cases.get(i));
             ArrayList<Case> current_list = new ArrayList<>();
             CaseCompare current = new CaseCompare(end_nodes.get(i).getParameter_name(),end_nodes.get(i).getParameter_value());
         
@@ -134,7 +142,8 @@ public class TreeGraph {
                 for (int j=0; j<unclassified_cases.size(); j++) {
                     CaseCompare temp_compare = new CaseCompare(end_nodes.get(j).getParameter_name(),end_nodes.get(j).getParameter_value());
                     if (temp_compare.equals(current)) {
-                        current_list.add(temp_case);
+                        // Tu je prije argumnt bio temp_case
+                        current_list.add(unclassified_cases.get(j));
                     }
                 }
                 used_attributes.add(current);
@@ -156,9 +165,10 @@ public class TreeGraph {
             
             // Ako su svi čvorovi iste dijagnoze, onda samo napravi tu propoziciju
             boolean all_same_diagnosis = true;
-            for (int j=0; j<current_list.size()-1; j++)
-                if (! current_list.get(j).getCorrectDiagnosis().getName().equals(current_list.get(j+1).getCorrectDiagnosis().getName()))
-                    all_same_diagnosis = false;
+            if (current_list.size()>1)
+                for (int j=0; j<current_list.size()-1; j++)
+                    if (! current_list.get(j).getCorrectDiagnosis().getName().equals(current_list.get(j+1).getCorrectDiagnosis().getName()))
+                        all_same_diagnosis = false;
 
             int tree_index = 0;
             if (algorithm.equals("id3")) tree_index = 1; else tree_index=2;
@@ -179,7 +189,8 @@ public class TreeGraph {
                 DT new_tree = new DT();
                 new_tree.initializeOptimal(current_list, parameters_map, algorithm, include_weights);
             
-                String p0_concept_two = parameters_map.get(new_tree.getStartNodeID());
+                //String p0_concept_two = parameters_map.get(new_tree.getStartNodeID());
+                String p0_concept_two = new_tree.getStartNodeID();
                 new_propositions.add(new Proposition(p0_concept_one, p0_link, p0_concept_two));
                 new_propositions.addAll(new_tree.propositions);
             }
@@ -192,18 +203,18 @@ public class TreeGraph {
         
         // Korisnikovo stablo je na tree_list.get(0)
         int i=1;
-        new_propositions.addAll(this.tree_list.get(0).propositions);
         
         if (new_propositions.size()>0) {
-            
+    
+            new_propositions.addAll(this.tree.propositions);
             DT improved_tree = new DT();
             improved_tree.setPropositions(new_propositions);
             improved_tree.setConceptsMap(parameters_map);
-            improved_tree.setStartNode(this.tree_list.get(0).getStartNodeID());
-            improved_tree.setDiagnoses(this.tree_list.get(0).determineDiagnoses(new_propositions));
+            improved_tree.setStartNode(this.tree.getStartNodeID());
+            improved_tree.setDiagnoses(this.tree.determineDiagnoses(new_propositions));
             for (Proposition prop : new_propositions)
                 improved_tree.propositionsMap.put(new PropositionKey (prop.getConcept_one(), prop.getLink()), prop.getConcept_two());
-            improved_tree.setReachableDiagnoses( this.tree_list.get(0).getStartNodeID());
+            improved_tree.setReachableDiagnoses( this.tree.getStartNodeID());
             
             this.tree_list.add(improved_tree);
             
@@ -230,6 +241,12 @@ public class TreeGraph {
         if (algorithm.equals("user")) {
             buildUserTree();
             
+        } else if (algorithm.equals("user_correct")) {
+            styleCorrectSubTree();
+        } else if (algorithm.equals("only_correct")) {
+            displayCorrectSubtree(base);
+        } else if (algorithm.equals("corrected")) {
+            displayCorrectedSubtree(base, algorithm, include_weights);
         } else {
             DT optimal_tree = new DT();
             HashMap<String, String> cmap = new HashMap(this.tree.concepts_map);
@@ -250,6 +267,115 @@ public class TreeGraph {
         }
     }
     
+    public void styleCorrectSubTree() {
+    
+    }
+    
+    public void displayCorrectedSubtree(CaseBase base, String algorithm, Boolean include_weights) {
+        
+        ArrayList<String> incorrect_nodes = getIncorrectNodes(base);
+        
+        // Sad treba pošistiti propozicije od onih koje uključu
+        ArrayList<Proposition> new_propositions = new ArrayList<>();
+        for (Proposition prop : this.tree.getPropositions())
+            if ((! incorrect_nodes.contains(prop.getConcept_one())) && (! incorrect_nodes.contains(prop.getConcept_two())))
+                new_propositions.add(new Proposition(prop.getConcept_one(), prop.getLink(), prop.getConcept_two()));
+        
+        // Sad imamo listu propozicija new_propositions
+        DT corrected_tree = new DT();
+        HashMap<String, String> cmap = new HashMap(this.tree.concepts_map);
+        corrected_tree.setConceptsMap(cmap);
+        corrected_tree.setPropositions(new_propositions);
+        corrected_tree.setStartNode(this.tree.getStartNodeID());
+        
+        
+        ArrayList<String> new_diagnoses = new ArrayList<>();
+        for (Proposition prop : new_propositions)
+            if ((this.tree.getDiagnoses().contains(prop.getConcept_two())) && (! new_diagnoses.contains(prop.getConcept_two())))
+                new_diagnoses.add(prop.getConcept_two());
+        corrected_tree.setDiagnoses(new_diagnoses);
+        
+        //corrected_tree.setDiagnoses(this.tree.determineDiagnoses(new_propositions));
+        for (Proposition prop : new_propositions) corrected_tree.propositionsMap.put(new PropositionKey (prop.getConcept_one(), prop.getLink()), prop.getConcept_two());
+        corrected_tree.setReachableDiagnoses(corrected_tree.getStartNodeID());
+ 
+        tree_list.add(corrected_tree);
+        this.tree = corrected_tree;
+        
+        correctUnclassified(base, algorithm, include_weights);
+        
+        this.active_tree.clear();
+        clearModel();
+        initializeStartNode();
+        buildFullTree();
+        saveNodeLocations();
+        
+    }
+    
+    public void displayCorrectSubtree(CaseBase base) {
+
+        ArrayList<String> incorrect_nodes = getIncorrectNodes(base);
+        
+        // Sad treba pošistiti propozicije od onih koje uključu
+        ArrayList<Proposition> new_propositions = new ArrayList<>();
+        for (Proposition prop : this.tree.getPropositions())
+            if ((! incorrect_nodes.contains(prop.getConcept_one())) && (! incorrect_nodes.contains(prop.getConcept_two())))
+                new_propositions.add(new Proposition(prop.getConcept_one(), prop.getLink(), prop.getConcept_two()));
+        
+        // Sad imamo listu propozicija new_propositions
+        DT corrected_tree = new DT();
+        HashMap<String, String> cmap = new HashMap(this.tree.concepts_map);
+        corrected_tree.setConceptsMap(cmap);
+        corrected_tree.setPropositions(new_propositions);
+        corrected_tree.setStartNode(this.tree.getStartNodeID());
+        
+        ArrayList<String> new_diagnoses = new ArrayList<>();
+        for (Proposition prop : new_propositions)
+            if ((this.tree.getDiagnoses().contains(prop.getConcept_two())) && (! new_diagnoses.contains(prop.getConcept_two())))
+                new_diagnoses.add(prop.getConcept_two());
+        corrected_tree.setDiagnoses(new_diagnoses);
+        
+        //corrected_tree.setDiagnoses(this.tree.determineDiagnoses(new_propositions));
+        for (Proposition prop : new_propositions) corrected_tree.propositionsMap.put(new PropositionKey (prop.getConcept_one(), prop.getLink()), prop.getConcept_two());
+        corrected_tree.setReachableDiagnoses(corrected_tree.getStartNodeID());
+ 
+        tree_list.add(corrected_tree);
+        this.tree = corrected_tree;
+        this.active_tree.clear();
+        clearModel();
+        initializeStartNode();
+        buildFullTree();
+        saveNodeLocations();
+    }
+            
+    public ArrayList<String> getIncorrectNodes(CaseBase base) {
+        ArrayList<String> incorrect_nodes = new ArrayList<>();
+        for (Case current_case : base.getCases()) {
+        
+            String current_parameter_name = this.tree.getStartNodeName();
+            String current_diagnosis_name = current_case.getCorrectDiagnosis().getName();
+            do {
+
+                String current_parameter_ID = this.tree.getNodeIDFromName(current_parameter_name);
+                String current_parameter_value = current_case.getParametarByName(current_parameter_name).getAssigned_value();
+                String next_parameter_ID = this.tree.propositionsMap.get(new PropositionKey(current_parameter_ID, current_parameter_value));
+                String next_parameter_name = this.tree.getNodeNameFromID(next_parameter_ID);
+            
+                if (! this.tree.getReachableDiagnoses(next_parameter_ID).contains(this.tree.getNodeIDFromName(current_diagnosis_name)))
+                    if ((! incorrect_nodes.contains(next_parameter_ID)) && (! this.tree.diagnoses.contains(next_parameter_ID)))
+                        incorrect_nodes.add(next_parameter_ID);
+                
+                if (this.tree.diagnoses.contains(next_parameter_ID) && (! current_case.getCorrectDiagnosis().getName().equals(next_parameter_name)))
+                    if (! incorrect_nodes.contains(next_parameter_ID))
+                        incorrect_nodes.add(next_parameter_ID);
+                
+                current_parameter_name = next_parameter_name;
+            
+            } while ((current_parameter_name != null) && (! this.tree.diagnoses.contains( this.tree.getNodeIDFromName(current_parameter_name)))) ;
+        
+        }
+        return incorrect_nodes;
+    }
     
     /** Expand leaves wrapper function. Removes legend, expands leaves, reloads node locations, and returns legend if it was on. */
     public void expandOneLevel() {
