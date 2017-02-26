@@ -83,8 +83,8 @@ public class TreeGraph {
             
             // Bez ovoga se ponekad neće inicijaliziratzi natrag korisnikovo stablo
             // Kad se prikaže klasifiakcija bar jednog čvora u ID3
-            buildOptimalTree(base, "id3", false);
-            buildOptimalTree(base, "c45", false);
+            //buildOptimalTree(base, "id3", false);
+            //buildOptimalTree(base, "c45", false);
             buildOptimalTree(base, "user", false);
             
             //buildUserTree();
@@ -95,6 +95,7 @@ public class TreeGraph {
             this.canvas_height=height;
             // Za sve cvorove skaliraj x koordinatu
         }
+        int i=0;
     }
     
     private void initializeStartNode() {
@@ -242,7 +243,7 @@ public class TreeGraph {
             buildUserTree();
             
         } else if (algorithm.equals("user_correct")) {
-            styleCorrectSubTree();
+            styleCorrectSubTree(base);
         } else if (algorithm.equals("only_correct")) {
             displayCorrectSubtree(base);
         } else if (algorithm.equals("corrected")) {
@@ -267,12 +268,35 @@ public class TreeGraph {
         }
     }
     
-    public void styleCorrectSubTree() {
-    
+    public void styleCorrectSubTree(CaseBase base) {
+        resetNodeStyles();
+        ArrayList<String> incorrect_nodes = getIncorrectNodes(base);
+        ArrayList<Proposition> new_propositions = new ArrayList<>();
+        for (Proposition prop : this.tree.getPropositions())
+            if ((! incorrect_nodes.contains(prop.getConcept_one())) && (! incorrect_nodes.contains(prop.getConcept_two())))
+                new_propositions.add(new Proposition(prop.getConcept_one(), prop.getLink(), prop.getConcept_two()));
+        incorrect_nodes.clear();
+        for (Proposition prop : new_propositions) {
+            if (! incorrect_nodes.contains(prop.getConcept_one()))
+                incorrect_nodes.add(prop.getConcept_one());
+            if (! incorrect_nodes.contains(prop.getConcept_two()))
+                incorrect_nodes.add(prop.getConcept_two());
+        }
+        buildUserTree();
+        for (Element node : this.model.getElements()) {
+            String node_name = node.getId();
+            if (incorrect_nodes.contains(node_name))
+                node.setStyleClass(node.getStyleClass().concat("-selected"));
+            else
+                node.setStyleClass(node.getStyleClass().concat("-selected-false"));
+        }
+        saveNodeStyles();
     }
     
     public void displayCorrectedSubtree(CaseBase base, String algorithm, Boolean include_weights) {
         
+        //this.tree = this.tree_list.get(0);
+        buildUserTree();
         ArrayList<String> incorrect_nodes = getIncorrectNodes(base);
         
         // Sad treba pošistiti propozicije od onih koje uključu
@@ -308,13 +332,34 @@ public class TreeGraph {
         clearModel();
         initializeStartNode();
         buildFullTree();
+        
+        
+        incorrect_nodes.clear();
+        for (Proposition prop : new_propositions) {
+            if (! incorrect_nodes.contains(prop.getConcept_one()))
+                incorrect_nodes.add(prop.getConcept_one());
+            if (! incorrect_nodes.contains(prop.getConcept_two()))
+                incorrect_nodes.add(prop.getConcept_two());
+        }
+        for (Element node : this.model.getElements()) {
+            String node_name = node.getId();
+            if (incorrect_nodes.contains(node_name))
+                node.setStyleClass(node.getStyleClass().concat(""));
+            else
+                node.setStyleClass(node.getStyleClass().concat("-selected"));
+        }
+        saveNodeStyles();
         saveNodeLocations();
         
     }
     
     public void displayCorrectSubtree(CaseBase base) {
 
+        //this.tree = this.tree_list.get(0);
+        buildUserTree();
+        
         ArrayList<String> incorrect_nodes = getIncorrectNodes(base);
+        resetNodeStyles();
         
         // Sad treba pošistiti propozicije od onih koje uključu
         ArrayList<Proposition> new_propositions = new ArrayList<>();
@@ -694,7 +739,7 @@ public class TreeGraph {
     }
     
     /** Toggle legend */
-    public void toggleLegend() {
+    public void toggleLegend(String language) {
         if (this.legend) {
             ArrayList<String> legend = new ArrayList<String>(Arrays.asList("csr", "icsp", "isr", "ucs", "start", "end", "decision", "cse"));
             ArrayList<String> nodes_to_remove = new ArrayList<>();
@@ -713,14 +758,14 @@ public class TreeGraph {
                 else if (node.getStyleClass().equals("ui-diagram-element")) decision_node=true;
                 else if (node.getStyleClass().equals("ui-diagram-end")) end_node=true;
             int i=0;
-            if (start_node) addNode("Start node", Integer.toString(canvas_width-300).concat("px"), Integer.toString(i++*65).concat("px"), "ui-diagram-start", "start");
-            if (decision_node) addNode("Decision node", Integer.toString(canvas_width-300).concat("px"), Integer.toString(i++*65).concat("px"), "ui-diagram-element", "decision");
-            if (end_node) addNode("End node", Integer.toString(canvas_width-300).concat("px"), Integer.toString(i++*65).concat("px"), "ui-diagram-end", "end");
-            if (correct_path) addNode("Correct case-solving path (correct solution reachable)", Integer.toString(canvas_width-300).concat("px"), Integer.toString(i++*65).concat("px"), "ui-diagram-element-selected", "csr");
-            if (correct_end) addNode("Correct end node", Integer.toString(canvas_width-300).concat("px"), Integer.toString(i++*65).concat("px"), "ui-diagram-end-selected", "cse");
-            if (incorrect_path) addNode("Incorrect case-solving path (correct solution unreachable)", Integer.toString(canvas_width-300).concat("px"), Integer.toString(i++*65).concat("px"), "ui-diagram-element-selected-false", "icsp");
-            if (incorrect_solution) addNode("Incorrect solution reached", Integer.toString(canvas_width-300).concat("px"), Integer.toString(i++*65).concat("px"), "ui-diagram-end-selected-false", "isr");
-            if (unreached_correct) addNode("Unreached correct solution", Integer.toString(canvas_width-300).concat("px"), Integer.toString(i++*65).concat("px"), "ui-diagram-end-selected-true", "ucs");
+            if (start_node) addNode( (language.equals("hr")) ? "Početni čvor" : "Start node", Integer.toString(canvas_width-300).concat("px"), Integer.toString(i++*65).concat("px"), "ui-diagram-start", "start");
+            if (decision_node) addNode( (language.equals("hr")) ? "Ispitivanje vrijednosti" : "Decision node", Integer.toString(canvas_width-300).concat("px"), Integer.toString(i++*65).concat("px"), "ui-diagram-element", "decision");
+            if (end_node) addNode( (language.equals("hr")) ? "Dijagnoza" : "End node", Integer.toString(canvas_width-300).concat("px"), Integer.toString(i++*65).concat("px"), "ui-diagram-end", "end");
+            if (correct_path) addNode( (language.equals("hr")) ? "Ispravan put rješavanja" : "Correct case-solving path (correct solution reachable)", Integer.toString(canvas_width-300).concat("px"), Integer.toString(i++*65).concat("px"), "ui-diagram-element-selected", "csr");
+            if (correct_end) addNode( (language.equals("hr")) ? "Ispravna dijagnoza" : "Correct end node", Integer.toString(canvas_width-300).concat("px"), Integer.toString(i++*65).concat("px"), "ui-diagram-end-selected", "cse");
+            if (incorrect_path) addNode( (language.equals("hr")) ? "Neispravan put rješavanja" : "Incorrect case-solving path (correct solution unreachable)", Integer.toString(canvas_width-300).concat("px"), Integer.toString(i++*65).concat("px"), "ui-diagram-element-selected-false", "icsp");
+            if (incorrect_solution) addNode( (language.equals("hr")) ? "Neispravna dijagnoza" : "Incorrect solution reached", Integer.toString(canvas_width-300).concat("px"), Integer.toString(i++*65).concat("px"), "ui-diagram-end-selected-false", "isr");
+            if (unreached_correct) addNode( (language.equals("hr")) ? "Nepostavljena dijagnoza" : "Unreached correct solution", Integer.toString(canvas_width-300).concat("px"), Integer.toString(i++*65).concat("px"), "ui-diagram-end-selected-true", "ucs");
         }
         this.legend=!this.legend;
     }
@@ -728,7 +773,7 @@ public class TreeGraph {
     public void resetTree(){
             resetNodeStyles();
             this.legend=true;
-            toggleLegend();
+            toggleLegend("en");
             while (this.active_tree.size()>0) pruneLeaves();
     }
     /** Get all childless node IDs from active tree */

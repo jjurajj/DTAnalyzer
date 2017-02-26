@@ -90,7 +90,7 @@ and open the template in the editor.
                         <ui:fragment>#{item.getName()}</ui:fragment>
                     </h:column>
                     <h:column >
-                        <f:facet name="header">#{msg['test_cases']} (<p:commandLink value="#{CaseBase.cases.size()}" actionListener="#{PerDiagnosisDetails.setAll(CaseBase.cases,'ATC')}" update=":panels_form:perCaseTable"/>)</f:facet>
+                        <f:facet name="header">#{msg['test_cases']} (<p:commandLink value="#{CaseBase.cases.size()}" actionListener="#{PerDiagnosisDetails.setAll(CaseBase.cases,'ATC')}" oncomplete="correctCroChars()" update=":panels_form:perCaseTable"/>)</f:facet>
                         <p:commandLink rendered="#{item.getTotal().size()>0}" value="#{item.getTotal().size()}" actionListener="#{PerDiagnosisDetails.setAll(item.getTotal(),'ATC')}" update=":panels_form:perCaseTable"/>
                         <h:outputText rendered="#{item.getTotal().size()==0}" value="0" />
                     </h:column>
@@ -106,31 +106,31 @@ and open the template in the editor.
                         <!-- Na temelju ovog sad treba apdejtat neku komponentu s arguemntima item.name i TP (to definira listu caseova)-->
                         <!--http://stackoverflow.com/questions/8634156/how-to-find-out-client-id-of-component-for-ajax-update-render-cannot-find-compo-->
                         <f:facet name="header">#{msg['tp']} (<h:graphicImage value="/resources/images/tick.png" width="16" height="16" />)</f:facet>
-                        <p:commandLink rendered="#{item.getTP().size()>0}" value="#{item.getTP().size()}" actionListener="#{PerDiagnosisDetails.setAll(item.getTP(),'TP')}" update=":panels_form:perCaseTable"/>
+                        <p:commandLink rendered="#{item.getTP().size()>0}" value="#{item.getTP().size()}" actionListener="#{PerDiagnosisDetails.setAll(item.getTP(),'TP')}" oncomplete="correctCroChars()" update=":panels_form:perCaseTable"/>
                         <h:outputText rendered="#{item.getTP().size()==0}" value="0" />
                     </h:column>
                     
                     <ui:remove>
                     <h:column>
                         <f:facet name="header">#{msg['tn']} (<h:graphicImage value="/resources/images/tick.png" width="16" height="16" />)</f:facet>
-                        <p:commandLink rendered="#{item.getTN().size()>0}" value="#{item.getTN().size()}" actionListener="#{PerDiagnosisDetails.setAll(item.getTN(),'TN')}" update=":panels_form:perCaseTable"/>
+                        <p:commandLink rendered="#{item.getTN().size()>0}" value="#{item.getTN().size()}" actionListener="#{PerDiagnosisDetails.setAll(item.getTN(),'TN')}" oncomplete="correctCroChars()" update=":panels_form:perCaseTable"/>
                         <h:outputText rendered="#{item.getTN().size()==0}" value="0" />
                     </h:column>
                     </ui:remove>    
                         
                     <h:column>
                         <f:facet name="header">#{msg['fp']} (<h:graphicImage value="/resources/images/cross.png" width="16" height="16" />)</f:facet>
-                        <p:commandLink rendered="#{item.getFP().size()>0}" value="#{item.getFP().size()}" actionListener="#{PerDiagnosisDetails.setAll(item.getFP(),'FP')}" update=":panels_form:perCaseTable"/>
+                        <p:commandLink rendered="#{item.getFP().size()>0}" value="#{item.getFP().size()}" actionListener="#{PerDiagnosisDetails.setAll(item.getFP(),'FP')}" oncomplete="correctCroChars()" update=":panels_form:perCaseTable"/>
                         <h:outputText rendered="#{item.getFP().size()==0}" value="0" />
                     </h:column>
                     <h:column >
                         <f:facet name="header">#{msg['fn']} (<h:graphicImage value="/resources/images/cross.png" width="16" height="16" />)</f:facet>
-                        <p:commandLink rendered="#{item.getFN().size()>0}" value="#{item.getFN().size()}" actionListener="#{PerDiagnosisDetails.setAll(item.getFN(),'FN')}" update=":panels_form:perCaseTable"/>
+                        <p:commandLink rendered="#{item.getFN().size()>0}" value="#{item.getFN().size()}" actionListener="#{PerDiagnosisDetails.setAll(item.getFN(),'FN')}" oncomplete="correctCroChars()" update=":panels_form:perCaseTable"/>
                         <h:outputText rendered="#{item.getFN().size()==0}" value="0" />
                     </h:column>
                     <h:column >
                         <f:facet name="header">#{msg['undiagnosed']} (<h:graphicImage value="/resources/images/cross.png" width="16" height="16" />)</f:facet>
-                        <p:commandLink rendered="#{item.getUndiagnosed().size()>0}" value="#{item.getUndiagnosed().size()}" actionListener="#{PerDiagnosisDetails.setAll(item.getUndiagnosed(),'undiagnosed')}" update=":panels_form:perCaseTable"/>
+                        <p:commandLink rendered="#{item.getUndiagnosed().size()>0}" value="#{item.getUndiagnosed().size()}" actionListener="#{PerDiagnosisDetails.setAll(item.getUndiagnosed(),'undiagnosed')}" oncomplete="correctCroChars()" update=":panels_form:perCaseTable"/>
                         <h:outputText rendered="#{item.getUndiagnosed().size()==0}" value="0" />
                     </h:column>
                 </h:dataTable>
@@ -189,8 +189,8 @@ and open the template in the editor.
                     
                     
                     
-                    <p:commandButton oncomplete="parseNodeBreaklines()" value="#{msg['refresh']}" actionListener="#{TreeDrawer.buildOptimalTree(CaseBase,TreeSelector.algorithm,TreeSelector.weighted_attributes)}" update="activeTree,unclassified_bottun,weight_droplist"  />
-                    <p:commandButton actionListener="#{TreeDrawer.toggleLegend()}" update="activeTree" value="#{msg['legend']}" />
+                    <p:commandButton oncomplete="parseNodeBreaklines()" value="#{msg['refresh']}" actionListener="#{TreeDrawer.buildOptimalTree(CaseBase,TreeSelector.algorithm,TreeSelector.weighted_attributes)}" update="activeTree,weight_droplist"  />
+                    <p:commandButton actionListener="#{TreeDrawer.toggleLegend(userData.getLanguage())}" oncomplete="parseNodeBreaklines()" update="activeTree" value="#{msg['legend']}" />
                     
                     <ui:remove>
                     <p:commandButton actionListener="#{TreeDrawer.buildUserTree()}" update="activeTree" value="User tree" />
@@ -198,6 +198,7 @@ and open the template in the editor.
                     <p:commandButton actionListener="#{TreeDrawer.buildOptimalTree(CaseBase,'id3',true)}" update="activeTree" value="C4.5 tree" />
                     </ui:remove>
                     
+                    <ui:remove>
                     <br />
                     <br />
                     <p:commandButton value="#{msg['decision_analysis']}: " style="border-width: 0px; background-color: white; pointer-events:none;" />
@@ -210,7 +211,7 @@ and open the template in the editor.
                     <p:commandButton actionListener="#{TreeDrawer.correctUnclassified(CaseBase,TreeSelector.algorithm,TreeSelector.weighted_attributes)}" id="unclassified_bottun" disabled="#{!(TreeSelector.getAlgorithm().equals('user'))}" update="activeTree" value="Unclassified" />
                     <p:commandButton actionListener="#{TreeDrawer.expandOneLevel()}" update="activeTree" value="Display gain measure" />
                     <p:commandButton actionListener="#{TreeDrawer.toggleLegend()}" update="activeTree" value="Incremental analysis" />
-                    
+                    </ui:remove>
                </h:form>
             <br />
             
