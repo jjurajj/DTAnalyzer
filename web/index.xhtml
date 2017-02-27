@@ -33,6 +33,7 @@
             <h:form id="size_form" enctype="multipart/form-data">
             <h:outputText value="#{msg['select_base']}" escape="false" />
                 <h:selectOneMenu value="#{BaseSelector.link}">
+                   <f:selectItem itemValue="http://diana.zesoi.fer.hr/~jpetrovic/case_repository/car_starting/" itemLabel="Demo - Dijagnostika problema benzinskog motora" />
                    <f:selectItem itemValue="http://diana.zesoi.fer.hr/~jpetrovic/case_repository/car_starting/" itemLabel="Car Starting Problem" />
                    <f:selectItem itemValue="http://diana.zesoi.fer.hr/~jpetrovic/case_repository/lan/" itemLabel="LAN Misconfiguration Diagnosis (v2)" />
                    <f:selectItem itemValue="http://diana.zesoi.fer.hr/~jpetrovic/case_repository/lan_pon/" itemLabel="LAN Misconfiguration Diagnosis (v1)" />

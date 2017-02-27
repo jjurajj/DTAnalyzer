@@ -269,7 +269,9 @@ public class TreeGraph {
     }
     
     public void styleCorrectSubTree(CaseBase base) {
-        resetNodeStyles();
+        //resetNodeStyles();
+        buildUserTree();    
+        
         ArrayList<String> incorrect_nodes = getIncorrectNodes(base);
         ArrayList<Proposition> new_propositions = new ArrayList<>();
         for (Proposition prop : this.tree.getPropositions())
